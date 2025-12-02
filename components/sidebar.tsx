@@ -108,7 +108,7 @@ export function Sidebar() {
 
           <div className="p-4 border-t text-xs text-muted-foreground">
             <p>58th International Chemistry Olympiad</p>
-            <p className="mt-1">Copyright 2024 - 2026 IChO Uzbekistan</p>
+            <p className="mt-1">Copyright - 2026 IChO Uzbekistan by Dadaxanov Oqiljon</p>
           </div>
         </div>
       </aside>
