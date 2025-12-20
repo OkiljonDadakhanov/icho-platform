@@ -1,8 +1,54 @@
+"use client"
+
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Plus, Edit, X, Users } from "lucide-react"
 
+type Coordinator = {
+  name: string
+  email: string
+  lastSeen: string
+}
+
 export default function CoordinatorsPage() {
+  const [coordinators, setCoordinators] = useState<Coordinator[]>([
+    {
+      name: "Davron Tukhtaev",
+      email: "toxtayev.davron@mail.ru",
+      lastSeen: "2026-03-18 14:03:48 (password)",
+    },
+  ])
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+
+  const handleAddCoordinator = (data: Coordinator) => {
+    setCoordinators([...coordinators, data])
+    setIsAddDialogOpen(false)
+  }
+
+  const handleEditCoordinator = (index: number, data: Coordinator) => {
+    const updated = [...coordinators]
+    updated[index] = data
+    setCoordinators(updated)
+    setEditingIndex(null)
+  }
+
+  const handleDeleteCoordinator = (index: number) => {
+    setCoordinators(coordinators.filter((_, i) => i !== index))
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-8 rounded-lg">
@@ -27,34 +73,33 @@ export default function CoordinatorsPage() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b hover:bg-gray-50">
-                <td className="py-4 font-medium">Davron Tukhtaev</td>
-                <td className="py-4">
-                  <a href="mailto:toxtayev.davron@mail.ru" className="text-[#2f3090] hover:underline">
-                    toxtayev.davron@mail.ru
-                  </a>
-                </td>
-                <td className="py-4 text-muted-foreground">2026-03-18 14:03:48 (password)</td>
-                <td className="py-4">
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="text-[#2f3090] hover:bg-[#2f3090]/10">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50">
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
+              {coordinators.map((coordinator, index) => (
+                <tr key={index} className="border-b hover:bg-gray-50">
+                  <td className="py-4 font-medium">{coordinator.name}</td>
+                  <td className="py-4">
+                    <a href={`mailto:${coordinator.email}`} className="text-[#2f3090] hover:underline">
+                      {coordinator.email}
+                    </a>
+                  </td>
+                  <td className="py-4 text-muted-foreground">{coordinator.lastSeen}</td>
+                  <td className="py-4">
+                    <div className="flex items-center gap-2">
+                      <EditCoordinatorDialog
+                        coordinator={coordinator}
+                        index={index}
+                        onEdit={handleEditCoordinator}
+                        onDelete={handleDeleteCoordinator}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
         <div className="mt-6">
-          <Button className="bg-[#2f3090] hover:bg-[#4547a9]">
-            <Plus className="w-4 h-4 mr-2" />
-            Add coordinator
-          </Button>
+          <AddCoordinatorDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onAdd={handleAddCoordinator} />
         </div>
       </Card>
 
@@ -68,5 +113,152 @@ export default function CoordinatorsPage() {
         </ul>
       </Card>
     </div>
+  )
+}
+
+function AddCoordinatorDialog({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onAdd: (data: Coordinator) => void
+}) {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    lastSeen: "Never",
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onAdd(formData)
+    setFormData({ name: "", email: "", lastSeen: "Never" })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button className="bg-[#2f3090] hover:bg-[#4547a9]">
+          <Plus className="w-4 h-4 mr-2" />
+          Add coordinator
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Coordinator</DialogTitle>
+          <DialogDescription>Add a new coordinator to your delegation.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name *</Label>
+            <Input
+              id="name"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address *</Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]">
+              Add Coordinator
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function EditCoordinatorDialog({
+  coordinator,
+  index,
+  onEdit,
+  onDelete,
+}: {
+  coordinator: Coordinator
+  index: number
+  onEdit: (index: number, data: Coordinator) => void
+  onDelete: (index: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [formData, setFormData] = useState(coordinator)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onEdit(index, formData)
+    setOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-[#2f3090] hover:bg-[#2f3090]/10">
+          <Edit className="w-4 h-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Coordinator</DialogTitle>
+          <DialogDescription>Update coordinator information.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor={`edit-name-${index}`}>Full Name *</Label>
+            <Input
+              id={`edit-name-${index}`}
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`edit-email-${index}`}>Email Address *</Label>
+            <Input
+              id={`edit-email-${index}`}
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+          <DialogFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                onDelete(index)
+                setOpen(false)
+              }}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]">
+                Save Changes
+              </Button>
+            </div>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

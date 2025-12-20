@@ -97,33 +97,64 @@ export default function DashboardPage() {
           </div>
 
           <div className="pt-4 border-t">
-            <h3 className="font-semibold mb-3">Timeline</h3>
-            <div className="space-y-4">
-              {stages.map((stage, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div
-                    className={`mt-0.5 rounded-full p-1 ${
-                      stage.status === "completed"
-                        ? "bg-[#00795d] text-white"
-                        : stage.status === "current"
-                          ? "bg-[#2f3090] text-white"
-                          : "bg-gray-200 text-gray-400"
-                    }`}
-                  >
-                    {stage.status === "completed" ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : stage.status === "current" ? (
-                      <Clock className="w-4 h-4" />
-                    ) : (
-                      <Circle className="w-4 h-4" />
-                    )}
+            <h3 className="font-semibold mb-4 text-lg">Timeline</h3>
+            <div className="relative">
+              {/* Vertical line */}
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
+
+              <div className="space-y-6">
+                {stages.map((stage, index) => (
+                  <div key={index} className="relative flex items-start gap-4">
+                    {/* Icon circle */}
+                    <div
+                      className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full border-2 ${
+                        stage.status === "completed"
+                          ? "bg-[#00795d] border-[#00795d] text-white shadow-lg shadow-[#00795d]/30"
+                          : stage.status === "current"
+                            ? "bg-[#2f3090] border-[#2f3090] text-white shadow-lg shadow-[#2f3090]/30 animate-pulse"
+                            : "bg-white border-gray-300 text-gray-400"
+                      }`}
+                    >
+                      {stage.status === "completed" ? (
+                        <CheckCircle2 className="w-6 h-6" />
+                      ) : stage.status === "current" ? (
+                        <Clock className="w-6 h-6" />
+                      ) : (
+                        <Circle className="w-6 h-6" />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 pt-1">
+                      <div
+                        className={`font-semibold mb-1 ${
+                          stage.status === "completed"
+                            ? "text-[#00795d]"
+                            : stage.status === "current"
+                              ? "text-[#2f3090]"
+                              : "text-gray-500"
+                        }`}
+                      >
+                        {stage.date}
+                      </div>
+                      <div
+                        className={`text-base font-medium ${
+                          stage.status === "completed"
+                            ? "text-gray-700"
+                            : stage.status === "current"
+                              ? "text-[#2f3090] font-semibold"
+                              : "text-gray-500"
+                        }`}
+                      >
+                        {stage.label}
+                      </div>
+                      {stage.status === "current" && (
+                        <Badge className="mt-2 bg-[#2f3090] text-white">Current Stage</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">{stage.date}</p>
-                    <p className="text-sm font-medium">{stage.label}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </Card>

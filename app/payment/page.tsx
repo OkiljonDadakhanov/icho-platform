@@ -1,11 +1,56 @@
+"use client"
+
+import { useState, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock } from "lucide-react"
+import { mockDelegation } from "@/lib/mock-data"
+
+type PaymentStatus = "pending" | "approved" | "rejected"
 
 export default function PaymentPage() {
-  const paymentStatus = "approved" // 'pending' | 'approved' | 'rejected'
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("pending")
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null)
+  const [uploadedInvoice, setUploadedInvoice] = useState<string | null>(null)
+
+  // Calculate based on registered participants
+  const participants = mockDelegation.participants
+  const teamLeaders = participants.filter((p) => p.role === "Team Leader").length
+  const contestants = participants.filter((p) => p.role === "Contestant").length
+  const observers = participants.filter((p) => p.role === "Observer").length
+  const guests = participants.filter((p) => p.role === "Guest").length
+
+  const pricePerPerson = 500 // Prices are subject to change
+
+  const breakdown = useMemo(() => {
+    return {
+      teamLeaders: teamLeaders * pricePerPerson,
+      contestants: contestants * pricePerPerson,
+      observers: observers * pricePerPerson,
+      guests: guests * pricePerPerson,
+      total:
+        teamLeaders * pricePerPerson +
+        contestants * pricePerPerson +
+        observers * pricePerPerson +
+        guests * pricePerPerson,
+    }
+  }, [teamLeaders, contestants, observers, guests, pricePerPerson])
+
+  const handleInvoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setInvoiceFile(file)
+      setUploadedInvoice(file.name)
+      setPaymentStatus("pending")
+    }
+  }
+
+  const handleFileRemove = () => {
+    setInvoiceFile(null)
+    setUploadedInvoice(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -53,7 +98,7 @@ export default function PaymentPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-4 border rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
-              <p className="text-2xl font-bold text-[#2f3090]">$5,000 USD</p>
+              <p className="text-2xl font-bold text-[#2f3090]">${breakdown.total.toLocaleString()} USD</p>
             </div>
             <div className="p-4 border rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">Payment Status</p>
@@ -66,11 +111,22 @@ export default function PaymentPage() {
                       : "bg-yellow-500"
                 }
               >
-                {paymentStatus === "approved"
-                  ? "Approved"
-                  : paymentStatus === "rejected"
-                    ? "Rejected"
-                    : "Pending Verification"}
+                {paymentStatus === "approved" ? (
+                  <>
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Approved
+                  </>
+                ) : paymentStatus === "rejected" ? (
+                  <>
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Rejected
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-3 h-3 mr-1" />
+                    Pending Verification
+                  </>
+                )}
               </Badge>
             </div>
           </div>
@@ -78,25 +134,33 @@ export default function PaymentPage() {
           <div className="p-4 border rounded-lg">
             <h3 className="font-semibold mb-2">Breakdown</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Team Leader (1 x $500)</span>
-                <span>$500</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Contestants (4 x $500)</span>
-                <span>$2,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Observers (2 x $500)</span>
-                <span>$1,000</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Guests (3 x $500)</span>
-                <span>$1,500</span>
-              </div>
+              {teamLeaders > 0 && (
+                <div className="flex justify-between">
+                  <span>Team Leader ({teamLeaders} x ${pricePerPerson})</span>
+                  <span>${breakdown.teamLeaders.toLocaleString()}</span>
+                </div>
+              )}
+              {contestants > 0 && (
+                <div className="flex justify-between">
+                  <span>Contestants ({contestants} x ${pricePerPerson})</span>
+                  <span>${breakdown.contestants.toLocaleString()}</span>
+                </div>
+              )}
+              {observers > 0 && (
+                <div className="flex justify-between">
+                  <span>Observers ({observers} x ${pricePerPerson})</span>
+                  <span>${breakdown.observers.toLocaleString()}</span>
+                </div>
+              )}
+              {guests > 0 && (
+                <div className="flex justify-between">
+                  <span>Guests ({guests} x ${pricePerPerson})</span>
+                  <span>${breakdown.guests.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold pt-2 border-t">
                 <span>Total</span>
-                <span>$5,000</span>
+                <span>${breakdown.total.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -112,7 +176,7 @@ export default function PaymentPage() {
               <CheckCircle2 className="w-5 h-5 text-[#00795d]" />
               <p className="font-semibold text-[#00795d]">Payment Verified</p>
             </div>
-            <p className="text-sm text-[#00795d]/80">Uploaded: bank_transfer_receipt.pdf</p>
+            <p className="text-sm text-[#00795d]/80">Uploaded: {uploadedInvoice || "bank_transfer_receipt.pdf"}</p>
             <p className="text-sm text-[#00795d]/80">Verified on: March 18, 2026</p>
           </div>
         ) : (
@@ -122,14 +186,49 @@ export default function PaymentPage() {
               5MB)
             </p>
 
-            <div className="border-2 border-dashed rounded-lg p-8 text-center border-[#2f3090]/30">
-              <Upload className="w-12 h-12 mx-auto mb-4 text-[#2f3090]/50" />
-              <p className="font-medium mb-2">Drop your file here or click to browse</p>
-              <p className="text-sm text-muted-foreground mb-4">PDF, JPG, PNG up to 5MB</p>
-              <Button className="bg-[#2f3090] hover:bg-[#4547a9]">Select File</Button>
-            </div>
+            {uploadedInvoice ? (
+              <div className="p-4 bg-gray-50 border rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-sm font-medium">{uploadedInvoice}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleFileRemove}>
+                    Remove
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-[#2f3090] hover:bg-[#4547a9]"
+                    onClick={() => {
+                      // In a real app, this would upload to server
+                      setPaymentStatus("pending")
+                    }}
+                  >
+                    Submit for Review
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-8 text-center border-[#2f3090]/30">
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleInvoiceUpload}
+                  className="hidden"
+                  id="invoice-upload"
+                />
+                <label htmlFor="invoice-upload" className="cursor-pointer">
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-[#2f3090]/50" />
+                  <p className="font-medium mb-2">Drop your file here or click to browse</p>
+                  <p className="text-sm text-muted-foreground mb-4">PDF, JPG, PNG up to 5MB</p>
+                  <Button className="bg-[#2f3090] hover:bg-[#4547a9]" asChild>
+                    <span>Select File</span>
+                  </Button>
+                </label>
+              </div>
+            )}
 
-            {paymentStatus === "pending" && (
+            {paymentStatus === "pending" && uploadedInvoice && (
               <Alert className="bg-[#2f3090]/10 border-[#2f3090]/30">
                 <AlertDescription className="text-[#2f3090]">
                   Your payment proof is currently under review. You will be notified once it's verified.
