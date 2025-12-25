@@ -197,39 +197,6 @@ export default function TeamPage() {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">Required Documents</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium">Consent Forms</p>
-              <p className="text-sm text-muted-foreground">Signed consent form for each participant</p>
-            </div>
-            <Badge variant="secondary" className="bg-[#00795d]/10 text-[#00795d]">
-              {participants.length - 1}/{participants.length} Uploaded
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium">Passport Scans</p>
-              <p className="text-sm text-muted-foreground">Clear scan of passport photo page</p>
-            </div>
-            <Badge variant="secondary" className="bg-[#00795d]/10 text-[#00795d]">
-              {participants.length}/{participants.length} Uploaded
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-            <div>
-              <p className="font-medium">Profile Photos</p>
-              <p className="text-sm text-muted-foreground">Passport-style photo for each participant</p>
-            </div>
-            <Badge variant="secondary" className="bg-[#00795d]/10 text-[#00795d]">
-              {uploadedPhotosCount}/{participants.length} Uploaded
-            </Badge>
-          </div>
-        </div>
-      </Card>
-
       {!isLocked && (
         <div className="flex justify-end">
           <Button size="lg" className="bg-[#00795d] hover:bg-[#009973]">
