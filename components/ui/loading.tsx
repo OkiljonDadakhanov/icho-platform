@@ -35,6 +35,9 @@ export function LoadingPage({ message = "Loading..." }: LoadingPageProps) {
   );
 }
 
+// Alias for backwards compatibility
+export const Loading = LoadingPage;
+
 interface LoadingOverlayProps {
   isLoading: boolean;
   children: React.ReactNode;

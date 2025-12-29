@@ -29,9 +29,10 @@ export default function DocumentsPage() {
       const data = await documentsService.getDocuments()
       setDocuments(data)
       setError(null)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to fetch documents:", err)
-      setError("Failed to load documents")
+      const message = (err as { message?: string })?.message || "Failed to load documents. Please try again.";
+      setError(message)
     } finally {
       setIsLoading(false)
     }
@@ -46,9 +47,10 @@ export default function DocumentsPage() {
       await documentsService.uploadDocument(file, "general")
       await fetchDocuments()
       setError(null)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to upload document:", err)
-      setError("Failed to upload document")
+      const message = (err as { message?: string })?.message || "Failed to upload document. Please try again.";
+      setError(message)
     } finally {
       setIsUploading(false)
     }
@@ -58,9 +60,10 @@ export default function DocumentsPage() {
     try {
       await documentsService.deleteDocument(id)
       await fetchDocuments()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to delete document:", err)
-      setError("Failed to delete document")
+      const message = (err as { message?: string })?.message || "Failed to delete document. Please try again.";
+      setError(message)
     }
   }
 

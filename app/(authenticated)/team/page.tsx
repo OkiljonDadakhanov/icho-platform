@@ -67,9 +67,10 @@ export default function TeamPage() {
       await participantsService.createParticipant(data)
       await fetchParticipants()
       setIsAddDialogOpen(false)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to add participant:", err)
-      setError("Failed to add participant")
+      const message = (err as { message?: string })?.message || "Failed to add participant. Please try again.";
+      setError(message)
     } finally {
       setIsSaving(false)
     }
@@ -80,9 +81,10 @@ export default function TeamPage() {
       setIsSaving(true)
       await participantsService.updateParticipant(id, data)
       await fetchParticipants()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to update participant:", err)
-      setError("Failed to update participant")
+      const message = (err as { message?: string })?.message || "Failed to update participant. Please try again.";
+      setError(message)
     } finally {
       setIsSaving(false)
     }
@@ -93,9 +95,10 @@ export default function TeamPage() {
       setIsSaving(true)
       await participantsService.deleteParticipant(id)
       await fetchParticipants()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to delete participant:", err)
-      setError("Failed to delete participant")
+      const message = (err as { message?: string })?.message || "Failed to delete participant. Please try again.";
+      setError(message)
     } finally {
       setIsSaving(false)
     }
@@ -105,9 +108,10 @@ export default function TeamPage() {
     try {
       await participantsService.uploadProfilePhoto(participantId, file)
       await fetchParticipants()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to upload photo:", err)
-      setError("Failed to upload photo")
+      const message = (err as { message?: string })?.message || "Failed to upload photo. Please try again.";
+      setError(message)
     }
   }
 

@@ -31,18 +31,18 @@ export default function PaymentPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, invoiceData, paymentData] = await Promise.all([
+      const [participantsData, paymentData] = await Promise.all([
         participantsService.getAllParticipants(),
-        paymentsService.getInvoice().catch(() => null),
         paymentsService.getPayment().catch(() => null)
       ])
       setParticipants(participantsData)
-      setInvoice(invoiceData)
       setPayment(paymentData)
+      // Invoice is embedded in payment response
+      setInvoice(paymentData?.invoice || null)
       setError(null)
     } catch (err) {
       console.error("Failed to fetch data:", err)
-      setError("Failed to load payment information")
+      setError("Failed to load payment information. Please try again later.")
     } finally {
       setIsLoading(false)
     }
@@ -72,25 +72,29 @@ export default function PaymentPage() {
 
   const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !invoice) return
+    if (!file) return
 
     try {
       setIsUploading(true)
-      await paymentsService.uploadPaymentProof(invoice.id, file)
+      await paymentsService.uploadPaymentProof(file)
       await fetchData()
       setError(null)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to upload payment proof:", err)
-      setError("Failed to upload payment proof")
+      const errorMessage = (err as { message?: string })?.message || "Failed to upload payment proof. Please try again."
+      setError(errorMessage)
     } finally {
       setIsUploading(false)
     }
   }
 
   const handleDownloadInvoice = async () => {
-    if (!invoice) return
+    if (!invoice) {
+      setError("Invoice is not available yet. Please complete pre-registration first.")
+      return
+    }
     try {
-      const blob = await paymentsService.downloadInvoice(invoice.id)
+      const blob = await paymentsService.downloadInvoice()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -99,9 +103,10 @@ export default function PaymentPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to download invoice:", err)
-      setError("Failed to download invoice")
+      const errorMessage = (err as { message?: string })?.message || "Failed to download invoice. Please try again."
+      setError(errorMessage)
     }
   }
 

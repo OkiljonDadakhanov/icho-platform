@@ -43,9 +43,10 @@ export default function InvitationsPage() {
       })
       setInvitations(invitationMap)
       setError(null)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to fetch data:", err)
-      setError("Failed to load data")
+      const message = (err as { message?: string })?.message || "Failed to load data. Please try again.";
+      setError(message)
     } finally {
       setIsLoading(false)
     }
@@ -56,9 +57,10 @@ export default function InvitationsPage() {
       setGeneratingFor(participantId)
       await invitationsService.generateInvitation(participantId)
       await fetchData()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to generate invitation:", err)
-      setError("Failed to generate invitation letter")
+      const message = (err as { message?: string })?.message || "Failed to generate invitation letter. Please try again.";
+      setError(message)
     } finally {
       setGeneratingFor(null)
     }
@@ -75,9 +77,10 @@ export default function InvitationsPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to download invitation:", err)
-      setError("Failed to download invitation letter")
+      const message = (err as { message?: string })?.message || "Failed to download invitation letter. Please try again.";
+      setError(message)
     }
   }
 

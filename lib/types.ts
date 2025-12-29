@@ -131,8 +131,8 @@ export interface Invoice {
 
 export interface Payment {
   id: string;
-  country: string;
-  invoice: string;
+  country?: string;
+  invoice?: Invoice;
   proof_file?: string;
   status: PaymentStatus;
   admin_comment?: string;

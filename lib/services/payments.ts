@@ -8,7 +8,7 @@ import type { Payment, Invoice } from '../types';
 
 export const paymentsService = {
   /**
-   * Get payment details for current country
+   * Get payment details for current country (includes invoice)
    */
   async getPayment(): Promise<Payment | null> {
     try {
@@ -23,11 +23,12 @@ export const paymentsService = {
   },
 
   /**
-   * Get invoice details
+   * Get invoice details (extracted from payment)
    */
   async getInvoice(): Promise<Invoice | null> {
     try {
-      return await api.get<Invoice>('/v1/payments/invoice/');
+      const payment = await api.get<Payment>('/v1/payments/');
+      return payment?.invoice || null;
     } catch (error) {
       if ((error as { status: number }).status === 404) {
         return null;
@@ -53,10 +54,25 @@ export const paymentsService = {
   },
 
   /**
+   * Regenerate invoice with updated data
+   */
+  async regenerateInvoice(): Promise<Payment> {
+    return api.post<Payment>('/v1/payments/invoice/regenerate/');
+  },
+
+  /**
    * Get payment status
    */
   async getPaymentStatus(): Promise<{ status: string; message: string }> {
-    return api.get('/v1/payments/status/');
+    const payment = await this.getPayment();
+    return {
+      status: payment?.status || 'NOT_FOUND',
+      message: payment?.status === 'APPROVED'
+        ? 'Payment approved'
+        : payment?.status === 'REJECTED'
+        ? 'Payment rejected'
+        : 'Payment pending verification'
+    };
   },
 };
 
