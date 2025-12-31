@@ -226,9 +226,14 @@ export class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
-  // File upload
+  // File upload (POST)
   async upload<T>(endpoint: string, formData: FormData): Promise<T> {
     return this.requestWithFile<T>(endpoint, formData, 'POST');
+  }
+
+  // File upload (PATCH)
+  async uploadPatch<T>(endpoint: string, formData: FormData): Promise<T> {
+    return this.requestWithFile<T>(endpoint, formData, 'PATCH');
   }
 
   // Download file

@@ -326,11 +326,18 @@ function AddMemberDialog({
     dietary_requirements: "" as DietaryRequirement | "",
     passport_number: "",
     medical_requirements: "",
+    email: "",
+    regulations_accepted: false,
   })
+  const [passportScan, setPassportScan] = useState<File | null>(null)
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
+  const [consentForm, setConsentForm] = useState<File | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.role || !formData.gender || !formData.tshirt_size || !formData.dietary_requirements) return
+    if (!formData.email || !formData.regulations_accepted) return
+    if (!passportScan || !profilePhoto || !consentForm) return
 
     onAdd({
       full_name: formData.full_name,
@@ -341,6 +348,11 @@ function AddMemberDialog({
       dietary_requirements: formData.dietary_requirements as DietaryRequirement,
       passport_number: formData.passport_number,
       medical_requirements: formData.medical_requirements || undefined,
+      email: formData.email,
+      regulations_accepted: formData.regulations_accepted,
+      passport_scan: passportScan,
+      profile_photo: profilePhoto,
+      consent_form_signed: consentForm,
     })
     setFormData({
       full_name: "",
@@ -351,7 +363,12 @@ function AddMemberDialog({
       dietary_requirements: "",
       passport_number: "",
       medical_requirements: "",
+      email: "",
+      regulations_accepted: false,
     })
+    setPassportScan(null)
+    setProfilePhoto(null)
+    setConsentForm(null)
   }
 
   return (
@@ -370,7 +387,7 @@ function AddMemberDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name *</Label>
+              <Label htmlFor="full_name">Full Name (as in passport) *</Label>
               <Input
                 id="full_name"
                 required
@@ -379,6 +396,20 @@ function AddMemberDialog({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                placeholder="participant@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="passport_number">Passport Number *</Label>
               <Input
                 id="passport_number"
@@ -386,6 +417,16 @@ function AddMemberDialog({
                 placeholder="FA8475924"
                 value={formData.passport_number}
                 onChange={(e) => setFormData({ ...formData, passport_number: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date_of_birth">Date of Birth *</Label>
+              <Input
+                id="date_of_birth"
+                type="date"
+                required
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
               />
             </div>
           </div>
@@ -405,23 +446,9 @@ function AddMemberDialog({
                   <SelectItem value="CONTESTANT">Contestant</SelectItem>
                   <SelectItem value="OBSERVER">Observer</SelectItem>
                   <SelectItem value="GUEST">Guest</SelectItem>
-                  <SelectItem value="MENTOR">Mentor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="date_of_birth">Date of Birth *</Label>
-              <Input
-                id="date_of_birth"
-                type="date"
-                required
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="gender">Gender *</Label>
               <Select
@@ -438,6 +465,9 @@ function AddMemberDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tshirt_size">T-shirt Size *</Label>
               <Select
@@ -457,9 +487,6 @@ function AddMemberDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dietary_requirements">Dietary Requirements *</Label>
               <Select
@@ -478,14 +505,72 @@ function AddMemberDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="medical_requirements">Medical Requirements</Label>
-              <Input
-                id="medical_requirements"
-                placeholder="Optional"
-                value={formData.medical_requirements}
-                onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="medical_requirements">Medical Requirements</Label>
+            <Input
+              id="medical_requirements"
+              placeholder="Any allergies, medical conditions, or special requirements (optional)"
+              value={formData.medical_requirements}
+              onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+            />
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="font-medium mb-3">Required Documents</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="passport_scan">Passport Scan *</Label>
+                <Input
+                  id="passport_scan"
+                  type="file"
+                  accept="image/*,.pdf"
+                  required
+                  onChange={(e) => setPassportScan(e.target.files?.[0] || null)}
+                />
+                {passportScan && <p className="text-sm text-muted-foreground">{passportScan.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile_photo">Profile Photo (passport-style) *</Label>
+                <Input
+                  id="profile_photo"
+                  type="file"
+                  accept="image/*"
+                  required
+                  onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                />
+                {profilePhoto && <p className="text-sm text-muted-foreground">{profilePhoto.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="consent_form">Signed Consent Form *</Label>
+                <Input
+                  id="consent_form"
+                  type="file"
+                  accept="image/*,.pdf"
+                  required
+                  onChange={(e) => setConsentForm(e.target.files?.[0] || null)}
+                />
+                {consentForm && <p className="text-sm text-muted-foreground">{consentForm.name}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-start space-x-2">
+              <input
+                type="checkbox"
+                id="regulations_accepted"
+                checked={formData.regulations_accepted}
+                onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
+                className="mt-1"
+                required
               />
+              <Label htmlFor="regulations_accepted" className="text-sm font-normal">
+                I have read and agree to the IChO 2026 regulations and rules *
+              </Label>
             </div>
           </div>
 
@@ -524,11 +609,21 @@ function EditMemberDialog({
     dietary_requirements: participant.dietary_requirements,
     passport_number: participant.passport_number,
     medical_requirements: participant.medical_requirements || "",
+    email: participant.email || "",
+    regulations_accepted: participant.regulations_accepted,
   })
+  const [passportScan, setPassportScan] = useState<File | null>(null)
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
+  const [consentForm, setConsentForm] = useState<File | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onEdit(participant.id, formData)
+    onEdit(participant.id, {
+      ...formData,
+      passport_scan: passportScan || undefined,
+      profile_photo: profilePhoto || undefined,
+      consent_form_signed: consentForm || undefined,
+    })
     setOpen(false)
   }
 
@@ -547,7 +642,7 @@ function EditMemberDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Full Name *</Label>
+              <Label>Full Name (as in passport) *</Label>
               <Input
                 required
                 value={formData.full_name}
@@ -555,11 +650,32 @@ function EditMemberDialog({
               />
             </div>
             <div className="space-y-2">
+              <Label>Email Address *</Label>
+              <Input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label>Passport Number *</Label>
               <Input
                 required
                 value={formData.passport_number}
                 onChange={(e) => setFormData({ ...formData, passport_number: e.target.value.toUpperCase() })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Date of Birth *</Label>
+              <Input
+                type="date"
+                required
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
               />
             </div>
           </div>
@@ -579,22 +695,9 @@ function EditMemberDialog({
                   <SelectItem value="CONTESTANT">Contestant</SelectItem>
                   <SelectItem value="OBSERVER">Observer</SelectItem>
                   <SelectItem value="GUEST">Guest</SelectItem>
-                  <SelectItem value="MENTOR">Mentor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Date of Birth *</Label>
-              <Input
-                type="date"
-                required
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Gender *</Label>
               <Select
@@ -611,6 +714,9 @@ function EditMemberDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>T-shirt Size *</Label>
               <Select
@@ -630,9 +736,6 @@ function EditMemberDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Dietary Requirements *</Label>
               <Select
@@ -651,13 +754,64 @@ function EditMemberDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Medical Requirements</Label>
-              <Input
-                placeholder="Optional"
-                value={formData.medical_requirements}
-                onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Medical Requirements</Label>
+            <Input
+              placeholder="Any allergies, medical conditions, or special requirements (optional)"
+              value={formData.medical_requirements}
+              onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+            />
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="font-medium mb-3">Update Documents (optional)</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label>Passport Scan {participant.passport_scan ? "(already uploaded)" : ""}</Label>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setPassportScan(e.target.files?.[0] || null)}
+                />
+                {passportScan && <p className="text-sm text-muted-foreground">New: {passportScan.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Profile Photo {participant.profile_photo ? "(already uploaded)" : ""}</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                />
+                {profilePhoto && <p className="text-sm text-muted-foreground">New: {profilePhoto.name}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Consent Form {participant.consent_form_signed ? "(already uploaded)" : ""}</Label>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setConsentForm(e.target.files?.[0] || null)}
+                />
+                {consentForm && <p className="text-sm text-muted-foreground">New: {consentForm.name}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-start space-x-2">
+              <input
+                type="checkbox"
+                id={`regulations_accepted_${participant.id}`}
+                checked={formData.regulations_accepted}
+                onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
+                className="mt-1"
               />
+              <Label htmlFor={`regulations_accepted_${participant.id}`} className="text-sm font-normal">
+                I have read and agree to the IChO 2026 regulations and rules
+              </Label>
             </div>
           </div>
 

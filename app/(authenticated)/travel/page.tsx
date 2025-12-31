@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus, Edit, Plane, Calendar, Clock, X, AlertCircle } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/auth-context"
 import { travelService } from "@/lib/services/travel"
 import { participantsService } from "@/lib/services/participants"
@@ -60,13 +61,18 @@ export default function TravelPage() {
   const participantsWithTravel = new Set(travelInfos.map(t => t.participant))
   const missingTravel = participants.filter(p => !participantsWithTravel.has(p.id))
 
-  const handleAddTravel = async (participantId: string, data: { arrival_datetime: string; departure_datetime: string; flight_number?: string; airline?: string }) => {
+  const handleAddTravel = async (participantIds: string[], data: { arrival_datetime: string; departure_datetime: string; flight_number?: string; airline?: string }) => {
     try {
       setIsSaving(true)
-      await travelService.createTravelInfo({
-        participant_id: participantId,
-        ...data
-      })
+      // Create travel info for all selected participants
+      await Promise.all(
+        participantIds.map(participantId =>
+          travelService.createTravelInfo({
+            participant_id: participantId,
+            ...data
+          })
+        )
+      )
       await fetchData()
     } catch (err) {
       console.error("Failed to add travel info:", err)
@@ -250,11 +256,11 @@ function AddTravelDialog({
 }: {
   participants: Participant[]
   existingTravelParticipants: Set<string>
-  onAdd: (participantId: string, data: { arrival_datetime: string; departure_datetime: string; flight_number?: string; airline?: string }) => void
+  onAdd: (participantIds: string[], data: { arrival_datetime: string; departure_datetime: string; flight_number?: string; airline?: string }) => void
   isSaving: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const [selectedParticipant, setSelectedParticipant] = useState("")
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [formData, setFormData] = useState({
     arrival_date: "",
     arrival_time: "",
@@ -266,11 +272,27 @@ function AddTravelDialog({
 
   const availableParticipants = participants.filter(p => !existingTravelParticipants.has(p.id))
 
+  const toggleParticipant = (participantId: string) => {
+    setSelectedParticipants(prev =>
+      prev.includes(participantId)
+        ? prev.filter(id => id !== participantId)
+        : [...prev, participantId]
+    )
+  }
+
+  const selectAll = () => {
+    setSelectedParticipants(availableParticipants.map(p => p.id))
+  }
+
+  const deselectAll = () => {
+    setSelectedParticipants([])
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedParticipant) return
+    if (selectedParticipants.length === 0) return
 
-    onAdd(selectedParticipant, {
+    onAdd(selectedParticipants, {
       arrival_datetime: `${formData.arrival_date}T${formData.arrival_time}:00`,
       departure_datetime: `${formData.departure_date}T${formData.departure_time}:00`,
       flight_number: formData.flight_number || undefined,
@@ -284,7 +306,7 @@ function AddTravelDialog({
       flight_number: "",
       airline: "",
     })
-    setSelectedParticipant("")
+    setSelectedParticipants([])
     setOpen(false)
   }
 
@@ -296,27 +318,64 @@ function AddTravelDialog({
           Add Travel Info
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Travel Information</DialogTitle>
-          <DialogDescription>Add travel information for a participant.</DialogDescription>
+          <DialogDescription>Select participants with the same travel schedule to add their information at once.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Select Participant *</Label>
-            <select
-              className="w-full p-2 border rounded-md"
-              value={selectedParticipant}
-              onChange={(e) => setSelectedParticipant(e.target.value)}
-              required
-            >
-              <option value="">Select a participant</option>
-              {availableParticipants.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.full_name} ({mapRoleToFrontend(p.role)})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between">
+              <Label>Select Participants *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={selectAll}
+                  className="text-xs h-7"
+                >
+                  Select All
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={deselectAll}
+                  className="text-xs h-7"
+                >
+                  Deselect All
+                </Button>
+              </div>
+            </div>
+            <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+              {availableParticipants.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  All participants already have travel information
+                </p>
+              ) : (
+                availableParticipants.map((p) => (
+                  <label
+                    key={p.id}
+                    className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedParticipants.includes(p.id)}
+                      onCheckedChange={() => toggleParticipant(p.id)}
+                    />
+                    <span className="flex-1">{p.full_name}</span>
+                    <Badge variant="secondary" className="bg-gray-100 text-xs">
+                      {mapRoleToFrontend(p.role)}
+                    </Badge>
+                  </label>
+                ))
+              )}
+            </div>
+            {selectedParticipants.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {selectedParticipants.length} participant{selectedParticipants.length !== 1 ? 's' : ''} selected
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -384,8 +443,12 @@ function AddTravelDialog({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Add Travel Info"}
+            <Button
+              type="submit"
+              className="bg-[#2f3090] hover:bg-[#4547a9]"
+              disabled={isSaving || selectedParticipants.length === 0}
+            >
+              {isSaving ? "Saving..." : `Add Travel Info${selectedParticipants.length > 1 ? ` (${selectedParticipants.length})` : ''}`}
             </Button>
           </DialogFooter>
         </form>

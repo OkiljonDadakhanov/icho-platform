@@ -103,6 +103,8 @@ export interface Participant {
   tshirt_size: TshirtSize;
   dietary_requirements: DietaryRequirement;
   medical_requirements?: string;
+  email: string;
+  consent_form_signed?: string;
   regulations_accepted: boolean;
   created_at: string;
   updated_at: string;
@@ -307,6 +309,11 @@ export interface ParticipantCreateRequest {
   tshirt_size: TshirtSize;
   dietary_requirements: DietaryRequirement;
   medical_requirements?: string;
+  email: string;
+  passport_scan?: File;
+  profile_photo?: File;
+  consent_form_signed?: File;
+  regulations_accepted: boolean;
 }
 
 export interface ParticipantUpdateRequest extends Partial<ParticipantCreateRequest> {}
