@@ -32,7 +32,7 @@ export default function InvitationsPage() {
       setIsLoading(true)
       const [participantsData, invitationsData] = await Promise.all([
         participantsService.getAllParticipants(),
-        invitationsService.getInvitations()
+        invitationsService.getAllInvitations()
       ])
       setParticipants(participantsData)
 
@@ -55,7 +55,7 @@ export default function InvitationsPage() {
   const handleGenerateInvitation = async (participantId: string) => {
     try {
       setGeneratingFor(participantId)
-      await invitationsService.generateInvitation(participantId)
+      await invitationsService.requestInvitation(participantId)
       await fetchData()
     } catch (err: unknown) {
       console.error("Failed to generate invitation:", err)

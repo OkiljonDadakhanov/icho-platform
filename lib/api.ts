@@ -37,8 +37,11 @@ export class ApiClient {
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       // Also set cookies for middleware to access
-      document.cookie = `accessToken=${accessToken}; path=/; max-age=${60 * 30}`; // 30 minutes
-      document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+      // Use Secure in production (HTTPS), SameSite=Lax for CSRF protection
+      const isSecure = window.location.protocol === 'https:';
+      const secureFlag = isSecure ? '; Secure' : '';
+      document.cookie = `accessToken=${accessToken}; path=/; max-age=${60 * 30}; SameSite=Lax${secureFlag}`; // 30 minutes
+      document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secureFlag}`; // 7 days
     }
   }
 
@@ -48,9 +51,11 @@ export class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      // Also clear cookies
-      document.cookie = 'accessToken=; path=/; max-age=0';
-      document.cookie = 'refreshToken=; path=/; max-age=0';
+      // Also clear cookies with same attributes for proper cleanup
+      const isSecure = window.location.protocol === 'https:';
+      const secureFlag = isSecure ? '; Secure' : '';
+      document.cookie = `accessToken=; path=/; max-age=0; SameSite=Lax${secureFlag}`;
+      document.cookie = `refreshToken=; path=/; max-age=0; SameSite=Lax${secureFlag}`;
     }
   }
 

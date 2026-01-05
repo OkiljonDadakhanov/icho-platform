@@ -26,8 +26,8 @@ export default function DocumentsPage() {
   const fetchDocuments = async () => {
     try {
       setIsLoading(true)
-      const data = await documentsService.getDocuments()
-      setDocuments(data)
+      const response = await documentsService.getDocuments()
+      setDocuments(response.results)
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to fetch documents:", err)
@@ -44,7 +44,8 @@ export default function DocumentsPage() {
 
     try {
       setIsUploading(true)
-      await documentsService.uploadDocument(file, "general")
+      // Note: "general" should be a valid document type ID from the backend
+      await documentsService.uploadDocument("general", file)
       await fetchDocuments()
       setError(null)
     } catch (err: unknown) {
