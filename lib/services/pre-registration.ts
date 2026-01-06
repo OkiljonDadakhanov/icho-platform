@@ -43,7 +43,25 @@ export const preRegistrationService = {
   /**
    * Create a coordinator
    */
-  async createCoordinator(data: CoordinatorUpsertRequest): Promise<Coordinator> {
+  async createCoordinator(
+    data: CoordinatorUpsertRequest,
+    passportScan?: File
+  ): Promise<Coordinator> {
+    if (passportScan) {
+      const formData = new FormData();
+      formData.append('full_name', data.full_name);
+      formData.append('role', data.role);
+      formData.append('gender', data.gender);
+      formData.append('date_of_birth', data.date_of_birth);
+      formData.append('passport_number', data.passport_number);
+      formData.append('email', data.email);
+      formData.append('phone', data.phone);
+      if (data.is_primary !== undefined) {
+        formData.append('is_primary', String(data.is_primary));
+      }
+      formData.append('passport_scan', passportScan);
+      return api.upload<Coordinator>('/pre-registration/coordinators/', formData);
+    }
     return api.post<Coordinator>('/pre-registration/coordinators/', data);
   },
 

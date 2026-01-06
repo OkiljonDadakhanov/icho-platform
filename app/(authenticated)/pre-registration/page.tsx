@@ -138,9 +138,12 @@ export default function PreRegistrationPage() {
       setCoordinatorPassportScan(updated.passport_scan ?? null);
       return updated;
     }
-    const created = await preRegistrationService.createCoordinator(payload);
+    const created = await preRegistrationService.createCoordinator(payload, passportScanFile || undefined);
     setCoordinatorId(created.id);
     setCoordinatorPassportScan(created.passport_scan ?? null);
+    if (passportScanFile) {
+      setPassportScanFile(null);
+    }
     return created;
   };
 
