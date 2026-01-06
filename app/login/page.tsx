@@ -36,11 +36,17 @@ export default function LoginPage() {
   const loadCountries = async () => {
     try {
       setIsLoadingCountries(true);
+      setError(null);
       const data = await countriesService.getCountries();
       setCountries(data);
     } catch (err) {
       console.error("Failed to load countries:", err);
-      setError("Failed to load countries. Please refresh the page.");
+      const error = err as { message?: string; status?: number };
+      if (error.status === 0 || error.message?.includes('Failed to fetch') || error.message?.includes('CORS')) {
+        setError("Unable to connect to the server. Please ensure the API server is running and CORS is configured correctly.");
+      } else {
+        setError(error.message || "Failed to load countries. Please refresh the page.");
+      }
     } finally {
       setIsLoadingCountries(false);
     }
@@ -58,16 +64,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Find the selected country to get its ISO code
-      const country = countries.find(c => c.id === selectedCountry);
-      if (!country) {
-        throw new Error("Selected country not found");
-      }
-
-      // Construct email from country ISO code
-      const email = `${country.iso_code.toLowerCase()}@icho2026.org`;
-
-      await login({ email, password });
+      // Send country ID and password
+      await login({ country: selectedCountry, password });
       router.push("/dashboard");
     } catch (err) {
       const error = err as { message?: string };

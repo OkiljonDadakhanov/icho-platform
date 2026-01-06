@@ -5,6 +5,10 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
+if (!process.env.NEXT_PUBLIC_API_URL) {
+  console.warn('NEXT_PUBLIC_API_URL is not set. Using default: http://localhost:8000/api');
+}
+
 export interface ApiError {
   message: string;
   status: number;
@@ -94,6 +98,10 @@ export class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    if (!API_URL) {
+      throw new Error('API URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.');
+    }
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -103,20 +111,45 @@ export class ApiClient {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
-    let response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+        mode: 'cors',
+        credentials: 'include',
+      });
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw {
+          message: 'Unable to connect to the server. Please check your internet connection and ensure the API server is running.',
+          status: 0,
+        } as ApiError;
+      }
+      throw error;
+    }
 
     // Handle token refresh
     if (response.status === 401 && this.refreshToken) {
       const refreshed = await this.refreshAccessToken();
       if (refreshed) {
         (headers as Record<string, string>)['Authorization'] = `Bearer ${this.accessToken}`;
-        response = await fetch(`${API_URL}${endpoint}`, {
-          ...options,
-          headers,
-        });
+        try {
+          response = await fetch(`${API_URL}${endpoint}`, {
+            ...options,
+            headers,
+            mode: 'cors',
+            credentials: 'include',
+          });
+        } catch (error) {
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            throw {
+              message: 'Unable to connect to the server. Please check your internet connection and ensure the API server is running.',
+              status: 0,
+            } as ApiError;
+          }
+          throw error;
+        }
       }
     }
 
@@ -149,28 +182,57 @@ export class ApiClient {
     formData: FormData,
     method: 'POST' | 'PUT' | 'PATCH' = 'POST'
   ): Promise<T> {
+    if (!API_URL) {
+      throw new Error('API URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.');
+    }
+
     const headers: HeadersInit = {};
 
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
-    let response = await fetch(`${API_URL}${endpoint}`, {
-      method,
-      headers,
-      body: formData,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}${endpoint}`, {
+        method,
+        headers,
+        body: formData,
+        mode: 'cors',
+        credentials: 'include',
+      });
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw {
+          message: 'Unable to connect to the server. Please check your internet connection and ensure the API server is running.',
+          status: 0,
+        } as ApiError;
+      }
+      throw error;
+    }
 
     // Handle token refresh
     if (response.status === 401 && this.refreshToken) {
       const refreshed = await this.refreshAccessToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${this.accessToken}`;
-        response = await fetch(`${API_URL}${endpoint}`, {
-          method,
-          headers,
-          body: formData,
-        });
+        try {
+          response = await fetch(`${API_URL}${endpoint}`, {
+            method,
+            headers,
+            body: formData,
+            mode: 'cors',
+            credentials: 'include',
+          });
+        } catch (error) {
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            throw {
+              message: 'Unable to connect to the server. Please check your internet connection and ensure the API server is running.',
+              status: 0,
+            } as ApiError;
+          }
+          throw error;
+        }
       }
     }
 
@@ -243,15 +305,29 @@ export class ApiClient {
 
   // Download file
   async download(endpoint: string): Promise<Blob> {
+    if (!API_URL) {
+      throw new Error('API URL is not configured. Please set NEXT_PUBLIC_API_URL environment variable.');
+    }
+
     const headers: HeadersInit = {};
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'GET',
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'GET',
+        headers,
+        mode: 'cors',
+        credentials: 'include',
+      });
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to the server. Please check your internet connection and ensure the API server is running.');
+      }
+      throw error;
+    }
 
     if (!response.ok) {
       throw new Error('Download failed');

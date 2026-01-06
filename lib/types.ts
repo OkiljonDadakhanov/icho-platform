@@ -274,7 +274,7 @@ export interface AuditLog {
 
 // API Request Types
 export interface LoginRequest {
-  email: string;
+  country: string;
   password: string;
 }
 
