@@ -113,7 +113,7 @@ export default function LoginPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {countries.map((country) => (
-                    <SelectItem key={country.id} value={country.id}>
+                    <SelectItem key={country.id} value={country.name}>
                       <div className="flex items-center gap-2">
                         <img
                           src={`https://flagcdn.com/16x12/${country.iso_code.toLowerCase().slice(0, 2)}.png`}
