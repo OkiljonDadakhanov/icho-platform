@@ -4,15 +4,25 @@ import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Upload, FileText, InfoIcon, Trash2, Download } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Upload, FileText, InfoIcon, Download } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { documentsService } from "@/lib/services/documents"
 import { Loading } from "@/components/ui/loading"
-import type { Document } from "@/lib/types"
+import type { Document, DocumentType } from "@/lib/types"
 
 export default function DocumentsPage() {
   const { user } = useAuth()
   const [documents, setDocuments] = useState<Document[]>([])
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([])
+  const [selectedDocumentTypeId, setSelectedDocumentTypeId] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,14 +30,19 @@ export default function DocumentsPage() {
   const countryName = user?.country?.name || "Your Country"
 
   useEffect(() => {
-    fetchDocuments()
+    loadDocuments()
   }, [])
 
-  const fetchDocuments = async () => {
+  const loadDocuments = async () => {
     try {
       setIsLoading(true)
-      const response = await documentsService.getDocuments()
-      setDocuments(response.results)
+      const [documentsResponse, types] = await Promise.all([
+        documentsService.getDocuments(),
+        documentsService.getDocumentTypes(),
+      ])
+      setDocuments(documentsResponse.results)
+      setDocumentTypes(types)
+      setSelectedDocumentTypeId((current) => current || types[0]?.id || "")
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to fetch documents:", err)
@@ -42,11 +57,15 @@ export default function DocumentsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    if (!selectedDocumentTypeId) {
+      setError("Please select a document type before uploading.")
+      return
+    }
+
     try {
       setIsUploading(true)
-      // Note: "general" should be a valid document type ID from the backend
-      await documentsService.uploadDocument("general", file)
-      await fetchDocuments()
+      await documentsService.uploadDocument(selectedDocumentTypeId, file)
+      await loadDocuments()
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to upload document:", err)
@@ -57,13 +76,18 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleDeleteDocument = async (id: string) => {
+  const handleDownloadDocument = async (doc: Document) => {
     try {
-      await documentsService.deleteDocument(id)
-      await fetchDocuments()
+      const blob = await documentsService.downloadDocument(doc.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = window.document.createElement("a")
+      link.href = url
+      link.download = doc.original_filename
+      link.click()
+      window.URL.revokeObjectURL(url)
     } catch (err: unknown) {
-      console.error("Failed to delete document:", err)
-      const message = (err as { message?: string })?.message || "Failed to delete document. Please try again.";
+      console.error("Failed to download document:", err)
+      const message = (err as { message?: string })?.message || "Failed to download document. Please try again.";
       setError(message)
     }
   }
@@ -71,6 +95,8 @@ export default function DocumentsPage() {
   if (isLoading) {
     return <Loading message="Loading documents..." />
   }
+
+  const selectedDocumentType = documentTypes.find((type) => type.id === selectedDocumentTypeId)
 
   return (
     <div className="space-y-6">
@@ -121,24 +147,46 @@ export default function DocumentsPage() {
                     variant="outline"
                     size="sm"
                     className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10"
-                    onClick={() => window.open(doc.file, '_blank')}
+                    onClick={() => handleDownloadDocument(doc)}
                   >
                     <Download className="w-4 h-4 mr-1" />
                     Download
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:bg-red-50"
-                    onClick={() => handleDeleteDocument(doc.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        <div className="space-y-4 mb-6">
+          <div className="space-y-2">
+            <Label htmlFor="document_type">Document Type *</Label>
+            <Select
+              value={selectedDocumentTypeId}
+              onValueChange={setSelectedDocumentTypeId}
+              disabled={documentTypes.length === 0}
+            >
+              <SelectTrigger id="document_type">
+                <SelectValue placeholder="Select document type" />
+              </SelectTrigger>
+              <SelectContent>
+                {documentTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedDocumentType?.description && (
+              <p className="text-xs text-muted-foreground">{selectedDocumentType.description}</p>
+            )}
+            {documentTypes.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No document types are configured yet. Contact the organizers.
+              </p>
+            )}
+          </div>
+        </div>
 
         <div className="border-2 border-dashed rounded-lg p-8 text-center border-[#2f3090]/30">
           <input
@@ -147,7 +195,7 @@ export default function DocumentsPage() {
             onChange={handleFileUpload}
             className="hidden"
             id="document-upload"
-            disabled={isUploading}
+            disabled={isUploading || documentTypes.length === 0}
           />
           <label htmlFor="document-upload" className="cursor-pointer">
             <Upload className="w-12 h-12 mx-auto mb-4 text-[#2f3090]/50" />
@@ -155,7 +203,7 @@ export default function DocumentsPage() {
               {isUploading ? "Uploading..." : "Upload documents"}
             </p>
             <p className="text-sm text-muted-foreground mb-4">Drag and drop files here or click to browse</p>
-            <Button className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isUploading}>
+            <Button className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isUploading || documentTypes.length === 0}>
               <Upload className="w-4 h-4 mr-2" />
               {isUploading ? "Uploading..." : "Add Document"}
             </Button>

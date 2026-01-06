@@ -11,7 +11,10 @@ export const documentsService = {
    * Get document types
    */
   async getDocumentTypes(): Promise<DocumentType[]> {
-    const response = await api.get<PaginatedResponse<DocumentType>>('/v1/documents/types/');
+    const response = await api.get<DocumentType[] | PaginatedResponse<DocumentType>>('/v1/documents/types/');
+    if (Array.isArray(response)) {
+      return response;
+    }
     return response.results;
   },
 
@@ -47,21 +50,16 @@ export const documentsService = {
   },
 
   /**
-   * Delete a document
-   */
-  async deleteDocument(documentId: string): Promise<void> {
-    return api.delete(`/v1/documents/${documentId}/`);
-  },
-
-  /**
    * Get document requirements for a participant
    */
-  async getParticipantRequirements(participantId: string): Promise<{
-    required: DocumentType[];
-    uploaded: Document[];
-    missing: DocumentType[];
-  }> {
-    return api.get(`/v1/documents/participant/${participantId}/requirements/`);
+  async getParticipantRequirements(participantId: string): Promise<Array<{
+    document_type: DocumentType;
+    uploaded: boolean;
+  }>> {
+    return api.get<Array<{
+      document_type: DocumentType;
+      uploaded: boolean;
+    }>>(`/v1/documents/participant/${participantId}/requirements/`);
   },
 };
 

@@ -4,7 +4,12 @@
  */
 
 import { api } from '../api';
-import type { PreRegistration, PreRegistrationSubmitRequest, Coordinator } from '../types';
+import type {
+  PreRegistration,
+  PreRegistrationUpdateRequest,
+  Coordinator,
+  CoordinatorUpsertRequest,
+} from '../types';
 
 export const preRegistrationService = {
   /**
@@ -15,33 +20,47 @@ export const preRegistrationService = {
   },
 
   /**
+   * Update pre-registration counts
+   */
+  async updatePreRegistration(data: PreRegistrationUpdateRequest): Promise<PreRegistration> {
+    return api.put<PreRegistration>('/pre-registration/', data);
+  },
+
+  /**
    * Submit pre-registration
    */
-  async submitPreRegistration(data: PreRegistrationSubmitRequest): Promise<PreRegistration> {
-    return api.post<PreRegistration>('/pre-registration/submit/', data);
+  async submitPreRegistration(): Promise<PreRegistration> {
+    return api.post<PreRegistration>('/pre-registration/submit/');
   },
 
   /**
-   * Get coordinator details
+   * Get all coordinators for the current country
    */
-  async getCoordinator(): Promise<Coordinator> {
-    return api.get<Coordinator>('/pre-registration/coordinator/');
+  async getCoordinators(): Promise<Coordinator[]> {
+    return api.get<Coordinator[]>('/pre-registration/coordinators/');
   },
 
   /**
-   * Update coordinator
+   * Create a coordinator
    */
-  async updateCoordinator(data: Partial<Coordinator>): Promise<Coordinator> {
-    return api.patch<Coordinator>('/pre-registration/coordinator/', data);
+  async createCoordinator(data: CoordinatorUpsertRequest): Promise<Coordinator> {
+    return api.post<Coordinator>('/pre-registration/coordinators/', data);
+  },
+
+  /**
+   * Update a coordinator
+   */
+  async updateCoordinator(id: string, data: Partial<CoordinatorUpsertRequest>): Promise<Coordinator> {
+    return api.patch<Coordinator>(`/pre-registration/coordinators/${id}/`, data);
   },
 
   /**
    * Upload coordinator passport scan
    */
-  async uploadPassportScan(file: File): Promise<Coordinator> {
+  async uploadCoordinatorPassport(coordinatorId: string, file: File): Promise<Coordinator> {
     const formData = new FormData();
     formData.append('passport_scan', file);
-    return api.upload<Coordinator>('/pre-registration/coordinator/passport/', formData);
+    return api.upload<Coordinator>(`/pre-registration/coordinators/${coordinatorId}/passport/`, formData);
   },
 };
 

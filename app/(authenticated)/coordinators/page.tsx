@@ -20,48 +20,42 @@ import { useAuth } from "@/contexts/auth-context"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Coordinator } from "@/lib/types"
+import type { Coordinator, CoordinatorUpsertRequest } from "@/lib/types"
 
 export default function CoordinatorsPage() {
   const { user } = useAuth()
-  const [coordinator, setCoordinator] = useState<Coordinator | null>(null)
+  const [coordinators, setCoordinators] = useState<Coordinator[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [editingCoordinatorId, setEditingCoordinatorId] = useState<string | null>(null)
 
   const countryName = user?.country?.name || "Your Country"
 
   useEffect(() => {
-    fetchCoordinator()
+    fetchCoordinators()
   }, [])
 
-  const fetchCoordinator = async () => {
+  const fetchCoordinators = async () => {
     try {
       setIsLoading(true)
-      const data = await preRegistrationService.getCoordinator()
-      setCoordinator(data)
+      const data = await preRegistrationService.getCoordinators()
+      setCoordinators(data)
       setError(null)
     } catch (err: unknown) {
-      const error = err as { status?: number }
-      if (error.status === 404) {
-        setCoordinator(null)
-        setError(null)
-      } else {
-        console.error("Failed to fetch coordinator:", err)
-        setError("Failed to load coordinator information")
-      }
+      console.error("Failed to fetch coordinators:", err)
+      setError("Failed to load coordinator information")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleUpdateCoordinator = async (data: Partial<Coordinator>) => {
+  const handleUpdateCoordinator = async (coordinatorId: string, data: Partial<CoordinatorUpsertRequest>) => {
     try {
       setIsSaving(true)
-      await preRegistrationService.updateCoordinator(data)
-      await fetchCoordinator()
-      setIsEditDialogOpen(false)
+      await preRegistrationService.updateCoordinator(coordinatorId, data)
+      await fetchCoordinators()
+      setEditingCoordinatorId(null)
       setError(null)
     } catch (err) {
       console.error("Failed to update coordinator:", err)
@@ -75,7 +69,7 @@ export default function CoordinatorsPage() {
     return <Loading message="Loading coordinator information..." />
   }
 
-  if (error && !coordinator) {
+  if (error && coordinators.length === 0) {
     return <ErrorDisplay message={error} />
   }
 
@@ -84,9 +78,9 @@ export default function CoordinatorsPage() {
       <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-8 rounded-lg">
         <div className="flex items-center gap-3 mb-2">
           <Users className="w-8 h-8" />
-          <h1 className="text-3xl font-bold">Coordinator for {countryName}</h1>
+          <h1 className="text-3xl font-bold">Coordinators for {countryName}</h1>
         </div>
-        <p className="text-white/80">The person below can view and edit team information.</p>
+        <p className="text-white/80">The coordinators below can view and edit team information.</p>
       </div>
 
       {error && (
@@ -98,10 +92,10 @@ export default function CoordinatorsPage() {
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Coordinator</h2>
+          <h2 className="text-xl font-semibold">Coordinators</h2>
         </div>
 
-        {!coordinator ? (
+        {coordinators.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No coordinator information registered yet.</p>
@@ -123,60 +117,72 @@ export default function CoordinatorsPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-4 font-medium">{coordinator.full_name}</td>
-                  <td className="py-4 text-muted-foreground">{coordinator.role}</td>
-                  <td className="py-4">
-                    <a href={`mailto:${coordinator.email}`} className="text-[#2f3090] hover:underline">
-                      {coordinator.email}
-                    </a>
-                  </td>
-                  <td className="py-4 text-muted-foreground">{coordinator.phone}</td>
-                  <td className="py-4">
-                    <EditCoordinatorDialog
-                      coordinator={coordinator}
-                      onEdit={handleUpdateCoordinator}
-                      isSaving={isSaving}
-                      open={isEditDialogOpen}
-                      onOpenChange={setIsEditDialogOpen}
-                    />
-                  </td>
-                </tr>
+                {coordinators.map((coordinator) => (
+                  <tr key={coordinator.id} className="border-b hover:bg-gray-50">
+                    <td className="py-4 font-medium">
+                      {coordinator.full_name}
+                      {coordinator.is_primary ? " (Primary)" : ""}
+                    </td>
+                    <td className="py-4 text-muted-foreground">{coordinator.role}</td>
+                    <td className="py-4">
+                      <a href={`mailto:${coordinator.email}`} className="text-[#2f3090] hover:underline">
+                        {coordinator.email}
+                      </a>
+                    </td>
+                    <td className="py-4 text-muted-foreground">{coordinator.phone}</td>
+                    <td className="py-4">
+                      <EditCoordinatorDialog
+                        coordinator={coordinator}
+                        onEdit={(data) => handleUpdateCoordinator(coordinator.id, data)}
+                        isSaving={isSaving}
+                        open={editingCoordinatorId === coordinator.id}
+                        onOpenChange={(open) => setEditingCoordinatorId(open ? coordinator.id : null)}
+                      />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
       </Card>
 
-      {coordinator && (
+      {coordinators.length > 0 && (
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Additional Details</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Gender</p>
-              <p className="font-medium">
-                {coordinator.gender === 'MALE' ? 'Male' : coordinator.gender === 'FEMALE' ? 'Female' : 'Other'}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Date of Birth</p>
-              <p className="font-medium">{new Date(coordinator.date_of_birth).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Passport Number</p>
-              <p className="font-medium font-mono">{coordinator.passport_number}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Passport Scan</p>
-              {coordinator.passport_scan ? (
-                <div className="flex items-center gap-2 text-[#00795d]">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Uploaded</span>
+          <div className="space-y-6">
+            {coordinators.map((coordinator) => (
+              <div key={coordinator.id} className="border-b last:border-b-0 pb-6 last:pb-0">
+                <p className="font-medium mb-3">{coordinator.full_name}</p>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Gender</p>
+                    <p className="font-medium">
+                      {coordinator.gender === 'MALE' ? 'Male' : coordinator.gender === 'FEMALE' ? 'Female' : 'Other'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Date of Birth</p>
+                    <p className="font-medium">{new Date(coordinator.date_of_birth).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Passport Number</p>
+                    <p className="font-medium font-mono">{coordinator.passport_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Passport Scan</p>
+                    {coordinator.passport_scan ? (
+                      <div className="flex items-center gap-2 text-[#00795d]">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Uploaded</span>
+                      </div>
+                    ) : (
+                      <span className="text-amber-600">Not uploaded</span>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <span className="text-amber-600">Not uploaded</span>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
         </Card>
       )}
@@ -202,7 +208,7 @@ function EditCoordinatorDialog({
   onOpenChange,
 }: {
   coordinator: Coordinator
-  onEdit: (data: Partial<Coordinator>) => void
+  onEdit: (data: Partial<CoordinatorUpsertRequest>) => void
   isSaving: boolean
   open: boolean
   onOpenChange: (open: boolean) => void

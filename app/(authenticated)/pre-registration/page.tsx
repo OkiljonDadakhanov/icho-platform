@@ -18,7 +18,7 @@ import { LoadingPage } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { preRegistrationService } from "@/lib/services/pre-registration";
 import { toast } from "sonner";
-import type { PreRegistration, Gender } from "@/lib/types";
+import type { PreRegistration, Gender, CoordinatorUpsertRequest } from "@/lib/types";
 
 interface FormData {
   firstName: string;
@@ -42,6 +42,9 @@ export default function PreRegistrationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null);
+  const [coordinatorId, setCoordinatorId] = useState<string | null>(null);
+  const [coordinatorPassportScan, setCoordinatorPassportScan] = useState<string | null>(null);
+  const [passportScanFile, setPassportScanFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -79,25 +82,27 @@ export default function PreRegistrationPage() {
         }));
       }
 
-      // Try to get coordinator info
-      try {
-        const coordinator = await preRegistrationService.getCoordinator();
-        if (coordinator) {
-          const [firstName, ...lastNameParts] = coordinator.full_name.split(" ");
-          setFormData((prev) => ({
-            ...prev,
-            firstName: firstName || "",
-            lastName: lastNameParts.join(" ") || "",
-            role: coordinator.role,
-            gender: coordinator.gender,
-            dateOfBirth: coordinator.date_of_birth,
-            passportNumber: coordinator.passport_number,
-            email: coordinator.email,
-            phone: coordinator.phone,
-          }));
-        }
-      } catch {
-        // Coordinator might not exist yet
+      // Try to get coordinator info (prefer primary)
+      const coordinators = data.coordinators ?? await preRegistrationService.getCoordinators();
+      const coordinator = coordinators.find((item) => item.is_primary) ?? coordinators[0];
+      if (coordinator) {
+        setCoordinatorId(coordinator.id);
+        setCoordinatorPassportScan(coordinator.passport_scan ?? null);
+        const [firstName, ...lastNameParts] = coordinator.full_name.split(" ");
+        setFormData((prev) => ({
+          ...prev,
+          firstName: firstName || "",
+          lastName: lastNameParts.join(" ") || "",
+          role: coordinator.role,
+          gender: coordinator.gender,
+          dateOfBirth: coordinator.date_of_birth,
+          passportNumber: coordinator.passport_number,
+          email: coordinator.email,
+          phone: coordinator.phone,
+        }));
+      } else {
+        setCoordinatorId(null);
+        setCoordinatorPassportScan(null);
       }
     } catch (err) {
       const error = err as { message?: string };
@@ -114,26 +119,59 @@ export default function PreRegistrationPage() {
     );
   };
 
+  const buildCoordinatorPayload = (): CoordinatorUpsertRequest => ({
+    full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+    role: formData.role,
+    gender: formData.gender,
+    date_of_birth: formData.dateOfBirth,
+    passport_number: formData.passportNumber,
+    email: formData.email,
+    phone: formData.phone,
+    is_primary: true,
+  });
+
+  const upsertCoordinator = async () => {
+    const payload = buildCoordinatorPayload();
+    if (coordinatorId) {
+      const updated = await preRegistrationService.updateCoordinator(coordinatorId, payload);
+      setCoordinatorId(updated.id);
+      setCoordinatorPassportScan(updated.passport_scan ?? null);
+      return updated;
+    }
+    const created = await preRegistrationService.createCoordinator(payload);
+    setCoordinatorId(created.id);
+    setCoordinatorPassportScan(created.passport_scan ?? null);
+    return created;
+  };
+
+  const uploadPassportScanIfNeeded = async (currentCoordinatorId: string) => {
+    if (!passportScanFile) return;
+    const updated = await preRegistrationService.uploadCoordinatorPassport(currentCoordinatorId, passportScanFile);
+    setCoordinatorPassportScan(updated.passport_scan ?? null);
+    setPassportScanFile(null);
+  };
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       setError(null);
 
-      await preRegistrationService.submitPreRegistration({
-        coordinator: {
-          full_name: `${formData.firstName} ${formData.lastName}`,
-          role: formData.role,
-          gender: formData.gender,
-          date_of_birth: formData.dateOfBirth,
-          passport_number: formData.passportNumber,
-          email: formData.email,
-          phone: formData.phone,
-        },
+      if (!passportScanFile && !coordinatorPassportScan) {
+        setError("Coordinator passport scan is required before submitting pre-registration.");
+        toast.error("Please upload a coordinator passport scan before submitting.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      await preRegistrationService.updatePreRegistration({
         num_team_leaders: formData.teamLeaders,
         num_contestants: formData.contestants,
         num_observers: formData.observers,
         num_guests: formData.guests,
       });
+      const coordinator = await upsertCoordinator();
+      await uploadPassportScanIfNeeded(coordinator.id);
+      await preRegistrationService.submitPreRegistration();
 
       toast.success("Pre-registration submitted successfully!");
       await loadPreRegistration();
@@ -149,15 +187,14 @@ export default function PreRegistrationPage() {
   const handleSaveDraft = async () => {
     try {
       setIsSubmitting(true);
-      await preRegistrationService.updateCoordinator({
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        role: formData.role,
-        gender: formData.gender,
-        date_of_birth: formData.dateOfBirth,
-        passport_number: formData.passportNumber,
-        email: formData.email,
-        phone: formData.phone,
+      await preRegistrationService.updatePreRegistration({
+        num_team_leaders: formData.teamLeaders,
+        num_contestants: formData.contestants,
+        num_observers: formData.observers,
+        num_guests: formData.guests,
       });
+      const coordinator = await upsertCoordinator();
+      await uploadPassportScanIfNeeded(coordinator.id);
       toast.success("Draft saved successfully!");
     } catch (err) {
       const error = err as { message?: string };
@@ -281,6 +318,26 @@ export default function PreRegistrationPage() {
               }
               disabled={isSubmitted}
             />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="passport_scan">Passport Scan (PDF/JPG/PNG) *</Label>
+            <Input
+              id="passport_scan"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => setPassportScanFile(e.target.files?.[0] || null)}
+              disabled={isSubmitted}
+            />
+            {passportScanFile && (
+              <p className="text-sm text-muted-foreground">Selected: {passportScanFile.name}</p>
+            )}
+            {!passportScanFile && coordinatorPassportScan && (
+              <p className="text-sm text-muted-foreground">Existing passport scan uploaded.</p>
+            )}
+            {!passportScanFile && !coordinatorPassportScan && (
+              <p className="text-sm text-muted-foreground">Required before submitting pre-registration.</p>
+            )}
           </div>
 
           <div className="space-y-2">

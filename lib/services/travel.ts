@@ -7,7 +7,6 @@ import { api } from '../api';
 import type {
   TravelInfo,
   TravelInfoRequest,
-  VisaInformation,
   AccommodationPreference,
   PaginatedResponse,
 } from '../types';
@@ -76,21 +75,7 @@ export const travelService = {
   async uploadTicket(travelId: string, file: File): Promise<TravelInfo> {
     const formData = new FormData();
     formData.append('ticket_file', file);
-    return api.upload<TravelInfo>(`/v1/travel/${travelId}/ticket/`, formData);
-  },
-
-  /**
-   * Get visa information
-   */
-  async getVisaInfo(): Promise<PaginatedResponse<VisaInformation>> {
-    return api.get<PaginatedResponse<VisaInformation>>('/v1/travel/visa/');
-  },
-
-  /**
-   * Update visa information
-   */
-  async updateVisaInfo(id: string, data: Partial<VisaInformation>): Promise<VisaInformation> {
-    return api.patch<VisaInformation>(`/v1/travel/visa/${id}/`, data);
+    return api.uploadPatch<TravelInfo>(`/v1/travel/${travelId}/`, formData);
   },
 
   /**

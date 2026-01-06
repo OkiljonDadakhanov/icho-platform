@@ -17,8 +17,8 @@ export const notificationsService = {
   /**
    * Get unread notification count
    */
-  async getUnreadCount(): Promise<{ count: number }> {
-    return api.get<{ count: number }>('/v1/notifications/unread-count/');
+  async getUnreadCount(): Promise<{ unread_count: number }> {
+    return api.get<{ unread_count: number }>('/v1/notifications/unread-count/');
   },
 
   /**
@@ -32,7 +32,7 @@ export const notificationsService = {
    * Mark all notifications as read
    */
   async markAllAsRead(): Promise<void> {
-    return api.post('/v1/notifications/mark-all-read/');
+    return api.post('/v1/notifications/read-all/');
   },
 };
 

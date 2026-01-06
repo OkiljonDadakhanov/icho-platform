@@ -70,7 +70,9 @@ export interface Coordinator {
   passport_scan?: string;
   email: string;
   phone: string;
+  is_primary: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export interface PreRegistration {
@@ -84,6 +86,8 @@ export interface PreRegistration {
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
   created_at: string;
+  updated_at: string;
+  coordinators?: Coordinator[];
 }
 
 export interface Participant {
@@ -283,20 +287,22 @@ export interface LoginResponse {
   user: User;
 }
 
-export interface PreRegistrationSubmitRequest {
-  coordinator: {
-    full_name: string;
-    role: string;
-    gender: Gender;
-    date_of_birth: string;
-    passport_number: string;
-    email: string;
-    phone: string;
-  };
+export interface PreRegistrationUpdateRequest {
   num_team_leaders: number;
   num_contestants: number;
   num_observers: number;
   num_guests: number;
+}
+
+export interface CoordinatorUpsertRequest {
+  full_name: string;
+  role: string;
+  gender: Gender;
+  date_of_birth: string;
+  passport_number: string;
+  email: string;
+  phone: string;
+  is_primary?: boolean;
 }
 
 export interface ParticipantCreateRequest {
