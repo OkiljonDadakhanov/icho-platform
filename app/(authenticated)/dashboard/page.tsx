@@ -83,12 +83,6 @@ export default function DashboardPage() {
                 <p>
                   <span className="font-medium">Country:</span> {countryName}
                 </p>
-                <p>
-                  <span className="font-medium">Email:</span>{" "}
-                  <a href={`mailto:${user?.email}`} className="text-[#2f3090] hover:underline">
-                    {user?.email}
-                  </a>
-                </p>
               </div>
             </div>
 
@@ -106,9 +100,6 @@ export default function DashboardPage() {
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">My account</h2>
           <div className="space-y-2 text-sm mb-4">
-            <p>
-              <span className="font-medium">Email:</span> {user?.email}
-            </p>
             <p>
               <span className="font-medium">Account Status:</span>{" "}
               <Badge variant="secondary" className="bg-[#00795d]/10 text-[#00795d]">

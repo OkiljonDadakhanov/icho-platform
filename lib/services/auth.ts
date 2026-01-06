@@ -8,7 +8,7 @@ import type { LoginRequest, LoginResponse, User } from '../types';
 
 export const authService = {
   /**
-   * Login with email and password
+   * Login with country name and password
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login/', credentials);

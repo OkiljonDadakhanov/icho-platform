@@ -85,9 +85,6 @@ export function Sidebar() {
           {user && (
             <div className="p-4 border-b bg-gray-50">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {user.email}
-              </p>
-              <p className="text-xs text-gray-500">
                 {user.country?.name || "Administrator"}
               </p>
             </div>

@@ -43,7 +43,6 @@ export type InvitationStatus = 'PENDING' | 'GENERATING' | 'GENERATED' | 'FAILED'
 // API Response Types
 export interface User {
   id: string;
-  email: string;
   country: Country | null;
   is_active: boolean;
   is_staff: boolean;
