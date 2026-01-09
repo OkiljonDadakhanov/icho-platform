@@ -40,6 +40,14 @@ export type DocumentStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type InvitationStatus = 'PENDING' | 'GENERATING' | 'GENERATED' | 'FAILED';
 
+export interface FeeRule {
+  id: string;
+  role: ParticipantRole;
+  unit_fee: number;
+  currency: string;
+  is_active: boolean;
+}
+
 // API Response Types
 export interface User {
   id: string;
@@ -88,6 +96,8 @@ export interface PreRegistration {
   created_at: string;
   updated_at: string;
   coordinators?: Coordinator[];
+  can_edit?: boolean;
+  edit_blocked_reason?: string | null;
 }
 
 export interface Participant {

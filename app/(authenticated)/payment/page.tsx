@@ -9,8 +9,9 @@ import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { participantsService } from "@/lib/services/participants"
+import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
-import type { Payment, Invoice, Participant } from "@/lib/types"
+import type { Payment, Invoice, Participant, FeeRule } from "@/lib/types"
 import { mapRoleToFrontend } from "@/lib/types"
 
 export default function PaymentPage() {
@@ -18,6 +19,7 @@ export default function PaymentPage() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [payment, setPayment] = useState<Payment | null>(null)
+  const [feeRules, setFeeRules] = useState<FeeRule[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,12 +33,14 @@ export default function PaymentPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, paymentData] = await Promise.all([
+      const [participantsData, paymentData, feeRulesData] = await Promise.all([
         participantsService.getAllParticipants(),
-        paymentsService.getPayment().catch(() => null)
+        paymentsService.getPayment().catch(() => null),
+        preRegistrationService.getFeeRules().catch(() => [])
       ])
       setParticipants(participantsData)
       setPayment(paymentData)
+      setFeeRules(feeRulesData)
       // Invoice is embedded in payment response
       setInvoice(paymentData?.invoice || null)
       setError(null)
@@ -54,21 +58,34 @@ export default function PaymentPage() {
   const observers = participants.filter((p) => p.role === "OBSERVER").length
   const guests = participants.filter((p) => p.role === "GUEST").length
 
-  const pricePerPerson = 500
+  // Get fee for each role from fee rules
+  const getFee = (role: string): number => {
+    const rule = feeRules.find((r) => r.role === role)
+    return rule ? Number(rule.unit_fee) : 500 // Default to 500 if no rule found
+  }
 
   const breakdown = useMemo(() => {
+    const teamLeaderFee = getFee("TEAM_LEADER")
+    const contestantFee = getFee("CONTESTANT")
+    const observerFee = getFee("OBSERVER")
+    const guestFee = getFee("GUEST")
+
     return {
-      teamLeaders: teamLeaders * pricePerPerson,
-      contestants: contestants * pricePerPerson,
-      observers: observers * pricePerPerson,
-      guests: guests * pricePerPerson,
+      teamLeaders: teamLeaders * teamLeaderFee,
+      teamLeaderFee,
+      contestants: contestants * contestantFee,
+      contestantFee,
+      observers: observers * observerFee,
+      observerFee,
+      guests: guests * guestFee,
+      guestFee,
       total:
-        teamLeaders * pricePerPerson +
-        contestants * pricePerPerson +
-        observers * pricePerPerson +
-        guests * pricePerPerson,
+        teamLeaders * teamLeaderFee +
+        contestants * contestantFee +
+        observers * observerFee +
+        guests * guestFee,
     }
-  }, [teamLeaders, contestants, observers, guests])
+  }, [teamLeaders, contestants, observers, guests, feeRules])
 
   const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -114,7 +131,7 @@ export default function PaymentPage() {
     return <Loading message="Loading payment information..." />
   }
 
-  const paymentStatus = payment?.status || "PENDING"
+  const paymentStatus = payment ? payment.status : "NOT_STARTED"
 
   return (
     <div className="space-y-6">
@@ -194,7 +211,9 @@ export default function PaymentPage() {
                     ? "bg-[#00795d]"
                     : paymentStatus === "REJECTED"
                       ? "bg-red-500"
-                      : "bg-yellow-500"
+                      : paymentStatus === "PENDING"
+                        ? "bg-yellow-500"
+                        : "bg-gray-500"
                 }
               >
                 {paymentStatus === "APPROVED" ? (
@@ -207,10 +226,15 @@ export default function PaymentPage() {
                     <XCircle className="w-3 h-3 mr-1" />
                     Rejected
                   </>
-                ) : (
+                ) : paymentStatus === "PENDING" ? (
                   <>
                     <Clock className="w-3 h-3 mr-1" />
                     Pending Verification
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-3 h-3 mr-1" />
+                    Not Started
                   </>
                 )}
               </Badge>
@@ -222,25 +246,25 @@ export default function PaymentPage() {
             <div className="space-y-2 text-sm">
               {teamLeaders > 0 && (
                 <div className="flex justify-between">
-                  <span>Team Leader ({teamLeaders} x ${pricePerPerson})</span>
+                  <span>Team Leader ({teamLeaders} x ${breakdown.teamLeaderFee})</span>
                   <span>${breakdown.teamLeaders.toLocaleString()}</span>
                 </div>
               )}
               {contestants > 0 && (
                 <div className="flex justify-between">
-                  <span>Contestants ({contestants} x ${pricePerPerson})</span>
+                  <span>Contestants ({contestants} x ${breakdown.contestantFee})</span>
                   <span>${breakdown.contestants.toLocaleString()}</span>
                 </div>
               )}
               {observers > 0 && (
                 <div className="flex justify-between">
-                  <span>Observers ({observers} x ${pricePerPerson})</span>
+                  <span>Observers ({observers} x ${breakdown.observerFee})</span>
                   <span>${breakdown.observers.toLocaleString()}</span>
                 </div>
               )}
               {guests > 0 && (
                 <div className="flex justify-between">
-                  <span>Guests ({guests} x ${pricePerPerson})</span>
+                  <span>Guests ({guests} x ${breakdown.guestFee})</span>
                   <span>${breakdown.guests.toLocaleString()}</span>
                 </div>
               )}
@@ -316,7 +340,7 @@ export default function PaymentPage() {
             {!invoice && (
               <Alert className="bg-amber-50 border-amber-200">
                 <AlertDescription className="text-amber-800">
-                  Invoice has not been generated yet. Please wait for the invoice to be generated before uploading payment proof.
+                  Please complete pre-registration first. Your invoice will be generated after pre-registration is submitted.
                 </AlertDescription>
               </Alert>
             )}

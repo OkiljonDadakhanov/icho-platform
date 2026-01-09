@@ -161,8 +161,24 @@ export class ApiClient {
 
       try {
         const data = await response.json();
-        error.message = data.detail || data.message || 'An error occurred';
-        error.errors = data.errors;
+        // Handle various error formats from DRF
+        if (data.detail) {
+          error.message = data.detail;
+        } else if (data.message) {
+          error.message = data.message;
+        } else if (typeof data === 'object') {
+          // Handle field-specific errors like {'role': 'error message'}
+          const fieldErrors = Object.entries(data)
+            .map(([key, value]) => {
+              const msg = Array.isArray(value) ? value.join(', ') : String(value);
+              return msg;
+            })
+            .filter(Boolean);
+          if (fieldErrors.length > 0) {
+            error.message = fieldErrors.join('. ');
+          }
+        }
+        error.errors = data.errors || data;
       } catch {
         // ignore json parse error
       }
@@ -244,8 +260,24 @@ export class ApiClient {
 
       try {
         const data = await response.json();
-        error.message = data.detail || data.message || 'An error occurred';
-        error.errors = data.errors;
+        // Handle various error formats from DRF
+        if (data.detail) {
+          error.message = data.detail;
+        } else if (data.message) {
+          error.message = data.message;
+        } else if (typeof data === 'object') {
+          // Handle field-specific errors like {'role': 'error message'}
+          const fieldErrors = Object.entries(data)
+            .map(([key, value]) => {
+              const msg = Array.isArray(value) ? value.join(', ') : String(value);
+              return msg;
+            })
+            .filter(Boolean);
+          if (fieldErrors.length > 0) {
+            error.message = fieldErrors.join('. ');
+          }
+        }
+        error.errors = data.errors || data;
       } catch {
         // ignore json parse error
       }

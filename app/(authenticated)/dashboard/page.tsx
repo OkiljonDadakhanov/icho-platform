@@ -62,8 +62,9 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 mb-4">
             <img
               src={`https://flagcdn.com/w40/${countryCode}.png`}
-              alt={`${countryName} flag`}
-              className="w-6 h-4"
+              alt=""
+              className="w-6 h-4 flex-shrink-0 object-cover"
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
             />
             <h2 className="text-lg font-semibold">Delegation Info</h2>
             <Button
@@ -125,8 +126,9 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 mb-4">
           <img
             src={`https://flagcdn.com/w40/${countryCode}.png`}
-            alt={`${countryName} flag`}
-            className="w-6 h-4"
+            alt=""
+            className="w-6 h-4 flex-shrink-0 object-cover"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
           <h2 className="text-lg font-semibold">Participants</h2>
         </div>
