@@ -18,7 +18,7 @@ import { LoadingPage } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { preRegistrationService } from "@/lib/services/pre-registration";
 import { toast } from "sonner";
-import type { PreRegistration, Gender, CoordinatorUpsertRequest } from "@/lib/types";
+import type { PreRegistration, Gender, CoordinatorUpsertRequest, FeeRule } from "@/lib/types";
 
 interface FormData {
   firstName: string;
@@ -35,13 +35,12 @@ interface FormData {
   guests: number;
 }
 
-const FEE_PER_PERSON = 500;
-
 export default function PreRegistrationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null);
+  const [feeRules, setFeeRules] = useState<FeeRule[]>([]);
   const [coordinatorId, setCoordinatorId] = useState<string | null>(null);
   const [coordinatorPassportScan, setCoordinatorPassportScan] = useState<string | null>(null);
   const [passportScanFile, setPassportScanFile] = useState<File | null>(null);
@@ -68,8 +67,12 @@ export default function PreRegistrationPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await preRegistrationService.getPreRegistration();
+      const [data, feeRulesData] = await Promise.all([
+        preRegistrationService.getPreRegistration(),
+        preRegistrationService.getFeeRules().catch(() => [])
+      ]);
       setPreRegistration(data);
+      setFeeRules(feeRulesData);
 
       // Pre-fill form if data exists
       if (data) {
@@ -112,10 +115,17 @@ export default function PreRegistrationPage() {
     }
   };
 
+  const getFee = (role: string): number => {
+    const rule = feeRules.find((r) => r.role === role);
+    return rule ? Number(rule.unit_fee) : 500; // Default to 500 if no rule found
+  };
+
   const calculateTotal = () => {
     return (
-      (formData.teamLeaders + formData.contestants + formData.observers + formData.guests) *
-      FEE_PER_PERSON
+      formData.teamLeaders * getFee("TEAM_LEADER") +
+      formData.contestants * getFee("CONTESTANT") +
+      formData.observers * getFee("OBSERVER") +
+      formData.guests * getFee("GUEST")
     );
   };
 
@@ -212,6 +222,7 @@ export default function PreRegistrationPage() {
   }
 
   const isSubmitted = preRegistration?.submitted_at != null;
+  const canEdit = preRegistration?.can_edit !== false; // Default to true if not set
 
   return (
     <div className="space-y-6">
@@ -225,11 +236,18 @@ export default function PreRegistrationPage() {
         </p>
       </div>
 
-      {isSubmitted ? (
-        <Alert className="bg-[#00795d]/10 border-[#00795d]/30">
-          <CheckCircle className="h-4 w-4 text-[#00795d]" />
-          <AlertDescription className="text-[#00795d]">
-            Your pre-registration has been submitted. You can now proceed to the payment stage.
+      {isSubmitted && canEdit ? (
+        <Alert className="bg-blue-50 border-blue-200">
+          <InfoIcon className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            Your pre-registration has been submitted. You can still edit it until you upload payment proof.
+          </AlertDescription>
+        </Alert>
+      ) : isSubmitted && !canEdit ? (
+        <Alert className="bg-amber-50 border-amber-200">
+          <InfoIcon className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            {preRegistration?.edit_blocked_reason || "Pre-registration is locked and cannot be edited."}
           </AlertDescription>
         </Alert>
       ) : (
@@ -255,7 +273,7 @@ export default function PreRegistrationPage() {
               placeholder="Enter first name"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
 
@@ -266,7 +284,7 @@ export default function PreRegistrationPage() {
               placeholder="Enter last name"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
 
@@ -277,7 +295,7 @@ export default function PreRegistrationPage() {
               placeholder="e.g., National Coordinator"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
 
@@ -286,7 +304,7 @@ export default function PreRegistrationPage() {
             <Select
               value={formData.gender}
               onValueChange={(value) => setFormData({ ...formData, gender: value as Gender })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -306,7 +324,7 @@ export default function PreRegistrationPage() {
               type="date"
               value={formData.dateOfBirth}
               onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
 
@@ -319,7 +337,7 @@ export default function PreRegistrationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, passportNumber: e.target.value.toUpperCase() })
               }
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
 
@@ -330,7 +348,7 @@ export default function PreRegistrationPage() {
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => setPassportScanFile(e.target.files?.[0] || null)}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
             {passportScanFile && (
               <p className="text-sm text-muted-foreground">Selected: {passportScanFile.name}</p>
@@ -351,7 +369,7 @@ export default function PreRegistrationPage() {
               placeholder="coordinator@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
 
@@ -363,7 +381,7 @@ export default function PreRegistrationPage() {
               placeholder="+998 XX XXX XX XX"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
           </div>
         </div>
@@ -383,7 +401,7 @@ export default function PreRegistrationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, teamLeaders: parseInt(e.target.value) || 0 })
               }
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
             <p className="text-xs text-muted-foreground">Usually 1-2 per country</p>
           </div>
@@ -399,7 +417,7 @@ export default function PreRegistrationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, contestants: parseInt(e.target.value) || 0 })
               }
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
             <p className="text-xs text-muted-foreground">Maximum 4 students</p>
           </div>
@@ -414,7 +432,7 @@ export default function PreRegistrationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, observers: parseInt(e.target.value) || 0 })
               }
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
             <p className="text-xs text-muted-foreground">Scientific observers</p>
           </div>
@@ -429,7 +447,7 @@ export default function PreRegistrationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, guests: parseInt(e.target.value) || 0 })
               }
-              disabled={isSubmitted}
+              disabled={!canEdit}
             />
             <p className="text-xs text-muted-foreground">Additional delegation members</p>
           </div>
@@ -440,34 +458,44 @@ export default function PreRegistrationPage() {
           <p className="text-2xl font-bold text-[#2f3090]">
             ${calculateTotal().toLocaleString()} USD
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Based on{" "}
-            {formData.teamLeaders + formData.contestants + formData.observers + formData.guests}{" "}
-            participants ({formData.teamLeaders} leader(s) + {formData.contestants} contestant(s) +{" "}
-            {formData.observers} observer(s) + {formData.guests} guest(s))
-          </p>
+          <div className="text-sm text-muted-foreground mt-2 space-y-1">
+            {formData.teamLeaders > 0 && (
+              <p>Team Leaders: {formData.teamLeaders} x ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
+            )}
+            {formData.contestants > 0 && (
+              <p>Contestants: {formData.contestants} x ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
+            )}
+            {formData.observers > 0 && (
+              <p>Observers: {formData.observers} x ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
+            )}
+            {formData.guests > 0 && (
+              <p>Guests: {formData.guests} x ${getFee("GUEST")} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
+            )}
+          </div>
         </div>
       </Card>
 
-      {!isSubmitted && (
+      {canEdit && (
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={handleSaveDraft} disabled={isSubmitting}>
-            Save Draft
+            {isSubmitted ? "Update & Regenerate Invoice" : "Save Draft"}
           </Button>
-          <Button
-            className="bg-[#2f3090] hover:bg-[#4547a9]"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit Pre-Registration"
-            )}
-          </Button>
+          {!isSubmitted && (
+            <Button
+              className="bg-[#2f3090] hover:bg-[#4547a9]"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Pre-Registration"
+              )}
+            </Button>
+          )}
         </div>
       )}
     </div>

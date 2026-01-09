@@ -9,6 +9,7 @@ import type {
   PreRegistrationUpdateRequest,
   Coordinator,
   CoordinatorUpsertRequest,
+  FeeRule,
 } from '../types';
 
 export const preRegistrationService = {
@@ -79,6 +80,13 @@ export const preRegistrationService = {
     const formData = new FormData();
     formData.append('passport_scan', file);
     return api.upload<Coordinator>(`/pre-registration/coordinators/${coordinatorId}/passport/`, formData);
+  },
+
+  /**
+   * Get fee rules
+   */
+  async getFeeRules(): Promise<FeeRule[]> {
+    return api.get<FeeRule[]>('/pre-registration/fee-rules/');
   },
 };
 

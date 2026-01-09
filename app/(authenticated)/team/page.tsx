@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Plus, Edit, AlertCircle, UsersRound, Upload, ImageIcon } from "lucide-react"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
@@ -64,13 +65,16 @@ export default function TeamPage() {
   const handleAddMember = async (data: ParticipantCreateRequest) => {
     try {
       setIsSaving(true)
+      setError(null)
       await participantsService.createParticipant(data)
       await fetchParticipants()
       setIsAddDialogOpen(false)
+      toast.success("Participant added successfully")
     } catch (err: unknown) {
       console.error("Failed to add participant:", err)
       const message = (err as { message?: string })?.message || "Failed to add participant. Please try again.";
       setError(message)
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -79,12 +83,15 @@ export default function TeamPage() {
   const handleEditMember = async (id: string, data: Partial<ParticipantCreateRequest>) => {
     try {
       setIsSaving(true)
+      setError(null)
       await participantsService.updateParticipant(id, data)
       await fetchParticipants()
+      toast.success("Participant updated successfully")
     } catch (err: unknown) {
       console.error("Failed to update participant:", err)
       const message = (err as { message?: string })?.message || "Failed to update participant. Please try again.";
       setError(message)
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -93,12 +100,15 @@ export default function TeamPage() {
   const handleDeleteMember = async (id: string) => {
     try {
       setIsSaving(true)
+      setError(null)
       await participantsService.deleteParticipant(id)
       await fetchParticipants()
+      toast.success("Participant deleted successfully")
     } catch (err: unknown) {
       console.error("Failed to delete participant:", err)
       const message = (err as { message?: string })?.message || "Failed to delete participant. Please try again.";
       setError(message)
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
