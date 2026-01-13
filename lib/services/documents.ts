@@ -50,6 +50,13 @@ export const documentsService = {
   },
 
   /**
+   * Download template for a document type (e.g., Consent Form, Commitment Form)
+   */
+  async downloadTemplate(documentTypeId: string): Promise<Blob> {
+    return apiDownload(`/v1/documents/types/${documentTypeId}/template/`);
+  },
+
+  /**
    * Get document requirements for a participant
    */
   async getParticipantRequirements(participantId: string): Promise<Array<{

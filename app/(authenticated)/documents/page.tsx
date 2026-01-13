@@ -92,6 +92,25 @@ export default function DocumentsPage() {
     }
   }
 
+  const handleDownloadTemplate = async (docType: DocumentType) => {
+    try {
+      const blob = await documentsService.downloadTemplate(docType.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = window.document.createElement("a")
+      link.href = url
+      link.download = `${docType.name}_template.pdf`
+      link.click()
+      window.URL.revokeObjectURL(url)
+    } catch (err: unknown) {
+      console.error("Failed to download template:", err)
+      const message = (err as { message?: string })?.message || "Failed to download template. Please try again.";
+      setError(message)
+    }
+  }
+
+  // Filter document types that have templates available
+  const documentTypesWithTemplates = documentTypes.filter((type) => type.has_template)
+
   if (isLoading) {
     return <Loading message="Loading documents..." />
   }
@@ -210,6 +229,37 @@ export default function DocumentsPage() {
           </label>
         </div>
       </Card>
+
+      {documentTypesWithTemplates.length > 0 && (
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Form Templates</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Download the template forms below, fill them out, sign them, and upload the completed forms.
+          </p>
+          <div className="space-y-3">
+            {documentTypesWithTemplates.map((docType) => (
+              <div key={docType.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-8 h-8 text-[#00795d]" />
+                  <div>
+                    <p className="font-medium">{docType.name} Template</p>
+                    <p className="text-xs text-muted-foreground">{docType.description}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
+                  onClick={() => handleDownloadTemplate(docType)}
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Download Template
+                </Button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card className="p-6 bg-[#2f3090]/5 border-[#2f3090]/20">
         <h3 className="font-semibold mb-4">Document Guidelines</h3>
