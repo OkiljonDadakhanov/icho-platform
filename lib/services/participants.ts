@@ -47,7 +47,8 @@ export const participantsService = {
    */
   async createParticipant(data: ParticipantCreateRequest): Promise<Participant> {
     const formData = new FormData();
-    formData.append('full_name', data.full_name);
+    formData.append('first_name', data.first_name);
+    formData.append('last_name', data.last_name);
     formData.append('gender', data.gender);
     formData.append('date_of_birth', data.date_of_birth);
     formData.append('passport_number', data.passport_number);
@@ -57,6 +58,15 @@ export const participantsService = {
     formData.append('email', data.email);
     formData.append('regulations_accepted', String(data.regulations_accepted));
 
+    if (data.paternal_name) {
+      formData.append('paternal_name', data.paternal_name);
+    }
+    if (data.badge_name) {
+      formData.append('badge_name', data.badge_name);
+    }
+    if (data.other_dietary_requirements) {
+      formData.append('other_dietary_requirements', data.other_dietary_requirements);
+    }
     if (data.medical_requirements) {
       formData.append('medical_requirements', data.medical_requirements);
     }
@@ -69,6 +79,9 @@ export const participantsService = {
     if (data.consent_form_signed) {
       formData.append('consent_form_signed', data.consent_form_signed);
     }
+    if (data.commitment_form_signed) {
+      formData.append('commitment_form_signed', data.commitment_form_signed);
+    }
 
     return api.upload<Participant>('/v1/participants/', formData);
   },
@@ -79,19 +92,24 @@ export const participantsService = {
   async updateParticipant(id: string, data: ParticipantUpdateRequest): Promise<Participant> {
     const formData = new FormData();
 
-    if (data.full_name !== undefined) formData.append('full_name', data.full_name);
+    if (data.first_name !== undefined) formData.append('first_name', data.first_name);
+    if (data.last_name !== undefined) formData.append('last_name', data.last_name);
+    if (data.paternal_name !== undefined) formData.append('paternal_name', data.paternal_name);
+    if (data.badge_name !== undefined) formData.append('badge_name', data.badge_name);
     if (data.gender !== undefined) formData.append('gender', data.gender);
     if (data.date_of_birth !== undefined) formData.append('date_of_birth', data.date_of_birth);
     if (data.passport_number !== undefined) formData.append('passport_number', data.passport_number);
     if (data.role !== undefined) formData.append('role', data.role);
     if (data.tshirt_size !== undefined) formData.append('tshirt_size', data.tshirt_size);
     if (data.dietary_requirements !== undefined) formData.append('dietary_requirements', data.dietary_requirements);
+    if (data.other_dietary_requirements !== undefined) formData.append('other_dietary_requirements', data.other_dietary_requirements);
     if (data.email !== undefined) formData.append('email', data.email);
     if (data.medical_requirements !== undefined) formData.append('medical_requirements', data.medical_requirements);
     if (data.regulations_accepted !== undefined) formData.append('regulations_accepted', String(data.regulations_accepted));
     if (data.passport_scan) formData.append('passport_scan', data.passport_scan);
     if (data.profile_photo) formData.append('profile_photo', data.profile_photo);
     if (data.consent_form_signed) formData.append('consent_form_signed', data.consent_form_signed);
+    if (data.commitment_form_signed) formData.append('commitment_form_signed', data.commitment_form_signed);
 
     return api.uploadPatch<Participant>(`/v1/participants/${id}/`, formData);
   },

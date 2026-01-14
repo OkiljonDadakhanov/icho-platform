@@ -16,7 +16,7 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
 
-export type DietaryRequirement = 'NORMAL' | 'HALAL' | 'VEGETARIAN' | 'VEGAN' | 'KOSHER';
+export type DietaryRequirement = 'NORMAL' | 'HALAL' | 'VEGETARIAN' | 'VEGAN' | 'KOSHER' | 'OTHER';
 
 export type PaymentStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -103,9 +103,11 @@ export interface PreRegistration {
 export interface Participant {
   id: string;
   country: string;
+  first_name: string;
+  last_name: string;
+  paternal_name?: string;
+  badge_name?: string;
   full_name: string;
-  first_name?: string;
-  last_name?: string;
   gender: Gender;
   date_of_birth: string;
   passport_number: string;
@@ -115,9 +117,11 @@ export interface Participant {
   role: ParticipantRole;
   tshirt_size: TshirtSize;
   dietary_requirements: DietaryRequirement;
+  other_dietary_requirements?: string;
   medical_requirements?: string;
   email: string;
   consent_form_signed?: string;
+  commitment_form_signed?: string;
   regulations_accepted: boolean;
   created_at: string;
   updated_at: string;
@@ -204,6 +208,7 @@ export interface DocumentType {
   required_for: string[];
   stage: WorkflowStage;
   is_active: boolean;
+  has_template: boolean;
   created_at: string;
 }
 
@@ -316,18 +321,23 @@ export interface CoordinatorUpsertRequest {
 }
 
 export interface ParticipantCreateRequest {
-  full_name: string;
+  first_name: string;
+  last_name: string;
+  paternal_name?: string;
+  badge_name?: string;
   gender: Gender;
   date_of_birth: string;
   passport_number: string;
   role: ParticipantRole;
   tshirt_size: TshirtSize;
   dietary_requirements: DietaryRequirement;
+  other_dietary_requirements?: string;
   medical_requirements?: string;
   email: string;
   passport_scan?: File;
   profile_photo?: File;
   consent_form_signed?: File;
+  commitment_form_signed?: File;
   regulations_accepted: boolean;
 }
 
@@ -421,6 +431,7 @@ export function mapDietaryToBackend(dietary: string): DietaryRequirement {
     'vegetarian': 'VEGETARIAN',
     'vegan': 'VEGAN',
     'kosher': 'KOSHER',
+    'other': 'OTHER',
   };
   return mapping[dietary.toLowerCase()] || 'NORMAL';
 }
@@ -432,6 +443,7 @@ export function mapDietaryToFrontend(dietary: DietaryRequirement): string {
     'VEGETARIAN': 'vegetarian',
     'VEGAN': 'vegan',
     'KOSHER': 'kosher',
+    'OTHER': 'other',
   };
   return mapping[dietary] || 'normal';
 }

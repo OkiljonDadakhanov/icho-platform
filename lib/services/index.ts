@@ -8,7 +8,6 @@ export { preRegistrationService } from './pre-registration';
 export { participantsService } from './participants';
 export { paymentsService } from './payments';
 export { travelService } from './travel';
-export { documentsService } from './documents';
 export { invitationsService } from './invitations';
 export { workflowService } from './workflow';
 export { notificationsService } from './notifications';
