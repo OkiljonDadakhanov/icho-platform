@@ -79,6 +79,9 @@ export const participantsService = {
     if (data.consent_form_signed) {
       formData.append('consent_form_signed', data.consent_form_signed);
     }
+    if (data.commitment_form_signed) {
+      formData.append('commitment_form_signed', data.commitment_form_signed);
+    }
 
     return api.upload<Participant>('/v1/participants/', formData);
   },
@@ -106,6 +109,7 @@ export const participantsService = {
     if (data.passport_scan) formData.append('passport_scan', data.passport_scan);
     if (data.profile_photo) formData.append('profile_photo', data.profile_photo);
     if (data.consent_form_signed) formData.append('consent_form_signed', data.consent_form_signed);
+    if (data.commitment_form_signed) formData.append('commitment_form_signed', data.commitment_form_signed);
 
     return api.uploadPatch<Participant>(`/v1/participants/${id}/`, formData);
   },

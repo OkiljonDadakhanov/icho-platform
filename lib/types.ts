@@ -121,6 +121,7 @@ export interface Participant {
   medical_requirements?: string;
   email: string;
   consent_form_signed?: string;
+  commitment_form_signed?: string;
   regulations_accepted: boolean;
   created_at: string;
   updated_at: string;
@@ -336,6 +337,7 @@ export interface ParticipantCreateRequest {
   passport_scan?: File;
   profile_photo?: File;
   consent_form_signed?: File;
+  commitment_form_signed?: File;
   regulations_accepted: boolean;
 }
 

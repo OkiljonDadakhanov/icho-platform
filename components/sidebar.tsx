@@ -9,7 +9,6 @@ import {
   UsersRound,
   Plane,
   FileText,
-  File,
   Menu,
   X,
   CreditCard,
@@ -29,7 +28,6 @@ const navigation = [
   { name: "Team", href: "/team", icon: UsersRound },
   { name: "Travel", href: "/travel", icon: Plane },
   { name: "Invitations", href: "/invitations", icon: FileText },
-  { name: "Documents", href: "/documents", icon: File },
 ];
 
 export function Sidebar() {

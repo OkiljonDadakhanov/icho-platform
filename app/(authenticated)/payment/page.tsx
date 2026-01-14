@@ -5,14 +5,13 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { participantsService } from "@/lib/services/participants"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import type { Payment, Invoice, Participant, FeeRule } from "@/lib/types"
-import { mapRoleToFrontend } from "@/lib/types"
 
 export default function PaymentPage() {
   const { user } = useAuth()
@@ -41,7 +40,6 @@ export default function PaymentPage() {
       setParticipants(participantsData)
       setPayment(paymentData)
       setFeeRules(feeRulesData)
-      // Invoice is embedded in payment response
       setInvoice(paymentData?.invoice || null)
       setError(null)
     } catch (err) {
@@ -52,16 +50,14 @@ export default function PaymentPage() {
     }
   }
 
-  // Calculate based on registered participants
   const teamLeaders = participants.filter((p) => p.role === "TEAM_LEADER").length
   const contestants = participants.filter((p) => p.role === "CONTESTANT").length
   const observers = participants.filter((p) => p.role === "OBSERVER").length
   const guests = participants.filter((p) => p.role === "GUEST").length
 
-  // Get fee for each role from fee rules
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role)
-    return rule ? Number(rule.unit_fee) : 500 // Default to 500 if no rule found
+    return rule ? Number(rule.unit_fee) : 500
   }
 
   const breakdown = useMemo(() => {
@@ -135,23 +131,54 @@ export default function PaymentPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-8 rounded-lg">
-        <div className="flex items-center gap-3 mb-2">
-          <CreditCard className="w-8 h-8" />
-          <h1 className="text-3xl font-bold">Payment & Invoice</h1>
+      {/* Hero Header with gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#2f3090] via-[#1e2060] to-[#00795d] text-white p-8 rounded-2xl shadow-xl">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#00795d]/30 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
+              <CreditCard className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Payment & Invoice</h1>
+              <p className="text-white/70 mt-1">Download your invoice and submit payment proof.</p>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex flex-wrap gap-4 mt-6">
+            <div className="px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10 transition-all hover:bg-white/20 hover:scale-105">
+              <span className="text-2xl font-bold">${invoice?.amount?.toLocaleString() || breakdown.total.toLocaleString()}</span>
+              <span className="text-white/70 ml-2 text-sm">Total Amount</span>
+            </div>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${
+              paymentStatus === "APPROVED"
+                ? "bg-[#00795d]/30 border-[#00795d]/30"
+                : paymentStatus === "REJECTED"
+                  ? "bg-red-500/20 border-red-500/20"
+                  : paymentStatus === "PENDING"
+                    ? "bg-yellow-500/20 border-yellow-500/20"
+                    : "bg-gray-500/20 border-gray-500/20"
+            }`}>
+              <span className="text-xl font-semibold capitalize">{paymentStatus.toLowerCase().replace('_', ' ')}</span>
+              <span className="text-white/70 ml-2 text-sm">Status</span>
+            </div>
+          </div>
         </div>
-        <p className="text-white/80">Download your invoice and submit payment proof.</p>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {paymentStatus === "APPROVED" && (
-        <Alert className="bg-[#00795d]/10 border-[#00795d]/30">
+        <Alert className="bg-gradient-to-r from-[#00795d]/10 to-[#00795d]/5 border-[#00795d]/30">
           <CheckCircle2 className="h-4 w-4 text-[#00795d]" />
           <AlertDescription className="text-[#00795d]">
             Your payment has been verified and approved. You can now proceed to participant registration.
@@ -160,7 +187,7 @@ export default function PaymentPage() {
       )}
 
       {paymentStatus === "REJECTED" && (
-        <Alert className="bg-red-50 border-red-200">
+        <Alert className="bg-gradient-to-r from-red-50 to-red-50/50 border-red-200">
           <XCircle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
             Your payment proof was rejected. {payment?.admin_comment && `Reason: ${payment.admin_comment}`}
@@ -169,52 +196,52 @@ export default function PaymentPage() {
         </Alert>
       )}
 
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Invoice Details</h2>
+      <Card className="p-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-lg text-white">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Invoice Details</h2>
+              <p className="text-sm text-gray-500">{invoice ? `Invoice #${invoice.number}` : "Invoice not yet generated"}</p>
+            </div>
+          </div>
+          {invoice && (
+            <Button
+              variant="outline"
+              className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10"
+              onClick={handleDownloadInvoice}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Invoice
+            </Button>
+          )}
+        </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p className="font-semibold">
-                {invoice ? `Invoice #${invoice.number}` : "Invoice not yet generated"}
-              </p>
-              {invoice && (
-                <p className="text-sm text-muted-foreground">
-                  Generated on {new Date(invoice.created_at).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-            {invoice && (
-              <Button
-                variant="outline"
-                className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10 bg-transparent"
-                onClick={handleDownloadInvoice}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download Invoice
-              </Button>
-            )}
-          </div>
-
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
-              <p className="text-2xl font-bold text-[#2f3090]">
-                ${invoice?.amount?.toLocaleString() || breakdown.total.toLocaleString()} {invoice?.currency || "USD"}
+            <div className="p-4 bg-gradient-to-r from-[#2f3090]/5 to-[#00795d]/5 rounded-xl border border-[#2f3090]/10">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-[#2f3090]" />
+                <p className="text-sm text-gray-600">Total Amount</p>
+              </div>
+              <p className="text-3xl font-bold text-[#2f3090]">
+                ${invoice?.amount?.toLocaleString() || breakdown.total.toLocaleString()} <span className="text-lg font-normal text-gray-500">{invoice?.currency || "USD"}</span>
               </p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm text-muted-foreground mb-1">Payment Status</p>
+            <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl border border-gray-200">
+              <p className="text-sm text-gray-600 mb-2">Payment Status</p>
               <Badge
-                className={
+                className={`text-sm px-3 py-1 ${
                   paymentStatus === "APPROVED"
-                    ? "bg-[#00795d]"
+                    ? "bg-[#00795d] text-white"
                     : paymentStatus === "REJECTED"
-                      ? "bg-red-500"
+                      ? "bg-red-500 text-white"
                       : paymentStatus === "PENDING"
-                        ? "bg-yellow-500"
-                        : "bg-gray-500"
-                }
+                        ? "bg-yellow-500 text-white"
+                        : "bg-gray-500 text-white"
+                }`}
               >
                 {paymentStatus === "APPROVED" ? (
                   <>
@@ -238,80 +265,111 @@ export default function PaymentPage() {
                   </>
                 )}
               </Badge>
+              {invoice && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Generated on {new Date(invoice.created_at).toLocaleDateString()}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="p-4 border rounded-lg">
-            <h3 className="font-semibold mb-2">Breakdown (Estimated)</h3>
+          <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+            <h3 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-amber-600" />
+              Fee Breakdown (Estimated)
+            </h3>
             <div className="space-y-2 text-sm">
               {teamLeaders > 0 && (
-                <div className="flex justify-between">
-                  <span>Team Leader ({teamLeaders} x ${breakdown.teamLeaderFee})</span>
-                  <span>${breakdown.teamLeaders.toLocaleString()}</span>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                  <span className="text-gray-700">
+                    <Badge className="bg-[#2f3090] text-white mr-2 text-xs">Leaders</Badge>
+                    {teamLeaders} x ${breakdown.teamLeaderFee}
+                  </span>
+                  <span className="font-semibold text-gray-800">${breakdown.teamLeaders.toLocaleString()}</span>
                 </div>
               )}
               {contestants > 0 && (
-                <div className="flex justify-between">
-                  <span>Contestants ({contestants} x ${breakdown.contestantFee})</span>
-                  <span>${breakdown.contestants.toLocaleString()}</span>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                  <span className="text-gray-700">
+                    <Badge className="bg-[#00795d] text-white mr-2 text-xs">Contestants</Badge>
+                    {contestants} x ${breakdown.contestantFee}
+                  </span>
+                  <span className="font-semibold text-gray-800">${breakdown.contestants.toLocaleString()}</span>
                 </div>
               )}
               {observers > 0 && (
-                <div className="flex justify-between">
-                  <span>Observers ({observers} x ${breakdown.observerFee})</span>
-                  <span>${breakdown.observers.toLocaleString()}</span>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                  <span className="text-gray-700">
+                    <Badge className="bg-purple-600 text-white mr-2 text-xs">Observers</Badge>
+                    {observers} x ${breakdown.observerFee}
+                  </span>
+                  <span className="font-semibold text-gray-800">${breakdown.observers.toLocaleString()}</span>
                 </div>
               )}
               {guests > 0 && (
-                <div className="flex justify-between">
-                  <span>Guests ({guests} x ${breakdown.guestFee})</span>
-                  <span>${breakdown.guests.toLocaleString()}</span>
+                <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                  <span className="text-gray-700">
+                    <Badge className="bg-orange-500 text-white mr-2 text-xs">Guests</Badge>
+                    {guests} x ${breakdown.guestFee}
+                  </span>
+                  <span className="font-semibold text-gray-800">${breakdown.guests.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between font-semibold pt-2 border-t">
-                <span>Estimated Total</span>
-                <span>${breakdown.total.toLocaleString()}</span>
+              <div className="flex justify-between items-center font-semibold pt-3 mt-2 border-t border-amber-200">
+                <span className="text-gray-800">Estimated Total</span>
+                <span className="text-lg text-[#2f3090]">${breakdown.total.toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Payment Proof</h2>
+      <Card className="p-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-lg text-white">
+            <Upload className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Payment Proof</h2>
+            <p className="text-sm text-gray-500">Upload your bank transfer receipt</p>
+          </div>
+        </div>
 
         {paymentStatus === "APPROVED" ? (
-          <div className="p-4 bg-[#00795d]/10 border border-[#00795d]/30 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-5 h-5 text-[#00795d]" />
-              <p className="font-semibold text-[#00795d]">Payment Verified</p>
+          <div className="p-6 bg-gradient-to-r from-[#00795d]/10 to-[#00795d]/5 border border-[#00795d]/30 rounded-xl">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-[#00795d] rounded-full">
+                <CheckCircle2 className="w-5 h-5 text-white" />
+              </div>
+              <p className="font-semibold text-[#00795d] text-lg">Payment Verified</p>
             </div>
             {payment?.reviewed_at && (
-              <p className="text-sm text-[#00795d]/80">
+              <p className="text-sm text-[#00795d]/80 ml-11">
                 Verified on: {new Date(payment.reviewed_at).toLocaleDateString()}
               </p>
             )}
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Please upload your bank transfer receipt or payment confirmation. Accepted formats: PDF, JPG, PNG (max
-              5MB)
+            <p className="text-sm text-gray-600">
+              Please upload your bank transfer receipt or payment confirmation. Accepted formats: PDF, JPG, PNG (max 5MB)
             </p>
 
             {payment?.proof_file ? (
-              <div className="p-4 bg-gray-50 border rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">Payment proof uploaded</span>
+              <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Upload className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <span className="font-medium text-gray-700">Payment proof uploaded</span>
                 </div>
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+                <Badge className="bg-yellow-500 text-white">
                   <Clock className="w-3 h-3 mr-1" />
                   Under Review
                 </Badge>
               </div>
             ) : (
-              <div className="border-2 border-dashed rounded-lg p-8 text-center border-[#2f3090]/30">
+              <div className="border-2 border-dashed rounded-xl p-8 text-center border-[#2f3090]/30 hover:border-[#2f3090]/50 transition-colors bg-gradient-to-br from-white to-gray-50/50">
                 <input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
@@ -321,24 +379,26 @@ export default function PaymentPage() {
                   disabled={isUploading || !invoice}
                 />
                 <label htmlFor="proof-upload" className="cursor-pointer">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-[#2f3090]/50" />
-                  <p className="font-medium mb-2">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#2f3090]/10 to-[#00795d]/10 rounded-full flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-[#2f3090]/50" />
+                  </div>
+                  <p className="font-medium mb-2 text-gray-800">
                     {isUploading ? "Uploading..." : "Drop your file here or click to browse"}
                   </p>
-                  <p className="text-sm text-muted-foreground mb-4">PDF, JPG, PNG up to 5MB</p>
+                  <p className="text-sm text-gray-500 mb-4">PDF, JPG, PNG up to 5MB</p>
                   <Button
-                    className="bg-[#2f3090] hover:bg-[#4547a9]"
+                    className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                     disabled={isUploading || !invoice}
-                    asChild
                   >
-                    <span>{isUploading ? "Uploading..." : "Select File"}</span>
+                    {isUploading ? "Uploading..." : "Select File"}
                   </Button>
                 </label>
               </div>
             )}
 
             {!invoice && (
-              <Alert className="bg-amber-50 border-amber-200">
+              <Alert className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800">
                   Please complete pre-registration first. Your invoice will be generated after pre-registration is submitted.
                 </AlertDescription>
@@ -349,11 +409,11 @@ export default function PaymentPage() {
       </Card>
 
       <div className="flex justify-between">
-        <Button variant="outline" asChild>
+        <Button variant="outline" className="border-gray-300 hover:bg-gray-100" asChild>
           <a href="/pre-registration">Back to Pre-Registration</a>
         </Button>
         {paymentStatus === "APPROVED" && (
-          <Button className="bg-[#00795d] hover:bg-[#009973]" asChild>
+          <Button className="bg-gradient-to-r from-[#00795d] to-[#00795d] hover:from-[#009973] hover:to-[#009973] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" asChild>
             <a href="/team">Continue to Participant Registration</a>
           </Button>
         )}
