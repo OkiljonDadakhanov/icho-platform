@@ -54,6 +54,14 @@ import { ErrorDisplay } from "@/components/ui/error-display"
 import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
 
+// Participant limits per delegation
+const PARTICIPANT_LIMITS: Record<string, number | null> = {
+  TEAM_LEADER: 2,
+  CONTESTANT: 4,
+  OBSERVER: 2,
+  GUEST: null, // Unlimited
+}
+
 export default function TeamPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
@@ -185,16 +193,16 @@ export default function TeamPage() {
               <span className="text-2xl font-bold">{participants.length}</span>
               <span className="text-white/70 ml-2 text-sm">Total</span>
             </div>
-            <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{teamLeaders}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${teamLeaders >= (PARTICIPANT_LIMITS.TEAM_LEADER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
+              <span className="text-xl font-semibold">{teamLeaders}/{PARTICIPANT_LIMITS.TEAM_LEADER ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Leaders</span>
             </div>
-            <div className="px-4 py-2 bg-[#00795d]/30 rounded-lg backdrop-blur-sm border border-[#00795d]/30 transition-all hover:bg-[#00795d]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{contestants}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${contestants >= (PARTICIPANT_LIMITS.CONTESTANT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
+              <span className="text-xl font-semibold">{contestants}/{PARTICIPANT_LIMITS.CONTESTANT ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Contestants</span>
             </div>
-            <div className="px-4 py-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/20 transition-all hover:bg-purple-500/40 hover:scale-105">
-              <span className="text-xl font-semibold">{observers}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
+              <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Observers</span>
             </div>
             <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
@@ -239,6 +247,7 @@ export default function TeamPage() {
               onOpenChange={setIsAddDialogOpen}
               onAdd={handleAddMember}
               isSaving={isSaving}
+              roleCounts={{ teamLeaders, contestants, observers, guests }}
             />
           )}
         </div>
@@ -349,6 +358,7 @@ export default function TeamPage() {
                             onEdit={handleEditMember}
                             onDelete={handleDeleteMember}
                             isSaving={isSaving}
+                            roleCounts={{ teamLeaders, contestants, observers, guests }}
                           />
                         )}
                       </td>
@@ -422,12 +432,25 @@ function AddMemberDialog({
   onOpenChange,
   onAdd,
   isSaving,
+  roleCounts,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
+  roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number }
 }) {
+  // Check if roles have reached their limits
+  const isRoleDisabled = (role: ParticipantRole) => {
+    const limit = PARTICIPANT_LIMITS[role]
+    if (limit === null || limit === undefined) return false // Unlimited or unknown role
+    switch (role) {
+      case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
+      case 'CONTESTANT': return roleCounts.contestants >= limit
+      case 'OBSERVER': return roleCounts.observers >= limit
+      default: return false
+    }
+  }
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -697,22 +720,22 @@ function AddMemberDialog({
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="TEAM_LEADER">
+                      <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#2f3090]"></span>
-                          Team Leader
+                          Team Leader {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="CONTESTANT">
+                      <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Contestant
+                          Contestant {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="OBSERVER">
+                      <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                          Observer
+                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="GUEST">
@@ -1058,12 +1081,27 @@ function EditMemberDialog({
   onEdit,
   onDelete,
   isSaving,
+  roleCounts,
 }: {
   participant: Participant
   onEdit: (id: string, data: Partial<ParticipantCreateRequest>) => void
   onDelete: (id: string) => void
   isSaving: boolean
+  roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number }
 }) {
+  // Check if roles have reached their limits (excluding current participant's role)
+  const isRoleDisabled = (role: ParticipantRole) => {
+    // If the participant already has this role, it's not disabled
+    if (participant.role === role) return false
+    const limit = PARTICIPANT_LIMITS[role]
+    if (limit === null || limit === undefined) return false // Unlimited or unknown role
+    switch (role) {
+      case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
+      case 'CONTESTANT': return roleCounts.contestants >= limit
+      case 'OBSERVER': return roleCounts.observers >= limit
+      default: return false
+    }
+  }
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
     first_name: participant.first_name || "",
@@ -1227,9 +1265,15 @@ function EditMemberDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="TEAM_LEADER">Team Leader</SelectItem>
-                    <SelectItem value="CONTESTANT">Contestant</SelectItem>
-                    <SelectItem value="OBSERVER">Observer</SelectItem>
+                    <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
+                      Team Leader {isRoleDisabled('TEAM_LEADER') && `(${PARTICIPANT_LIMITS.TEAM_LEADER}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
+                    </SelectItem>
+                    <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
+                      Contestant {isRoleDisabled('CONTESTANT') && `(${PARTICIPANT_LIMITS.CONTESTANT}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
+                    </SelectItem>
+                    <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
+                      Observer {isRoleDisabled('OBSERVER') && `(${PARTICIPANT_LIMITS.OBSERVER}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                    </SelectItem>
                     <SelectItem value="GUEST">Guest</SelectItem>
                   </SelectContent>
                 </Select>

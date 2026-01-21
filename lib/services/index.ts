@@ -12,7 +12,9 @@ export { invitationsService } from './invitations';
 export { workflowService } from './workflow';
 export { notificationsService } from './notifications';
 export { countriesService } from './countries';
+export { adminService } from './admin';
 
 // Re-export types from services
 export type { ParticipantSummary } from './participants';
 export type { InvitationStatus } from './invitations';
+export type { AdminStats, AdminCountry, AdminPayment, AdminParticipant } from './admin';

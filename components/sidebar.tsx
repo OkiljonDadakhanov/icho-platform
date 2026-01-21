@@ -14,6 +14,7 @@ import {
   CreditCard,
   ClipboardList,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +116,20 @@ export function Sidebar() {
               })}
             </ul>
           </nav>
+
+          {/* Admin Link - Only for staff users */}
+          {user?.is_staff && (
+            <div className="p-4 border-t">
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white hover:opacity-90 transition-opacity"
+              >
+                <Shield className="w-4 h-4" />
+                <span>Admin Panel</span>
+              </Link>
+            </div>
+          )}
 
           <div className="p-4 border-t">
             <Button

@@ -64,7 +64,6 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Send country ID and password
       await login({ country: selectedCountry, password });
       router.push("/dashboard");
     } catch (err) {
@@ -172,7 +171,7 @@ export default function LoginPage() {
         <div className="mt-4 text-center">
           <a
             href="mailto:support@icho2026.org"
-            className="text-sm text-[#2f3090] hover:underline"
+            className="text-sm text-gray-500 hover:underline"
           >
             Need help? Contact support
           </a>
