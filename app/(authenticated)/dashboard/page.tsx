@@ -12,6 +12,7 @@ import { ErrorDisplay } from "@/components/ui/error-display"
 import type { Participant } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend } from "@/lib/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Timeline } from "@/components/timeline"
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -161,14 +162,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="pt-4 border-t">
-              <h3 className="font-semibold mb-3 text-gray-800">Timeline</h3>
-              <div className="w-full">
-                <img
-                  src="/timeline.jpg"
-                  alt="Timeline"
-                  className="w-full h-auto rounded-lg shadow-sm"
-                />
-              </div>
+              <Timeline />
             </div>
           </div>
         </Card>

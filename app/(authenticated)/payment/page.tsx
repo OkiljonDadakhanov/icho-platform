@@ -8,14 +8,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
-import { participantsService } from "@/lib/services/participants"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
-import type { Payment, Invoice, Participant, FeeRule } from "@/lib/types"
+import type { Payment, Invoice, FeeRule, PreRegistration } from "@/lib/types"
 
 export default function PaymentPage() {
   const { user } = useAuth()
-  const [participants, setParticipants] = useState<Participant[]>([])
+  const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [payment, setPayment] = useState<Payment | null>(null)
   const [feeRules, setFeeRules] = useState<FeeRule[]>([])
@@ -32,12 +31,12 @@ export default function PaymentPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, paymentData, feeRulesData] = await Promise.all([
-        participantsService.getAllParticipants(),
+      const [preRegData, paymentData, feeRulesData] = await Promise.all([
+        preRegistrationService.getPreRegistration().catch(() => null),
         paymentsService.getPayment().catch(() => null),
         preRegistrationService.getFeeRules().catch(() => [])
       ])
-      setParticipants(participantsData)
+      setPreRegistration(preRegData)
       setPayment(paymentData)
       setFeeRules(feeRulesData)
       setInvoice(paymentData?.invoice || null)
@@ -50,10 +49,14 @@ export default function PaymentPage() {
     }
   }
 
-  const teamLeaders = participants.filter((p) => p.role === "TEAM_LEADER").length
-  const contestants = participants.filter((p) => p.role === "CONTESTANT").length
-  const observers = participants.filter((p) => p.role === "OBSERVER").length
-  const guests = participants.filter((p) => p.role === "GUEST").length
+  // Use pre-registration numbers for fee breakdown (matches invoice)
+  const teamLeaders = preRegistration?.num_team_leaders || 0
+  const contestants = preRegistration?.num_contestants || 0
+  const observers = preRegistration?.num_observers || 0
+  const guests = preRegistration?.num_guests || 0
+
+  // Check if values exceed limits (need to update pre-registration)
+  const hasExceededLimits = teamLeaders > 2 || contestants > 4 || observers > 2
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role)
@@ -69,12 +72,16 @@ export default function PaymentPage() {
     return {
       teamLeaders: teamLeaders * teamLeaderFee,
       teamLeaderFee,
+      teamLeadersCount: teamLeaders,
       contestants: contestants * contestantFee,
       contestantFee,
+      contestantsCount: contestants,
       observers: observers * observerFee,
       observerFee,
+      observersCount: observers,
       guests: guests * guestFee,
       guestFee,
+      guestsCount: guests,
       total:
         teamLeaders * teamLeaderFee +
         contestants * contestantFee +
@@ -186,6 +193,17 @@ export default function PaymentPage() {
         </Alert>
       )}
 
+      {hasExceededLimits && (
+        <Alert className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            Your pre-registration has values that exceed current limits. Please{" "}
+            <a href="/pre-registration" className="font-semibold underline">update your pre-registration</a>{" "}
+            and save to regenerate your invoice with correct amounts.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {paymentStatus === "REJECTED" && (
         <Alert className="bg-gradient-to-r from-red-50 to-red-50/50 border-red-200">
           <XCircle className="h-4 w-4 text-red-600" />
@@ -276,7 +294,7 @@ export default function PaymentPage() {
           <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
             <h3 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
               <Receipt className="w-4 h-4 text-amber-600" />
-              Fee Breakdown (Estimated)
+              Fee Breakdown (from Pre-registration)
             </h3>
             <div className="space-y-2 text-sm">
               {teamLeaders > 0 && (

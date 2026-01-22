@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FileInput } from "@/components/ui/file-input";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,13 +76,13 @@ export default function PreRegistrationPage() {
       setPreRegistration(data);
       setFeeRules(feeRulesData);
 
-      // Pre-fill form if data exists
+      // Pre-fill form if data exists (clamp to limits)
       if (data) {
         setFormData((prev) => ({
           ...prev,
-          teamLeaders: data.num_team_leaders,
-          contestants: data.num_contestants,
-          observers: data.num_observers,
+          teamLeaders: Math.min(data.num_team_leaders, 2),
+          contestants: Math.min(data.num_contestants, 4),
+          observers: Math.min(data.num_observers, 2),
           guests: data.num_guests,
         }));
       }
@@ -343,11 +345,10 @@ export default function PreRegistrationPage() {
 
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="passport_scan">Passport Scan (PDF/JPG/PNG) *</Label>
-            <Input
+            <FileInput
               id="passport_scan"
-              type="file"
               accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(e) => setPassportScanFile(e.target.files?.[0] || null)}
+              onFileChange={(file) => setPassportScanFile(file)}
               disabled={!canEdit}
             />
             {passportScanFile && (
@@ -390,66 +391,60 @@ export default function PreRegistrationPage() {
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-6">Expected Delegation Size</h2>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="teamLeaders">Team Leaders *</Label>
-            <Input
-              id="teamLeaders"
-              type="number"
-              min="0"
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-3 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Team Leaders *</Label>
+              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
+            </div>
+            <NumberStepper
               value={formData.teamLeaders}
-              onChange={(e) =>
-                setFormData({ ...formData, teamLeaders: parseInt(e.target.value) || 0 })
-              }
+              onChange={(value) => setFormData({ ...formData, teamLeaders: value })}
+              min={0}
+              max={2}
               disabled={!canEdit}
             />
-            <p className="text-xs text-muted-foreground">Usually 1-2 per country</p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contestants">Contestants *</Label>
-            <Input
-              id="contestants"
-              type="number"
-              min="0"
-              max="4"
+          <div className="flex items-center justify-between py-3 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Contestants *</Label>
+              <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
+            </div>
+            <NumberStepper
               value={formData.contestants}
-              onChange={(e) =>
-                setFormData({ ...formData, contestants: parseInt(e.target.value) || 0 })
-              }
+              onChange={(value) => setFormData({ ...formData, contestants: value })}
+              min={0}
+              max={4}
               disabled={!canEdit}
             />
-            <p className="text-xs text-muted-foreground">Maximum 4 students</p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="observers">Observers</Label>
-            <Input
-              id="observers"
-              type="number"
-              min="0"
+          <div className="flex items-center justify-between py-3 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Observers</Label>
+              <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded">Max 2</span>
+            </div>
+            <NumberStepper
               value={formData.observers}
-              onChange={(e) =>
-                setFormData({ ...formData, observers: parseInt(e.target.value) || 0 })
-              }
+              onChange={(value) => setFormData({ ...formData, observers: value })}
+              min={0}
+              max={2}
               disabled={!canEdit}
             />
-            <p className="text-xs text-muted-foreground">Scientific observers</p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="guests">Guests</Label>
-            <Input
-              id="guests"
-              type="number"
-              min="0"
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Guests</Label>
+              <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">No limit</span>
+            </div>
+            <NumberStepper
               value={formData.guests}
-              onChange={(e) =>
-                setFormData({ ...formData, guests: parseInt(e.target.value) || 0 })
-              }
+              onChange={(value) => setFormData({ ...formData, guests: value })}
+              min={0}
               disabled={!canEdit}
             />
-            <p className="text-xs text-muted-foreground">Additional delegation members</p>
           </div>
         </div>
 
