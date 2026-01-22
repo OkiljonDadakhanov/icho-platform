@@ -481,6 +481,13 @@ function AddMemberDialog({
     if (!formData.email || !formData.regulations_accepted) return
     if (!passportScan || !profilePhoto || !consentForm || !commitmentForm) return
 
+    // Validate role limits before submission
+    if (isRoleDisabled(formData.role as ParticipantRole)) {
+      const limit = PARTICIPANT_LIMITS[formData.role]
+      toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
+      return
+    }
+
     onAdd({
       first_name: formData.first_name,
       last_name: formData.last_name,
@@ -525,7 +532,8 @@ function AddMemberDialog({
     setCurrentStep(1)
   }
 
-  const canProceedStep1 = formData.first_name && formData.last_name && formData.email && formData.passport_number && formData.date_of_birth && formData.role && formData.gender
+  const isRoleValid = formData.role && !isRoleDisabled(formData.role as ParticipantRole)
+  const canProceedStep1 = formData.first_name && formData.last_name && formData.email && formData.passport_number && formData.date_of_birth && isRoleValid && formData.gender
   const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements)
   const canSubmit = canProceedStep1 && canProceedStep2 && passportScan && profilePhoto && consentForm && commitmentForm && formData.regulations_accepted
 
@@ -1127,6 +1135,14 @@ function EditMemberDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate role limits if role is being changed
+    if (formData.role !== participant.role && isRoleDisabled(formData.role)) {
+      const limit = PARTICIPANT_LIMITS[formData.role]
+      toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
+      return
+    }
+
     onEdit(participant.id, {
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
