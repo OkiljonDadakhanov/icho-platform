@@ -70,7 +70,19 @@ export const preRegistrationService = {
    * Update a coordinator
    */
   async updateCoordinator(id: string, data: Partial<CoordinatorUpsertRequest>): Promise<Coordinator> {
-    return api.patch<Coordinator>(`/pre-registration/coordinators/${id}/`, data);
+    const { passport_scan, ...rest } = data;
+
+    if (passport_scan) {
+      const formData = new FormData();
+      Object.entries(rest).forEach(([key, value]) => {
+        if (value !== undefined) {
+          formData.append(key, String(value));
+        }
+      });
+      formData.append('passport_scan', passport_scan);
+      return api.uploadPatch<Coordinator>(`/pre-registration/coordinators/${id}/`, formData);
+    }
+    return api.patch<Coordinator>(`/pre-registration/coordinators/${id}/`, rest);
   },
 
   /**

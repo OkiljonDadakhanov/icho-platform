@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Edit, Users, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Edit, Users, AlertCircle, CheckCircle2, Upload, FileText } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
@@ -121,7 +121,6 @@ export default function CoordinatorsPage() {
                   <tr key={coordinator.id} className="border-b hover:bg-gray-50">
                     <td className="py-4 font-medium">
                       {coordinator.full_name}
-                      {coordinator.is_primary ? " (Primary)" : ""}
                     </td>
                     <td className="py-4 text-muted-foreground">{coordinator.role}</td>
                     <td className="py-4">
@@ -219,10 +218,14 @@ function EditCoordinatorDialog({
     email: coordinator.email,
     phone: coordinator.phone,
   })
+  const [passportScan, setPassportScan] = useState<File | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onEdit(formData)
+    onEdit({
+      ...formData,
+      passport_scan: passportScan || undefined,
+    })
   }
 
   return (
@@ -274,6 +277,38 @@ function EditCoordinatorDialog({
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Passport Scan (PDF/JPG/PNG)</Label>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="p-2 bg-white rounded-lg border">
+                <FileText className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                {passportScan ? (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span className="text-sm truncate">{passportScan.name}</span>
+                  </div>
+                ) : coordinator.passport_scan ? (
+                  <span className="text-sm text-green-600">Already uploaded</span>
+                ) : (
+                  <span className="text-sm text-gray-500">No file uploaded</span>
+                )}
+              </div>
+              <label className="cursor-pointer">
+                <span className="text-sm font-medium text-[#2f3090] bg-[#2f3090]/10 px-3 py-1.5 rounded-lg hover:bg-[#2f3090]/20 transition-colors flex items-center gap-1">
+                  <Upload className="w-3 h-3" />
+                  {coordinator.passport_scan || passportScan ? "Replace" : "Upload"}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setPassportScan(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

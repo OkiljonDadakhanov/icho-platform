@@ -14,11 +14,13 @@ export type ParticipantRole =
 
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
-export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
+export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
 
 export type DietaryRequirement = 'NORMAL' | 'HALAL' | 'VEGETARIAN' | 'VEGAN' | 'KOSHER' | 'OTHER';
 
 export type PaymentStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type SingleRoomInvoiceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type WorkflowStage =
   | 'PRE_REGISTRATION'
@@ -123,6 +125,8 @@ export interface Participant {
   consent_form_signed?: string;
   commitment_form_signed?: string;
   regulations_accepted: boolean;
+  prefers_single_room?: boolean;
+  single_room_invoice_status?: SingleRoomInvoiceStatus | null;
   created_at: string;
   updated_at: string;
 }
@@ -154,6 +158,22 @@ export interface Payment {
   invoice?: Invoice;
   proof_file?: string;
   status: PaymentStatus;
+  admin_comment?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
+}
+
+export interface SingleRoomInvoice {
+  id: string;
+  participant: string;
+  participant_name?: string;
+  country_name?: string;
+  number: string;
+  amount: number;
+  currency: string;
+  pdf_file?: string;
+  status: SingleRoomInvoiceStatus;
   admin_comment?: string;
   reviewed_by?: string;
   reviewed_at?: string;
@@ -318,6 +338,7 @@ export interface CoordinatorUpsertRequest {
   email: string;
   phone: string;
   is_primary?: boolean;
+  passport_scan?: File;
 }
 
 export interface ParticipantCreateRequest {
@@ -339,6 +360,7 @@ export interface ParticipantCreateRequest {
   consent_form_signed?: File;
   commitment_form_signed?: File;
   regulations_accepted: boolean;
+  prefers_single_room?: boolean;
 }
 
 export interface ParticipantUpdateRequest extends Partial<ParticipantCreateRequest> {}

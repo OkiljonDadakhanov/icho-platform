@@ -134,7 +134,16 @@ export default function PaymentPage() {
     return <Loading message="Loading payment information..." />
   }
 
-  const paymentStatus = payment ? payment.status : "NOT_STARTED"
+  // Determine actual payment status based on proof upload
+  const getPaymentStatus = () => {
+    if (!payment) return "NOT_STARTED"
+    if (payment.status === "APPROVED") return "APPROVED"
+    if (payment.status === "REJECTED") return "REJECTED"
+    // PENDING status - check if proof was actually uploaded
+    if (payment.proof_file) return "PENDING"
+    return "NOT_STARTED"
+  }
+  const paymentStatus = getPaymentStatus()
 
   return (
     <div className="space-y-6">
@@ -170,7 +179,7 @@ export default function PaymentPage() {
                     ? "bg-yellow-500/20 border-yellow-500/20"
                     : "bg-gray-500/20 border-gray-500/20"
             }`}>
-              <span className="text-xl font-semibold capitalize">{paymentStatus.toLowerCase().replace('_', ' ')}</span>
+              <span className="text-xl font-semibold">{paymentStatus === "PENDING" ? "Pending" : paymentStatus === "NOT_STARTED" ? "Not Started" : paymentStatus.charAt(0) + paymentStatus.slice(1).toLowerCase()}</span>
               <span className="text-white/70 ml-2 text-sm">Status</span>
             </div>
           </div>
