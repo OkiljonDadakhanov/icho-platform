@@ -474,20 +474,16 @@ function AddMemberDialog({
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.first_name || !formData.last_name) return
-    if (!formData.role || !formData.gender || !formData.tshirt_size || !formData.dietary_requirements) return
-    if (!formData.email || !formData.regulations_accepted) return
-    if (!passportScan || !profilePhoto || !consentForm || !commitmentForm) return
+  // Email validation helper
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
 
-    // Validate role limits before submission
-    if (isRoleDisabled(formData.role as ParticipantRole)) {
-      const limit = PARTICIPANT_LIMITS[formData.role]
-      toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
-      return
-    }
+  const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault()
 
+    // All validation is done via canSubmit - if we get here, form is valid
     onAdd({
       first_name: formData.first_name,
       last_name: formData.last_name,
@@ -503,10 +499,10 @@ function AddMemberDialog({
       medical_requirements: formData.medical_requirements || undefined,
       email: formData.email,
       regulations_accepted: formData.regulations_accepted,
-      passport_scan: passportScan,
-      profile_photo: profilePhoto,
-      consent_form_signed: consentForm,
-      commitment_form_signed: commitmentForm,
+      passport_scan: passportScan || undefined,
+      profile_photo: profilePhoto || undefined,
+      consent_form_signed: consentForm || undefined,
+      commitment_form_signed: commitmentForm || undefined,
     })
     // Reset form
     setFormData({
@@ -533,9 +529,11 @@ function AddMemberDialog({
   }
 
   const isRoleValid = formData.role && !isRoleDisabled(formData.role as ParticipantRole)
-  const canProceedStep1 = formData.first_name && formData.last_name && formData.email && formData.passport_number && formData.date_of_birth && isRoleValid && formData.gender
+  const isEmailValid = formData.email && isValidEmail(formData.email)
+  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && formData.passport_number && formData.date_of_birth && isRoleValid && formData.gender
   const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements)
-  const canSubmit = canProceedStep1 && canProceedStep2 && passportScan && profilePhoto && consentForm && commitmentForm && formData.regulations_accepted
+  // Documents are optional for now - TODO: make required in production
+  const canSubmit = canProceedStep1 && canProceedStep2 && formData.regulations_accepted
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
@@ -616,7 +614,6 @@ function AddMemberDialog({
                   </Label>
                   <Input
                     id="first_name"
-                    required
                     placeholder="John"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
@@ -629,7 +626,6 @@ function AddMemberDialog({
                   </Label>
                   <Input
                     id="last_name"
-                    required
                     placeholder="Doe"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
@@ -680,12 +676,20 @@ function AddMemberDialog({
                   <Input
                     id="email"
                     type="email"
-                    required
                     placeholder="participant@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all"
+                    className={`transition-all ${
+                      formData.email
+                        ? isValidEmail(formData.email)
+                          ? "border-green-500 focus:border-green-500 focus:ring-green-500/20"
+                          : "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    }`}
                   />
+                  {formData.email && !isValidEmail(formData.email) && (
+                    <p className="text-xs text-red-500">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="passport_number" className="text-gray-600 flex items-center gap-1">
@@ -693,7 +697,6 @@ function AddMemberDialog({
                   </Label>
                   <Input
                     id="passport_number"
-                    required
                     placeholder="FA8475924"
                     value={formData.passport_number}
                     onChange={(e) => setFormData({ ...formData, passport_number: e.target.value.toUpperCase() })}
@@ -710,7 +713,6 @@ function AddMemberDialog({
                   <Input
                     id="date_of_birth"
                     type="date"
-                    required
                     value={formData.date_of_birth}
                     onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                     className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all"
@@ -798,7 +800,7 @@ function AddMemberDialog({
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
                     <SelectContent>
-                      {["XS", "S", "M", "L", "XL", "XXL"].map(size => (
+                      {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
                         <SelectItem key={size} value={size}>{size}</SelectItem>
                       ))}
                     </SelectContent>
@@ -834,7 +836,6 @@ function AddMemberDialog({
                   </Label>
                   <Input
                     id="other_dietary_requirements"
-                    required
                     placeholder="Describe your dietary requirements"
                     value={formData.other_dietary_requirements}
                     onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
@@ -910,6 +911,8 @@ function AddMemberDialog({
                   onChange={setConsentForm}
                   icon={<FileText className="w-4 h-4" />}
                   color="violet"
+                  templateUrl="/documents/consent_form_template.pdf"
+                  templateName="IChO2026_Consent_Form.pdf"
                 />
 
                 {/* Commitment Form */}
@@ -922,6 +925,8 @@ function AddMemberDialog({
                   onChange={setCommitmentForm}
                   icon={<FileCheck className="w-4 h-4" />}
                   color="violet"
+                  templateUrl="/documents/commitment_form_template.pdf"
+                  templateName="IChO2026_Commitment_Form.pdf"
                 />
               </div>
             </div>
@@ -936,7 +941,6 @@ function AddMemberDialog({
                     checked={formData.regulations_accepted}
                     onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
                     className="w-5 h-5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20 transition-all cursor-pointer"
-                    required
                   />
                 </div>
                 <Label htmlFor="regulations_accepted" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
@@ -977,7 +981,8 @@ function AddMemberDialog({
                 </Button>
               ) : (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={isSaving || !canSubmit}
                   className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] min-w-[140px]"
                 >
@@ -1011,6 +1016,8 @@ function FileUploadField({
   onChange,
   icon,
   color = "violet",
+  templateUrl,
+  templateName,
 }: {
   id: string
   label: string
@@ -1020,6 +1027,8 @@ function FileUploadField({
   onChange: (file: File | null) => void
   icon: React.ReactNode
   color?: "violet" | "emerald" | "blue"
+  templateUrl?: string
+  templateName?: string
 }) {
   const colorClasses = {
     violet: {
@@ -1043,10 +1052,23 @@ function FileUploadField({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-gray-600 flex items-center gap-1.5 text-sm">
-        <span className={colors.icon}>{icon}</span>
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
+      <div className="flex items-center justify-between">
+        <Label htmlFor={id} className="text-gray-600 flex items-center gap-1.5 text-sm">
+          <span className={colors.icon}>{icon}</span>
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+        {templateUrl && (
+          <a
+            href={templateUrl}
+            download={templateName}
+            className="flex items-center gap-1 text-xs font-medium text-[#2f3090] hover:text-[#00795d] transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Download className="w-3 h-3" />
+            Download Template
+          </a>
+        )}
+      </div>
       <div className={`relative flex items-center gap-3 p-3 bg-white rounded-lg border ${colors.border} transition-all duration-200 hover:shadow-sm`}>
         <div className={`p-2 ${colors.bg} rounded-lg`}>
           <Upload className={`w-4 h-4 ${colors.icon}`} />
@@ -1068,11 +1090,10 @@ function FileUploadField({
             <span className="text-sm text-gray-500">No file selected</span>
           )}
         </div>
-        <Input
+        <input
           id={id}
           type="file"
           accept={accept}
-          required={required && !file}
           onChange={(e) => onChange(e.target.files?.[0] || null)}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
@@ -1331,7 +1352,7 @@ function EditMemberDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["XS", "S", "M", "L", "XL", "XXL"].map(size => (
+                    {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
                       <SelectItem key={size} value={size}>{size}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1409,6 +1430,8 @@ function EditMemberDialog({
                 file={consentForm}
                 onChange={setConsentForm}
                 accept="image/*,.pdf"
+                templateUrl="/documents/consent_form_template.pdf"
+                templateName="IChO2026_Consent_Form.pdf"
               />
               <FileUploadFieldEdit
                 label="Commitment Form"
@@ -1416,6 +1439,8 @@ function EditMemberDialog({
                 file={commitmentForm}
                 onChange={setCommitmentForm}
                 accept="image/*,.pdf"
+                templateUrl="/documents/commitment_form_template.pdf"
+                templateName="IChO2026_Commitment_Form.pdf"
               />
             </div>
           </div>
@@ -1508,12 +1533,16 @@ function FileUploadFieldEdit({
   file,
   onChange,
   accept,
+  templateUrl,
+  templateName,
 }: {
   label: string
   hasExisting: boolean
   file: File | null
   onChange: (file: File | null) => void
   accept: string
+  templateUrl?: string
+  templateName?: string
 }) {
   return (
     <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-violet-200 hover:border-violet-400 transition-all">
@@ -1521,7 +1550,19 @@ function FileUploadFieldEdit({
         <FileText className="w-4 h-4 text-violet-600" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-700 text-sm">{label}</p>
+        <div className="flex items-center justify-between">
+          <p className="font-medium text-gray-700 text-sm">{label}</p>
+          {templateUrl && (
+            <a
+              href={templateUrl}
+              download={templateName}
+              className="flex items-center gap-1 text-xs font-medium text-[#2f3090] hover:text-[#00795d] transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Template
+            </a>
+          )}
+        </div>
         {file ? (
           <div className="flex items-center gap-2 mt-1">
             <Check className="w-3 h-3 text-green-500" />
