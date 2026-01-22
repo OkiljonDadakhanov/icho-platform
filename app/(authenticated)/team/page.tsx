@@ -466,6 +466,7 @@ function AddMemberDialog({
     medical_requirements: "",
     email: "",
     regulations_accepted: false,
+    prefers_single_room: false,
   })
   const [passportScan, setPassportScan] = useState<File | null>(null)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
@@ -499,6 +500,7 @@ function AddMemberDialog({
       medical_requirements: formData.medical_requirements || undefined,
       email: formData.email,
       regulations_accepted: formData.regulations_accepted,
+      prefers_single_room: formData.role === 'TEAM_LEADER' ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
@@ -520,6 +522,7 @@ function AddMemberDialog({
       medical_requirements: "",
       email: "",
       regulations_accepted: false,
+      prefers_single_room: false,
     })
     setPassportScan(null)
     setProfilePhoto(null)
@@ -865,6 +868,49 @@ function AddMemberDialog({
                 <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
               </div>
             </div>
+
+            {/* Room Preference (Team Leaders only) */}
+            {formData.role === 'TEAM_LEADER' && (
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-200">
+                <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <UsersRound className="w-4 h-4 text-indigo-600" />
+                  Accommodation Preference
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  By default, team leaders share a twin room with another team leader from a different country.
+                </p>
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
+                    <input
+                      type="radio"
+                      name="room_preference"
+                      value="shared"
+                      checked={!formData.prefers_single_room}
+                      onChange={() => setFormData({ ...formData, prefers_single_room: false })}
+                      className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-800">Share twin room (included)</p>
+                      <p className="text-sm text-gray-500">Share with another team leader from a different country</p>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
+                    <input
+                      type="radio"
+                      name="room_preference"
+                      value="single"
+                      checked={formData.prefers_single_room}
+                      onChange={() => setFormData({ ...formData, prefers_single_room: true })}
+                      className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-800">Single room (additional fee)</p>
+                      <p className="text-sm text-gray-500">A separate invoice will be generated for admin approval</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step 3: Documents */}
@@ -1147,6 +1193,7 @@ function EditMemberDialog({
     medical_requirements: participant.medical_requirements || "",
     email: participant.email || "",
     regulations_accepted: participant.regulations_accepted,
+    prefers_single_room: participant.prefers_single_room || false,
   })
   const [passportScan, setPassportScan] = useState<File | null>(null)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
@@ -1167,6 +1214,7 @@ function EditMemberDialog({
     onEdit(participant.id, {
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
+      prefers_single_room: formData.role === 'TEAM_LEADER' ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
@@ -1401,6 +1449,63 @@ function EditMemberDialog({
               />
             </div>
           </div>
+
+          {/* Room Preference (Team Leaders only) */}
+          {formData.role === 'TEAM_LEADER' && (
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
+              <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <UsersRound className="w-4 h-4 text-indigo-600" />
+                Accommodation Preference
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                By default, team leaders share a twin room with another team leader from a different country.
+              </p>
+              {participant.single_room_invoice_status && (
+                <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 text-sm ${
+                  participant.single_room_invoice_status === 'APPROVED'
+                    ? 'bg-green-100 text-green-800'
+                    : participant.single_room_invoice_status === 'REJECTED'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  <AlertCircle className="w-4 h-4" />
+                  <span>
+                    Single room invoice status: <strong>{participant.single_room_invoice_status}</strong>
+                  </span>
+                </div>
+              )}
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
+                  <input
+                    type="radio"
+                    name={`room_preference_${participant.id}`}
+                    value="shared"
+                    checked={!formData.prefers_single_room}
+                    onChange={() => setFormData({ ...formData, prefers_single_room: false })}
+                    className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <p className="font-medium text-gray-800">Share twin room (included)</p>
+                    <p className="text-sm text-gray-500">Share with another team leader from a different country</p>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
+                  <input
+                    type="radio"
+                    name={`room_preference_${participant.id}`}
+                    value="single"
+                    checked={formData.prefers_single_room}
+                    onChange={() => setFormData({ ...formData, prefers_single_room: true })}
+                    className="mt-1 w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <p className="font-medium text-gray-800">Single room (additional fee)</p>
+                    <p className="text-sm text-gray-500">A separate invoice will be generated for admin approval</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
 
           {/* Update Documents */}
           <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-4 rounded-xl border border-violet-200">
