@@ -221,24 +221,33 @@ export default function PreRegistrationPage() {
     const allFields = ["firstName", "lastName", "email", "phone", "passportNumber", "dateOfBirth", "role"];
     setTouched(allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
 
-    // Check for errors
-    const errors = [
-      getFieldError("firstName", formData.firstName),
-      getFieldError("lastName", formData.lastName),
-      getFieldError("email", formData.email),
-      getFieldError("phone", formData.phone),
-      getFieldError("passportNumber", formData.passportNumber),
-      getFieldError("dateOfBirth", formData.dateOfBirth),
-      getFieldError("role", formData.role),
-    ].filter(Boolean);
+    // Check each field and collect specific errors
+    const fieldErrors: { field: string; error: string }[] = [];
 
-    if (errors.length > 0) {
-      toast.error("Please fix the validation errors before submitting");
+    if (!formData.firstName.trim()) fieldErrors.push({ field: "First name", error: "required" });
+    if (!formData.lastName.trim()) fieldErrors.push({ field: "Last name", error: "required" });
+    if (!formData.email.trim()) {
+      fieldErrors.push({ field: "Email", error: "required" });
+    } else if (!isValidEmail(formData.email)) {
+      fieldErrors.push({ field: "Email", error: "invalid format" });
+    }
+    if (!formData.phone.trim()) {
+      fieldErrors.push({ field: "Phone", error: "required" });
+    } else if (!isValidPhone(formData.phone)) {
+      fieldErrors.push({ field: "Phone", error: "invalid format" });
+    }
+    if (!formData.passportNumber.trim()) fieldErrors.push({ field: "Passport number", error: "required" });
+    if (!formData.dateOfBirth) fieldErrors.push({ field: "Date of birth", error: "required" });
+    if (!formData.role.trim()) fieldErrors.push({ field: "Role", error: "required" });
+
+    if (fieldErrors.length > 0) {
+      const missingFields = fieldErrors.map(e => e.field).join(", ");
+      toast.error(`Missing or invalid: ${missingFields}`);
       return false;
     }
 
     if (!passportScanFile && !coordinatorPassportScan) {
-      toast.error("Please upload a coordinator passport scan");
+      toast.error("Passport scan is required");
       return false;
     }
 
