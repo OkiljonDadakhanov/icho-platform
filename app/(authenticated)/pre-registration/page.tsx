@@ -228,12 +228,12 @@ export default function PreRegistrationPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-8 rounded-lg">
+      <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-6 sm:p-8 rounded-lg">
         <div className="flex items-center gap-3 mb-2">
-          <ClipboardList className="w-8 h-8" />
-          <h1 className="text-3xl font-bold">Pre-Registration</h1>
+          <ClipboardList className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+          <h1 className="text-2xl sm:text-3xl font-bold">Pre-Registration</h1>
         </div>
-        <p className="text-white/80">
+        <p className="text-white/80 text-sm sm:text-base">
           Please provide coordinator details and expected delegation size.
         </p>
       </div>
@@ -392,7 +392,7 @@ export default function PreRegistrationPage() {
         <h2 className="text-xl font-semibold mb-6">Expected Delegation Size</h2>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Team Leaders *</Label>
               <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
@@ -406,7 +406,7 @@ export default function PreRegistrationPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Contestants *</Label>
               <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
@@ -420,7 +420,7 @@ export default function PreRegistrationPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Observers</Label>
               <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded">Max 2</span>
@@ -434,7 +434,7 @@ export default function PreRegistrationPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Guests</Label>
               <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">No limit</span>
@@ -450,34 +450,34 @@ export default function PreRegistrationPage() {
 
         <div className="mt-6 p-4 bg-[#2f3090]/10 rounded-lg border border-[#2f3090]/20">
           <h3 className="font-semibold mb-2">Estimated Participation Fee</h3>
-          <p className="text-2xl font-bold text-[#2f3090]">
+          <p className="text-xl sm:text-2xl font-bold text-[#2f3090]">
             ${calculateTotal().toLocaleString()} USD
           </p>
-          <div className="text-sm text-muted-foreground mt-2 space-y-1">
+          <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
             {formData.teamLeaders > 0 && (
-              <p>Team Leaders: {formData.teamLeaders} x ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
+              <p>Team Leaders: {formData.teamLeaders} × ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
             )}
             {formData.contestants > 0 && (
-              <p>Contestants: {formData.contestants} x ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
+              <p>Contestants: {formData.contestants} × ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
             )}
             {formData.observers > 0 && (
-              <p>Observers: {formData.observers} x ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
+              <p>Observers: {formData.observers} × ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
             )}
             {formData.guests > 0 && (
-              <p>Guests: {formData.guests} x ${getFee("GUEST")} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
+              <p>Guests: {formData.guests} × ${getFee("GUEST")} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
             )}
           </div>
         </div>
       </Card>
 
       {canEdit && (
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={handleSaveDraft} disabled={isSubmitting}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <Button variant="outline" onClick={handleSaveDraft} disabled={isSubmitting} className="w-full sm:w-auto">
             {isSubmitted ? "Update & Regenerate Invoice" : "Save Draft"}
           </Button>
           {!isSubmitted && (
             <Button
-              className="bg-[#2f3090] hover:bg-[#4547a9]"
+              className="bg-[#2f3090] hover:bg-[#4547a9] w-full sm:w-auto"
               onClick={handleSubmit}
               disabled={isSubmitting}
             >
