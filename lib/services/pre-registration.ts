@@ -86,6 +86,13 @@ export const preRegistrationService = {
   },
 
   /**
+   * Delete a coordinator
+   */
+  async deleteCoordinator(id: string): Promise<void> {
+    return api.delete(`/pre-registration/coordinators/${id}/`);
+  },
+
+  /**
    * Upload coordinator passport scan
    */
   async uploadCoordinatorPassport(coordinatorId: string, file: File): Promise<Coordinator> {
