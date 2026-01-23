@@ -76,7 +76,7 @@ export function Sidebar() {
               </div>
               <div>
                 <h2 className="text-base font-bold text-white tracking-wide">SOCenter</h2>
-                <p className="text-xs text-white/70 uppercase tracking-wider">IChO 2026</p>
+                <p className="text-xs text-white/70 tracking-wider">IChO 2026</p>
               </div>
             </div>
           </div>
