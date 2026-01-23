@@ -121,9 +121,12 @@ export default function DashboardPage() {
               variant="outline"
               size="sm"
               className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10"
+              asChild
             >
-              <Edit className="w-3 h-3 mr-1" />
-              Edit
+              <a href="/pre-registration">
+                <Edit className="w-3 h-3 mr-1" />
+                Edit
+              </a>
             </Button>
           </div>
 
