@@ -4,7 +4,7 @@
  */
 
 import { api, apiDownload } from '../api';
-import type { Payment, Invoice } from '../types';
+import type { Payment, Invoice, SingleRoomInvoice } from '../types';
 
 export const paymentsService = {
   /**
@@ -73,6 +73,37 @@ export const paymentsService = {
         ? 'Payment rejected'
         : 'Payment pending verification'
     };
+  },
+
+  /**
+   * Get single room invoices for current country
+   */
+  async getSingleRoomInvoices(): Promise<SingleRoomInvoice[]> {
+    try {
+      const response = await api.get<{ invoices: SingleRoomInvoice[] }>('/v1/payments/single-room-invoices/');
+      return response.invoices || [];
+    } catch (error) {
+      if ((error as { status: number }).status === 404) {
+        return [];
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Download single room invoice PDF
+   */
+  async downloadSingleRoomInvoice(invoiceId: string): Promise<Blob> {
+    return apiDownload(`/v1/payments/single-room-invoices/${invoiceId}/download/`);
+  },
+
+  /**
+   * Upload single room payment proof
+   */
+  async uploadSingleRoomProof(invoiceId: string, file: File): Promise<SingleRoomInvoice> {
+    const formData = new FormData();
+    formData.append('proof_file', file);
+    return api.upload<SingleRoomInvoice>(`/v1/payments/single-room-invoices/${invoiceId}/upload-proof/`, formData);
   },
 };
 

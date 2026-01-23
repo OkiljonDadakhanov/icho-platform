@@ -14,6 +14,7 @@ import type {
   PaginatedResponse,
   PreRegistration,
   User,
+  SingleRoomInvoice,
 } from '../types';
 
 // Extended types for admin
@@ -286,6 +287,37 @@ export const adminService = {
    */
   async regenerateInvitation(participantId: string, reason: string): Promise<void> {
     return api.post(`/v1/admin/invitations/${participantId}/regenerate/`, { reason });
+  },
+
+  // ============= Single Room Payments =============
+
+  /**
+   * Get all single room invoices with filtering
+   */
+  async getSingleRoomInvoices(status?: string): Promise<SingleRoomInvoice[]> {
+    const params = status && status !== 'all' ? `?status=${status}` : '';
+    return api.get<SingleRoomInvoice[]>(`/v1/payments/admin/single-room-invoices/${params}`);
+  },
+
+  /**
+   * Approve a single room payment
+   */
+  async approveSingleRoomPayment(invoiceId: string, comment?: string): Promise<SingleRoomInvoice> {
+    return api.post<SingleRoomInvoice>(`/v1/payments/admin/single-room-invoices/${invoiceId}/approve/`, { admin_comment: comment });
+  },
+
+  /**
+   * Reject a single room payment
+   */
+  async rejectSingleRoomPayment(invoiceId: string, comment: string): Promise<SingleRoomInvoice> {
+    return api.post<SingleRoomInvoice>(`/v1/payments/admin/single-room-invoices/${invoiceId}/reject/`, { admin_comment: comment });
+  },
+
+  /**
+   * Download single room payment proof file
+   */
+  async downloadSingleRoomProof(invoiceId: string): Promise<Blob> {
+    return apiDownload(`/v1/payments/admin/single-room-invoices/${invoiceId}/proof/download/`);
   },
 };
 

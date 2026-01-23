@@ -173,6 +173,8 @@ export interface SingleRoomInvoice {
   amount: number;
   currency: string;
   pdf_file?: string;
+  proof_file?: string;
+  proof_submitted_at?: string;
   status: SingleRoomInvoiceStatus;
   admin_comment?: string;
   reviewed_by?: string;

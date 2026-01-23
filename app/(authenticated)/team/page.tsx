@@ -49,10 +49,13 @@ import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
+import { paymentsService } from "@/lib/services/payments"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement } from "@/lib/types"
+import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
+import { getErrorMessage } from "@/lib/error-utils"
+import Link from "next/link"
 
 // Participant limits per delegation
 const PARTICIPANT_LIMITS: Record<string, number | null> = {
@@ -65,29 +68,47 @@ const PARTICIPANT_LIMITS: Record<string, number | null> = {
 export default function TeamPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [payment, setPayment] = useState<Payment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const countryName = user?.country?.name || "Your Country"
-  const isLocked = false // This could come from workflow status API
+
+  // Check if payment is approved - this unlocks the participants stage
+  const isPaymentApproved = payment?.status === "APPROVED"
+  const isPaymentPending = payment?.status === "PENDING"
+  const hasNoPayment = !payment || !payment.proof_file
 
   useEffect(() => {
-    fetchParticipants()
+    fetchData()
   }, [])
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      const [participantsData, paymentData] = await Promise.all([
+        participantsService.getAllParticipants().catch(() => []),
+        paymentsService.getPayment().catch(() => null),
+      ])
+      setParticipants(participantsData)
+      setPayment(paymentData)
+      setError(null)
+    } catch (err) {
+      console.error("Failed to fetch data:", err)
+      setError("Failed to load data")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const fetchParticipants = async () => {
     try {
-      setIsLoading(true)
       const data = await participantsService.getAllParticipants()
       setParticipants(data)
-      setError(null)
     } catch (err) {
       console.error("Failed to fetch participants:", err)
-      setError("Failed to load participants")
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -100,8 +121,9 @@ export default function TeamPage() {
       setIsAddDialogOpen(false)
       toast.success("Participant added successfully")
     } catch (err: unknown) {
-      console.error("Failed to add participant:", err)
-      const message = (err as { message?: string })?.message || "Failed to add participant. Please try again.";
+      console.error("Failed to add participant:", JSON.stringify(err, null, 2))
+      const message = getErrorMessage(err, "Failed to add participant. Please try again.")
+      console.error("Extracted error message:", message)
       setError(message)
       toast.error(message)
     } finally {
@@ -118,7 +140,7 @@ export default function TeamPage() {
       toast.success("Participant updated successfully")
     } catch (err: unknown) {
       console.error("Failed to update participant:", err)
-      const message = (err as { message?: string })?.message || "Failed to update participant. Please try again.";
+      const message = getErrorMessage(err, "Failed to update participant. Please try again.")
       setError(message)
       toast.error(message)
     } finally {
@@ -135,7 +157,7 @@ export default function TeamPage() {
       toast.success("Participant deleted successfully")
     } catch (err: unknown) {
       console.error("Failed to delete participant:", err)
-      const message = (err as { message?: string })?.message || "Failed to delete participant. Please try again.";
+      const message = getErrorMessage(err, "Failed to delete participant. Please try again.")
       setError(message)
       toast.error(message)
     } finally {
@@ -149,8 +171,9 @@ export default function TeamPage() {
       await fetchParticipants()
     } catch (err: unknown) {
       console.error("Failed to upload photo:", err)
-      const message = (err as { message?: string })?.message || "Failed to upload photo. Please try again.";
+      const message = getErrorMessage(err, "Failed to upload photo. Please try again.")
       setError(message)
+      toast.error(message)
     }
   }
 
@@ -213,17 +236,41 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {isLocked && (
-        <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            The deadline for editing member details has passed. Please contact the organisers if you still need to make
-            edits.
-          </AlertDescription>
-        </Alert>
+      {/* Payment not approved - show helpful message */}
+      {!isPaymentApproved && (
+        <Card className="p-6 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-amber-100 rounded-full">
+              <CreditCard className="w-6 h-6 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900 text-lg mb-1">
+                {hasNoPayment
+                  ? "Payment Required"
+                  : isPaymentPending
+                    ? "Payment Under Review"
+                    : "Payment Not Approved"}
+              </h3>
+              <p className="text-amber-800 mb-4">
+                {hasNoPayment
+                  ? "You need to complete your payment before you can add participants to your delegation."
+                  : isPaymentPending
+                    ? "Your payment proof is being reviewed by our team. You'll be able to add participants once it's approved."
+                    : "Your payment needs to be approved before you can manage participants."}
+              </p>
+              <Link href="/payment">
+                <Button className="bg-amber-600 hover:bg-amber-700 text-white gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  {hasNoPayment ? "Go to Payment" : "View Payment Status"}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
       )}
 
-      {error && (
+      {error && isPaymentApproved && (
         <Alert variant="destructive" className="animate-in shake duration-300">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -241,7 +288,7 @@ export default function TeamPage() {
               <p className="text-sm text-gray-500">{participants.length} members registered</p>
             </div>
           </div>
-          {!isLocked && (
+          {isPaymentApproved && (
             <AddMemberDialog
               open={isAddDialogOpen}
               onOpenChange={setIsAddDialogOpen}
@@ -298,7 +345,7 @@ export default function TeamPage() {
                           participant={participant}
                           initials={initials}
                           onUpload={handlePhotoUpload}
-                          disabled={isLocked}
+                          disabled={!isPaymentApproved}
                         />
                       </td>
                       <td className="py-4 px-4">
@@ -352,7 +399,7 @@ export default function TeamPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4">
-                        {!isLocked && (
+                        {isPaymentApproved && (
                           <EditMemberDialog
                             participant={participant}
                             onEdit={handleEditMember}

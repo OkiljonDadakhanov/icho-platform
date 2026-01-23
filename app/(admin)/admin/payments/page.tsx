@@ -49,8 +49,10 @@ import {
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminPayment } from "@/lib/services/admin";
+import type { SingleRoomInvoice } from "@/lib/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Bed } from "lucide-react";
 
 
 export default function PaymentsPage() {
@@ -69,12 +71,27 @@ export default function PaymentsPage() {
   const [adminComment, setAdminComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Single room invoice states
+  const [singleRoomInvoices, setSingleRoomInvoices] = useState<SingleRoomInvoice[]>([]);
+  const [filteredSingleRoomInvoices, setFilteredSingleRoomInvoices] = useState<SingleRoomInvoice[]>([]);
+  const [singleRoomSearchQuery, setSingleRoomSearchQuery] = useState("");
+  const [singleRoomStatusFilter, setSingleRoomStatusFilter] = useState("all");
+  const [selectedSingleRoom, setSelectedSingleRoom] = useState<SingleRoomInvoice | null>(null);
+  const [showSingleRoomDialog, setShowSingleRoomDialog] = useState(false);
+  const [singleRoomAction, setSingleRoomAction] = useState<"approve" | "reject" | null>(null);
+  const [singleRoomComment, setSingleRoomComment] = useState("");
+  const [activeTab, setActiveTab] = useState<"delegation" | "single-room">("delegation");
+
   useEffect(() => {
-    const fetchPayments = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const data = await adminService.getPayments();
-        setPayments(data);
+        const [paymentsData, singleRoomData] = await Promise.all([
+          adminService.getPayments(),
+          adminService.getSingleRoomInvoices(),
+        ]);
+        setPayments(paymentsData);
+        setSingleRoomInvoices(singleRoomData);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch payments:", err);
@@ -84,7 +101,7 @@ export default function PaymentsPage() {
       }
     };
 
-    fetchPayments();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -107,6 +124,28 @@ export default function PaymentsPage() {
     setFilteredPayments(filtered);
   }, [statusFilter, searchQuery, payments]);
 
+  // Filter single room invoices
+  useEffect(() => {
+    let filtered = singleRoomInvoices;
+
+    // Filter by status
+    if (singleRoomStatusFilter !== "all") {
+      filtered = filtered.filter((inv) => inv.status === singleRoomStatusFilter);
+    }
+
+    // Filter by search query
+    if (singleRoomSearchQuery) {
+      filtered = filtered.filter(
+        (inv) =>
+          inv.participant_name?.toLowerCase().includes(singleRoomSearchQuery.toLowerCase()) ||
+          inv.country_name?.toLowerCase().includes(singleRoomSearchQuery.toLowerCase()) ||
+          inv.number?.toLowerCase().includes(singleRoomSearchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredSingleRoomInvoices(filtered);
+  }, [singleRoomStatusFilter, singleRoomSearchQuery, singleRoomInvoices]);
+
   const handleReview = (payment: AdminPayment, action: "approve" | "reject") => {
     setSelectedPayment(payment);
     setReviewAction(action);
@@ -124,13 +163,12 @@ export default function PaymentsPage() {
 
     try {
       setIsSubmitting(true);
-      // await adminService[reviewAction === "approve" ? "approvePayment" : "rejectPayment"](
-      //   selectedPayment.id,
-      //   adminComment
-      // );
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (reviewAction === "approve") {
+        await adminService.approvePayment(selectedPayment.id, adminComment);
+      } else {
+        await adminService.rejectPayment(selectedPayment.id, adminComment);
+      }
 
       setPayments((prev) =>
         prev.map((p) =>
@@ -152,6 +190,58 @@ export default function PaymentsPage() {
       );
       setShowReviewDialog(false);
     } catch (err) {
+      console.error("Failed to submit review:", err);
+      toast.error("Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSingleRoomReview = (invoice: SingleRoomInvoice, action: "approve" | "reject") => {
+    setSelectedSingleRoom(invoice);
+    setSingleRoomAction(action);
+    setSingleRoomComment("");
+    setShowSingleRoomDialog(true);
+  };
+
+  const submitSingleRoomReview = async () => {
+    if (!selectedSingleRoom || !singleRoomAction) return;
+
+    if (singleRoomAction === "reject" && !singleRoomComment.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      if (singleRoomAction === "approve") {
+        await adminService.approveSingleRoomPayment(selectedSingleRoom.id, singleRoomComment);
+      } else {
+        await adminService.rejectSingleRoomPayment(selectedSingleRoom.id, singleRoomComment);
+      }
+
+      setSingleRoomInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === selectedSingleRoom.id
+            ? {
+                ...inv,
+                status: singleRoomAction === "approve" ? "APPROVED" : "REJECTED",
+                admin_comment: singleRoomComment,
+                reviewed_at: new Date().toISOString(),
+              }
+            : inv
+        )
+      );
+
+      toast.success(
+        singleRoomAction === "approve"
+          ? `Single room payment for ${selectedSingleRoom.participant_name} approved`
+          : `Single room payment for ${selectedSingleRoom.participant_name} rejected`
+      );
+      setShowSingleRoomDialog(false);
+    } catch (err) {
+      console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
       setIsSubmitting(false);
@@ -193,6 +283,15 @@ export default function PaymentsPage() {
     .filter((p) => p.status === "APPROVED")
     .reduce((acc, p) => acc + (p.invoice?.amount || 0), 0);
 
+  // Single room stats
+  const singleRoomPendingCount = singleRoomInvoices.filter((inv) => inv.status === "PENDING" && inv.proof_file).length;
+  const singleRoomApprovedCount = singleRoomInvoices.filter((inv) => inv.status === "APPROVED").length;
+  const singleRoomRejectedCount = singleRoomInvoices.filter((inv) => inv.status === "REJECTED").length;
+  const singleRoomAwaitingProof = singleRoomInvoices.filter((inv) => !inv.proof_file).length;
+  const singleRoomTotalAmount = singleRoomInvoices
+    .filter((inv) => inv.status === "APPROVED")
+    .reduce((acc, inv) => acc + (inv.amount || 0), 0);
+
   if (isLoading) {
     return <Loading message="Loading payments..." />;
   }
@@ -215,55 +314,75 @@ export default function PaymentsPage() {
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 bg-amber-50 border-amber-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500 rounded-lg">
-              <Clock className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-amber-900">{pendingCount}</p>
-              <p className="text-sm text-amber-700">Pending Review</p>
-            </div>
+      {/* Main Tabs: Delegation vs Single Room */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "delegation" | "single-room")}>
+        <TabsList className="bg-gray-100 mb-6">
+          <TabsTrigger value="delegation" className="gap-2">
+            <DollarSign className="w-4 h-4" />
+            Delegation Payments
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+              {payments.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="single-room" className="gap-2">
+            <Bed className="w-4 h-4" />
+            Single Room
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+              {singleRoomInvoices.length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="delegation" className="space-y-6">
+          {/* Delegation Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="p-4 bg-amber-50 border-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500 rounded-lg">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-900">{pendingCount}</p>
+                  <p className="text-sm text-amber-700">Pending Review</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-emerald-50 border-emerald-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-900">{approvedCount}</p>
+                  <p className="text-sm text-emerald-700">Approved</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-red-50 border-red-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-500 rounded-lg">
+                  <XCircle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-900">{rejectedCount}</p>
+                  <p className="text-sm text-red-700">Rejected</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-purple-50 border-purple-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-500 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-purple-900">
+                    ${totalAmount.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-purple-700">Total Collected</p>
+                </div>
+              </div>
+            </Card>
           </div>
-        </Card>
-        <Card className="p-4 bg-emerald-50 border-emerald-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-emerald-900">{approvedCount}</p>
-              <p className="text-sm text-emerald-700">Approved</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-red-50 border-red-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-500 rounded-lg">
-              <XCircle className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-red-900">{rejectedCount}</p>
-              <p className="text-sm text-red-700">Rejected</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-purple-50 border-purple-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500 rounded-lg">
-              <DollarSign className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-purple-900">
-                ${totalAmount.toLocaleString()}
-              </p>
-              <p className="text-sm text-purple-700">Total Collected</p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
       {/* Filters & Table */}
       <Card className="p-6">
@@ -377,7 +496,9 @@ export default function PaymentsPage() {
                             className="gap-1 text-gray-600"
                             onClick={async () => {
                               try {
+                                console.log(`Downloading proof for payment ID: ${payment.id}, country: ${payment.country_name}`);
                                 const blob = await adminService.downloadPaymentProof(payment.id);
+                                console.log(`Downloaded blob: ${blob.size} bytes, type: ${blob.type}`);
                                 const url = URL.createObjectURL(blob);
                                 window.open(url, "_blank");
                               } catch (err) {
@@ -451,6 +572,252 @@ export default function PaymentsPage() {
           )}
         </Tabs>
       </Card>
+        </TabsContent>
+
+        {/* Single Room Payments Tab */}
+        <TabsContent value="single-room" className="space-y-6">
+          {/* Single Room Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card className="p-4 bg-gray-50 border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-500 rounded-lg">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{singleRoomAwaitingProof}</p>
+                  <p className="text-sm text-gray-700">Awaiting Proof</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-amber-50 border-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500 rounded-lg">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-900">{singleRoomPendingCount}</p>
+                  <p className="text-sm text-amber-700">Pending Review</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-emerald-50 border-emerald-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-900">{singleRoomApprovedCount}</p>
+                  <p className="text-sm text-emerald-700">Approved</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-red-50 border-red-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-500 rounded-lg">
+                  <XCircle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-900">{singleRoomRejectedCount}</p>
+                  <p className="text-sm text-red-700">Rejected</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-purple-50 border-purple-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-500 rounded-lg">
+                  <DollarSign className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-purple-900">
+                    ${singleRoomTotalAmount.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-purple-700">Total Collected</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Single Room Filters & Table */}
+          <Card className="p-6">
+            <Tabs defaultValue={singleRoomStatusFilter} onValueChange={setSingleRoomStatusFilter}>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <TabsList className="bg-gray-100">
+                  <TabsTrigger value="all" className="gap-1">
+                    All
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                      {singleRoomInvoices.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="PENDING" className="gap-1">
+                    Pending
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-amber-200 text-amber-800">
+                      {singleRoomPendingCount}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="APPROVED" className="gap-1">
+                    Approved
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-emerald-200 text-emerald-800">
+                      {singleRoomApprovedCount}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="REJECTED" className="gap-1">
+                    Rejected
+                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-red-200 text-red-800">
+                      {singleRoomRejectedCount}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="flex-1" />
+
+                <div className="relative w-full md:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by participant or country..."
+                    value={singleRoomSearchQuery}
+                    onChange={(e) => setSingleRoomSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="font-semibold">Participant</TableHead>
+                      <TableHead className="font-semibold">Country</TableHead>
+                      <TableHead className="font-semibold">Invoice</TableHead>
+                      <TableHead className="font-semibold">Amount</TableHead>
+                      <TableHead className="font-semibold">Submitted</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="font-semibold text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSingleRoomInvoices.map((invoice) => (
+                      <TableRow key={invoice.id} className="hover:bg-gray-50">
+                        <TableCell>
+                          <span className="font-medium">{invoice.participant_name}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-gray-600">{invoice.country_name}</span>
+                        </TableCell>
+                        <TableCell>
+                          <code className="px-2 py-1 bg-gray-100 rounded text-sm">
+                            {invoice.number}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold text-gray-900">
+                            ${invoice.amount?.toLocaleString()}
+                          </span>
+                          <span className="text-gray-500 text-sm ml-1">
+                            {invoice.currency}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-gray-500">
+                          {invoice.proof_submitted_at ? (
+                            format(new Date(invoice.proof_submitted_at), "MMM d, yyyy")
+                          ) : (
+                            <span className="text-gray-400">Not submitted</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {!invoice.proof_file ? (
+                            <Badge className="bg-gray-100 text-gray-700 border-0 gap-1">
+                              <FileText className="w-3 h-3" />
+                              Awaiting Proof
+                            </Badge>
+                          ) : (
+                            getStatusBadge(invoice.status)
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {invoice.proof_file ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1 text-gray-600"
+                                onClick={async () => {
+                                  try {
+                                    const blob = await adminService.downloadSingleRoomProof(invoice.id);
+                                    const url = URL.createObjectURL(blob);
+                                    window.open(url, "_blank");
+                                  } catch (err) {
+                                    console.error("Failed to open proof:", err);
+                                    toast.error("Failed to open payment proof");
+                                  }
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Proof
+                              </Button>
+                            ) : (
+                              <span className="text-sm text-gray-400 px-2">
+                                No proof uploaded
+                              </span>
+                            )}
+                            {invoice.proof_file && invoice.status === "PENDING" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="gap-1 bg-emerald-500 hover:bg-emerald-600"
+                                  onClick={() => handleSingleRoomReview(invoice, "approve")}
+                                >
+                                  <ThumbsUp className="w-4 h-4" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="gap-1"
+                                  onClick={() => handleSingleRoomReview(invoice, "reject")}
+                                >
+                                  <ThumbsDown className="w-4 h-4" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {invoice.status !== "PENDING" && invoice.admin_comment && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => {
+                                  setSelectedSingleRoom(invoice);
+                                  setShowSingleRoomDialog(true);
+                                  setSingleRoomAction(null);
+                                }}
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                                Comment
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {filteredSingleRoomInvoices.length === 0 && (
+                <div className="text-center py-12">
+                  <Bed className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No single room invoices found</h3>
+                  <p className="text-gray-500">
+                    {singleRoomStatusFilter !== "all"
+                      ? `No ${singleRoomStatusFilter.toLowerCase()} invoices to show`
+                      : "No invoices match your search"}
+                  </p>
+                </div>
+              )}
+            </Tabs>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
@@ -552,6 +919,130 @@ export default function PaymentsPage() {
                 {isSubmitting ? (
                   "Submitting..."
                 ) : reviewAction === "approve" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Approve Payment
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Reject Payment
+                  </>
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single Room Review Dialog */}
+      <Dialog open={showSingleRoomDialog} onOpenChange={setShowSingleRoomDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {singleRoomAction === "approve"
+                ? "Approve Single Room Payment"
+                : singleRoomAction === "reject"
+                ? "Reject Single Room Payment"
+                : "Payment Details"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSingleRoom?.participant_name} - Invoice {selectedSingleRoom?.number}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Payment Info */}
+            <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Participant</span>
+                <span className="font-semibold">{selectedSingleRoom?.participant_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Country</span>
+                <span>{selectedSingleRoom?.country_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Amount</span>
+                <span className="font-semibold">
+                  ${selectedSingleRoom?.amount?.toLocaleString()} {selectedSingleRoom?.currency}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Submitted</span>
+                <span>
+                  {selectedSingleRoom?.proof_submitted_at &&
+                    format(new Date(selectedSingleRoom.proof_submitted_at), "MMM d, yyyy h:mm a")}
+                </span>
+              </div>
+              {selectedSingleRoom?.reviewed_at && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Reviewed</span>
+                  <span>
+                    {format(new Date(selectedSingleRoom.reviewed_at), "MMM d, yyyy h:mm a")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Existing comment (if viewing) */}
+            {!singleRoomAction && selectedSingleRoom?.admin_comment && (
+              <div className="p-4 bg-gray-100 rounded-lg">
+                <p className="text-sm font-medium text-gray-700 mb-1">Admin Comment</p>
+                <p className="text-gray-600">{selectedSingleRoom.admin_comment}</p>
+              </div>
+            )}
+
+            {/* Comment input (if reviewing) */}
+            {singleRoomAction && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  {singleRoomAction === "reject" ? (
+                    <span className="text-red-600">Reason for rejection *</span>
+                  ) : (
+                    "Comment (optional)"
+                  )}
+                </label>
+                <Textarea
+                  placeholder={
+                    singleRoomAction === "reject"
+                      ? "Please provide a detailed reason for rejection..."
+                      : "Add any notes about this payment..."
+                  }
+                  value={singleRoomComment}
+                  onChange={(e) => setSingleRoomComment(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {singleRoomAction === "reject" && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg text-amber-800">
+                <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <p className="text-sm">
+                  The country will be notified of this rejection and will need to resubmit their payment proof.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSingleRoomDialog(false)}>
+              {singleRoomAction ? "Cancel" : "Close"}
+            </Button>
+            {singleRoomAction && (
+              <Button
+                onClick={submitSingleRoomReview}
+                disabled={isSubmitting}
+                className={
+                  singleRoomAction === "approve"
+                    ? "bg-emerald-500 hover:bg-emerald-600"
+                    : "bg-red-500 hover:bg-red-600"
+                }
+              >
+                {isSubmitting ? (
+                  "Submitting..."
+                ) : singleRoomAction === "approve" ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Approve Payment

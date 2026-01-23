@@ -5,12 +5,13 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
-import type { Payment, Invoice, FeeRule, PreRegistration } from "@/lib/types"
+import { toast } from "sonner"
+import type { Payment, Invoice, FeeRule, PreRegistration, SingleRoomInvoice } from "@/lib/types"
 
 export default function PaymentPage() {
   const { user } = useAuth()
@@ -18,8 +19,10 @@ export default function PaymentPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [payment, setPayment] = useState<Payment | null>(null)
   const [feeRules, setFeeRules] = useState<FeeRule[]>([])
+  const [singleRoomInvoices, setSingleRoomInvoices] = useState<SingleRoomInvoice[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadingSingleRoomId, setUploadingSingleRoomId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const countryName = user?.country?.name || "Your Country"
@@ -31,14 +34,16 @@ export default function PaymentPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [preRegData, paymentData, feeRulesData] = await Promise.all([
+      const [preRegData, paymentData, feeRulesData, singleRoomData] = await Promise.all([
         preRegistrationService.getPreRegistration().catch(() => null),
         paymentsService.getPayment().catch(() => null),
-        preRegistrationService.getFeeRules().catch(() => [])
+        preRegistrationService.getFeeRules().catch(() => []),
+        paymentsService.getSingleRoomInvoices().catch(() => [])
       ])
       setPreRegistration(preRegData)
       setPayment(paymentData)
       setFeeRules(feeRulesData)
+      setSingleRoomInvoices(singleRoomData)
       setInvoice(paymentData?.invoice || null)
       setError(null)
     } catch (err) {
@@ -127,6 +132,41 @@ export default function PaymentPage() {
       console.error("Failed to download invoice:", err)
       const errorMessage = (err as { message?: string })?.message || "Failed to download invoice. Please try again."
       setError(errorMessage)
+    }
+  }
+
+  const handleDownloadSingleRoomInvoice = async (inv: SingleRoomInvoice) => {
+    try {
+      const blob = await paymentsService.downloadSingleRoomInvoice(inv.id)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `single_room_invoice_${inv.number}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err: unknown) {
+      console.error("Failed to download single room invoice:", err)
+      toast.error("Failed to download invoice. Please try again.")
+    }
+  }
+
+  const handleSingleRoomProofUpload = async (invoiceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploadingSingleRoomId(invoiceId)
+      await paymentsService.uploadSingleRoomProof(invoiceId, file)
+      await fetchData()
+      toast.success("Payment proof uploaded successfully")
+    } catch (err: unknown) {
+      console.error("Failed to upload single room proof:", err)
+      const errorMessage = (err as { message?: string })?.message || "Failed to upload payment proof. Please try again."
+      toast.error(errorMessage)
+    } finally {
+      setUploadingSingleRoomId(null)
     }
   }
 
@@ -382,7 +422,7 @@ export default function PaymentPage() {
               Please upload your bank transfer receipt or payment confirmation. Accepted formats: PDF, JPG, PNG (max 5MB)
             </p>
 
-            {payment?.proof_file ? (
+            {payment?.proof_file && paymentStatus !== "REJECTED" ? (
               <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-yellow-100 rounded-lg">
@@ -410,11 +450,11 @@ export default function PaymentPage() {
                     <Upload className="w-8 h-8 text-[#2f3090]/50" />
                   </div>
                   <p className="font-medium mb-2 text-gray-800">
-                    {isUploading ? "Uploading..." : "Drop your file here or click to browse"}
+                    {isUploading ? "Uploading..." : paymentStatus === "REJECTED" ? "Upload a new payment proof" : "Drop your file here or click to browse"}
                   </p>
                   <p className="text-sm text-gray-500 mb-4">PDF, JPG, PNG up to 5MB</p>
                   <span className="inline-flex items-center justify-center px-6 py-2.5 rounded-md text-sm font-medium text-white bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    {isUploading ? "Uploading..." : "Select File"}
+                    {isUploading ? "Uploading..." : paymentStatus === "REJECTED" ? "Resubmit Payment Proof" : "Select File"}
                   </span>
                 </label>
               </div>
@@ -431,6 +471,133 @@ export default function PaymentPage() {
           </div>
         )}
       </Card>
+
+      {/* Single Room Invoices Section */}
+      {singleRoomInvoices.length > 0 && (
+        <Card className="p-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg text-white">
+              <BedDouble className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Single Room Surcharge</h2>
+              <p className="text-sm text-gray-500">Additional payment for team leaders who requested single rooms</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {singleRoomInvoices.map((inv) => (
+              <div
+                key={inv.id}
+                className="p-4 bg-gradient-to-r from-purple-50 to-purple-100/50 rounded-xl border border-purple-200"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <User className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800">{inv.participant_name}</p>
+                      <p className="text-sm text-gray-500">Invoice #{inv.number}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-purple-700">
+                      ${inv.amount} {inv.currency}
+                    </span>
+                    <Badge
+                      className={`ml-2 ${
+                        inv.status === "APPROVED"
+                          ? "bg-[#00795d] text-white"
+                          : inv.status === "REJECTED"
+                            ? "bg-red-500 text-white"
+                            : inv.proof_file
+                              ? "bg-yellow-500 text-white"
+                              : "bg-gray-500 text-white"
+                      }`}
+                    >
+                      {inv.status === "APPROVED" ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Approved
+                        </>
+                      ) : inv.status === "REJECTED" ? (
+                        <>
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Rejected
+                        </>
+                      ) : inv.proof_file ? (
+                        <>
+                          <Clock className="w-3 h-3 mr-1" />
+                          Pending
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-3 h-3 mr-1" />
+                          Awaiting Proof
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+
+                {inv.status === "REJECTED" && inv.admin_comment && (
+                  <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                    <p className="text-sm text-red-700">
+                      <strong>Rejection reason:</strong> {inv.admin_comment}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {inv.pdf_file && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                      onClick={() => handleDownloadSingleRoomInvoice(inv)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Download Invoice
+                    </Button>
+                  )}
+
+                  {inv.status !== "APPROVED" && (
+                    <>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleSingleRoomProofUpload(inv.id, e)}
+                        className="hidden"
+                        id={`single-room-proof-${inv.id}`}
+                        disabled={uploadingSingleRoomId === inv.id}
+                      />
+                      <label htmlFor={`single-room-proof-${inv.id}`}>
+                        <span className={`inline-flex items-center justify-center px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer ${
+                          uploadingSingleRoomId === inv.id
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                        }`}>
+                          <Upload className="w-4 h-4 mr-1" />
+                          {uploadingSingleRoomId === inv.id
+                            ? "Uploading..."
+                            : inv.proof_file && inv.status === "REJECTED"
+                              ? "Resubmit Proof"
+                              : inv.proof_file
+                                ? "Update Proof"
+                                : "Upload Proof"
+                          }
+                        </span>
+                      </label>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="flex justify-between">
         <Button variant="outline" className="border-gray-300 hover:bg-gray-100" asChild>
