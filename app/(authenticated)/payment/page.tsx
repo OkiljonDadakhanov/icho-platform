@@ -405,7 +405,7 @@ export default function PaymentPage() {
                   id="proof-upload"
                   disabled={isUploading || !invoice}
                 />
-                <label htmlFor="proof-upload" className="cursor-pointer">
+                <label htmlFor="proof-upload" className={`cursor-pointer block ${(!invoice || isUploading) ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#2f3090]/10 to-[#00795d]/10 rounded-full flex items-center justify-center">
                     <Upload className="w-8 h-8 text-[#2f3090]/50" />
                   </div>
@@ -413,12 +413,9 @@ export default function PaymentPage() {
                     {isUploading ? "Uploading..." : "Drop your file here or click to browse"}
                   </p>
                   <p className="text-sm text-gray-500 mb-4">PDF, JPG, PNG up to 5MB</p>
-                  <Button
-                    className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                    disabled={isUploading || !invoice}
-                  >
+                  <span className="inline-flex items-center justify-center px-6 py-2.5 rounded-md text-sm font-medium text-white bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                     {isUploading ? "Uploading..." : "Select File"}
-                  </Button>
+                  </span>
                 </label>
               </div>
             )}
