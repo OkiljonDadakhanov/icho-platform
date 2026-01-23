@@ -324,6 +324,8 @@ function EditCoordinatorDialog({
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+              title="Please enter a valid email address"
             />
           </div>
           <div className="space-y-2">
@@ -505,6 +507,8 @@ function AddCoordinatorDialog({
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                title="Please enter a valid email address"
               />
             </div>
             <div className="space-y-2">

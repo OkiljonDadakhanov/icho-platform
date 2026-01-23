@@ -15,12 +15,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon, ClipboardList, Loader2, CheckCircle } from "lucide-react";
+import { InfoIcon, ClipboardList, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { LoadingPage } from "@/components/ui/loading";
-import { ErrorDisplay } from "@/components/ui/error-display";
 import { preRegistrationService } from "@/lib/services/pre-registration";
 import { toast } from "sonner";
 import type { PreRegistration, Gender, CoordinatorUpsertRequest, FeeRule } from "@/lib/types";
+
+// Email validation helper
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+// Phone validation helper
+const isValidPhone = (phone: string): boolean => {
+  const phoneRegex = /^[+]?[\d\s\-().]{7,20}$/;
+  return phoneRegex.test(phone);
+};
 
 interface FormData {
   firstName: string;
@@ -60,6 +71,45 @@ export default function PreRegistrationPage() {
     observers: 2,
     guests: 3,
   });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const getFieldError = (field: string, value: string): string | null => {
+    if (!touched[field] && value === "") return null;
+
+    switch (field) {
+      case "firstName":
+        if (!value.trim()) return "First name is required";
+        if (value.length < 2) return "First name must be at least 2 characters";
+        break;
+      case "lastName":
+        if (!value.trim()) return "Last name is required";
+        if (value.length < 2) return "Last name must be at least 2 characters";
+        break;
+      case "email":
+        if (!value.trim()) return "Email is required";
+        if (!isValidEmail(value)) return "Please enter a valid email address";
+        break;
+      case "phone":
+        if (!value.trim()) return "Phone number is required";
+        if (!isValidPhone(value)) return "Please enter a valid phone number";
+        break;
+      case "passportNumber":
+        if (!value.trim()) return "Passport number is required";
+        if (value.length < 5) return "Passport number seems too short";
+        break;
+      case "dateOfBirth":
+        if (!value) return "Date of birth is required";
+        break;
+      case "role":
+        if (!value.trim()) return "Role is required";
+        break;
+    }
+    return null;
+  };
 
   useEffect(() => {
     loadPreRegistration();
@@ -166,17 +216,41 @@ export default function PreRegistrationPage() {
     setPassportScanFile(null);
   };
 
+  const validateForm = (): boolean => {
+    // Mark all fields as touched to show validation
+    const allFields = ["firstName", "lastName", "email", "phone", "passportNumber", "dateOfBirth", "role"];
+    setTouched(allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
+
+    // Check for errors
+    const errors = [
+      getFieldError("firstName", formData.firstName),
+      getFieldError("lastName", formData.lastName),
+      getFieldError("email", formData.email),
+      getFieldError("phone", formData.phone),
+      getFieldError("passportNumber", formData.passportNumber),
+      getFieldError("dateOfBirth", formData.dateOfBirth),
+      getFieldError("role", formData.role),
+    ].filter(Boolean);
+
+    if (errors.length > 0) {
+      toast.error("Please fix the validation errors before submitting");
+      return false;
+    }
+
+    if (!passportScanFile && !coordinatorPassportScan) {
+      toast.error("Please upload a coordinator passport scan");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+
     try {
       setIsSubmitting(true);
       setError(null);
-
-      if (!passportScanFile && !coordinatorPassportScan) {
-        setError("Coordinator passport scan is required before submitting pre-registration.");
-        toast.error("Please upload a coordinator passport scan before submitting.");
-        setIsSubmitting(false);
-        return;
-      }
 
       await preRegistrationService.updatePreRegistration({
         num_team_leaders: formData.teamLeaders,
@@ -192,14 +266,25 @@ export default function PreRegistrationPage() {
       await loadPreRegistration();
     } catch (err) {
       const error = err as { message?: string };
-      setError(error.message || "Failed to submit pre-registration");
-      toast.error("Failed to submit pre-registration");
+      toast.error(error.message || "Failed to submit pre-registration");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSaveDraft = async () => {
+    // Validate email and phone if they have values
+    if (formData.email && !isValidEmail(formData.email)) {
+      setTouched((prev) => ({ ...prev, email: true }));
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      setTouched((prev) => ({ ...prev, phone: true }));
+      toast.error("Please enter a valid phone number");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await preRegistrationService.updatePreRegistration({
@@ -262,7 +347,6 @@ export default function PreRegistrationPage() {
         </Alert>
       )}
 
-      {error && <ErrorDisplay message={error} onRetry={loadPreRegistration} />}
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-6">Coordinator Information</h2>
@@ -364,26 +448,76 @@ export default function PreRegistrationPage() {
 
           <div className="space-y-2">
             <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="coordinator@example.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              disabled={!canEdit}
-            />
+            <div className="relative">
+              <Input
+                id="email"
+                type="email"
+                placeholder="coordinator@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onBlur={() => handleBlur("email")}
+                disabled={!canEdit}
+                className={
+                  touched.email
+                    ? getFieldError("email", formData.email)
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-200 pr-10"
+                      : "border-green-300 focus:border-green-500 focus:ring-green-200 pr-10"
+                    : ""
+                }
+              />
+              {touched.email && formData.email && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  {getFieldError("email", formData.email) ? (
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  )}
+                </div>
+              )}
+            </div>
+            {touched.email && getFieldError("email", formData.email) && (
+              <p className="text-sm text-red-500 flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {getFieldError("email", formData.email)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number *</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+998 XX XXX XX XX"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              disabled={!canEdit}
-            />
+            <div className="relative">
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+998 XX XXX XX XX"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onBlur={() => handleBlur("phone")}
+                disabled={!canEdit}
+                className={
+                  touched.phone
+                    ? getFieldError("phone", formData.phone)
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-200 pr-10"
+                      : "border-green-300 focus:border-green-500 focus:ring-green-200 pr-10"
+                    : ""
+                }
+              />
+              {touched.phone && formData.phone && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  {getFieldError("phone", formData.phone) ? (
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  )}
+                </div>
+              )}
+            </div>
+            {touched.phone && getFieldError("phone", formData.phone) && (
+              <p className="text-sm text-red-500 flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {getFieldError("phone", formData.phone)}
+              </p>
+            )}
           </div>
         </div>
       </Card>
