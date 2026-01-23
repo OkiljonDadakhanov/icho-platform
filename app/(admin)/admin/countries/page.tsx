@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ import { toast } from "sonner";
 
 
 export default function CountriesPage() {
+  const router = useRouter();
   const [countries, setCountries] = useState<AdminCountry[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<AdminCountry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +65,10 @@ export default function CountriesPage() {
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+
+  const handleViewDetails = (country: AdminCountry) => {
+    router.push(`/admin/countries/${country.id}`);
+  };
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -294,7 +300,11 @@ export default function CountriesPage() {
             </TableHeader>
             <TableBody>
               {filteredCountries.map((country) => (
-                <TableRow key={country.id} className="hover:bg-gray-50">
+                <TableRow
+                  key={country.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleViewDetails(country)}
+                >
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img
@@ -334,7 +344,7 @@ export default function CountriesPage() {
                       {country.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -342,7 +352,10 @@ export default function CountriesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem className="gap-2">
+                        <DropdownMenuItem
+                          className="gap-2"
+                          onClick={() => handleViewDetails(country)}
+                        >
                           <Eye className="w-4 h-4" />
                           View Details
                         </DropdownMenuItem>

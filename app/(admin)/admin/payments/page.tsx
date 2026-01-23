@@ -100,7 +100,7 @@ export default function PaymentsPage() {
       filtered = filtered.filter(
         (p) =>
           p.country_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.invoice?.number.toLowerCase().includes(searchQuery.toLowerCase())
+          p.invoice_number?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -338,36 +338,62 @@ export default function PaymentsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <code className="px-2 py-1 bg-gray-100 rounded text-sm">
-                        {payment.invoice?.number}
-                      </code>
+                      {payment.invoice_number ? (
+                        <code className="px-2 py-1 bg-gray-100 rounded text-sm">
+                          {payment.invoice_number}
+                        </code>
+                      ) : (
+                        <span className="text-sm text-gray-400">No invoice</span>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <span className="font-semibold text-gray-900">
-                        ${payment.invoice?.amount?.toLocaleString()}
-                      </span>
-                      <span className="text-gray-500 text-sm ml-1">
-                        {payment.invoice?.currency}
-                      </span>
+                      {payment.invoice_amount != null ? (
+                        <>
+                          <span className="font-semibold text-gray-900">
+                            ${payment.invoice_amount.toLocaleString()}
+                          </span>
+                          <span className="text-gray-500 text-sm ml-1">
+                            USD
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-gray-500">
-                      {format(new Date(payment.created_at), "MMM d, yyyy")}
+                      {payment.proof_submitted_at ? (
+                        format(new Date(payment.proof_submitted_at), "MMM d, yyyy")
+                      ) : (
+                        <span className="text-gray-400">Not submitted</span>
+                      )}
                     </TableCell>
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 text-gray-600"
-                          onClick={() => {
-                            // View proof file
-                            toast.info("Opening payment proof...");
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                          View Proof
-                        </Button>
+{payment.proof_file ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-gray-600"
+                            onClick={async () => {
+                              try {
+                                const blob = await adminService.downloadPaymentProof(payment.id);
+                                const url = URL.createObjectURL(blob);
+                                window.open(url, "_blank");
+                              } catch (err) {
+                                console.error("Failed to open proof:", err);
+                                toast.error("Failed to open payment proof");
+                              }
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Proof
+                          </Button>
+                        ) : (
+                          <span className="text-sm text-gray-400 px-2">
+                            No proof uploaded
+                          </span>
+                        )}
                         {payment.status === "PENDING" && (
                           <>
                             <Button

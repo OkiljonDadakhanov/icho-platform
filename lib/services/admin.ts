@@ -32,7 +32,9 @@ export interface AdminCountry extends Country {
 export interface AdminPayment extends Payment {
   country_name?: string;
   country_iso?: string;
+  invoice_number?: string;
   invoice_amount?: number;
+  proof_submitted_at?: string;
 }
 
 export interface AdminParticipant extends Participant {
