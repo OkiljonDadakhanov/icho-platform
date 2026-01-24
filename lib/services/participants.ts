@@ -158,10 +158,17 @@ export const participantsService = {
   },
 
   /**
-   * Download commitment form template
+   * Download commitment form template (for students/contestants only)
    */
   async downloadCommitmentFormTemplate(): Promise<Blob> {
     return apiDownload('/v1/participants/templates/commitment/download/');
+  },
+
+  /**
+   * Download team leader consent form template
+   */
+  async downloadTeamLeaderConsentFormTemplate(): Promise<Blob> {
+    return apiDownload('/v1/participants/templates/consent-team-leader/download/');
   },
 };
 

@@ -277,55 +277,89 @@ export default function TeamPage() {
             <FileText className="w-6 h-6 text-blue-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 text-lg mb-1">Required Forms for Contestants</h3>
+            <h3 className="font-semibold text-blue-900 text-lg mb-1">Required Forms</h3>
             <p className="text-blue-800 mb-4">
-              Download, fill out, sign, and upload these forms for each contestant during registration.
+              Download, fill out, sign, and upload these forms for each participant during registration.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
-                onClick={async () => {
-                  try {
-                    const blob = await participantsService.downloadConsentFormTemplate()
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = 'Photography_Audio_Video_Consent_Form.pdf'
-                    a.click()
-                    URL.revokeObjectURL(url)
-                    toast.success("Consent form template downloaded")
-                  } catch (err) {
-                    console.error("Failed to download consent form:", err)
-                    toast.error("Failed to download consent form")
-                  }
-                }}
-              >
-                <Download className="w-4 h-4" />
-                Consent Form Template
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
-                onClick={async () => {
-                  try {
-                    const blob = await participantsService.downloadCommitmentFormTemplate()
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = 'Student_Commitment_Form.pdf'
-                    a.click()
-                    URL.revokeObjectURL(url)
-                    toast.success("Commitment form template downloaded")
-                  } catch (err) {
-                    console.error("Failed to download commitment form:", err)
-                    toast.error("Failed to download commitment form")
-                  }
-                }}
-              >
-                <Download className="w-4 h-4" />
-                Commitment Form Template
-              </Button>
+
+            {/* Contestant Forms */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-blue-900 mb-2">For Contestants (2 forms required):</p>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="outline"
+                  className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+                  onClick={async () => {
+                    try {
+                      const blob = await participantsService.downloadConsentFormTemplate()
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'Photography_Audio_Video_Consent_Form_Student.pdf'
+                      a.click()
+                      URL.revokeObjectURL(url)
+                      toast.success("Student consent form template downloaded")
+                    } catch (err) {
+                      console.error("Failed to download consent form:", err)
+                      toast.error("Failed to download consent form")
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Consent Form (Student)
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+                  onClick={async () => {
+                    try {
+                      const blob = await participantsService.downloadCommitmentFormTemplate()
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'Student_Commitment_Form.pdf'
+                      a.click()
+                      URL.revokeObjectURL(url)
+                      toast.success("Commitment form template downloaded")
+                    } catch (err) {
+                      console.error("Failed to download commitment form:", err)
+                      toast.error("Failed to download commitment form")
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Commitment Form (Students only)
+                </Button>
+              </div>
+            </div>
+
+            {/* Team Leader Forms */}
+            <div>
+              <p className="text-sm font-medium text-blue-900 mb-2">For Team Leaders, Observers & Guests (1 form required):</p>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="outline"
+                  className="gap-2 border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+                  onClick={async () => {
+                    try {
+                      const blob = await participantsService.downloadTeamLeaderConsentFormTemplate()
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'Photography_Audio_Video_Consent_Form_Team_Leader.pdf'
+                      a.click()
+                      URL.revokeObjectURL(url)
+                      toast.success("Team leader consent form template downloaded")
+                    } catch (err) {
+                      console.error("Failed to download consent form:", err)
+                      toast.error("Failed to download consent form")
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                  Consent Form (Team Leaders/Observers/Guests)
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -1058,30 +1092,28 @@ function AddMemberDialog({
                 {/* Consent Form */}
                 <FileUploadField
                   id="consent_form"
-                  label="Signed Consent Form"
+                  label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Team Leader)' : ''}`}
                   required
                   accept="image/*,.pdf"
                   file={consentForm}
                   onChange={setConsentForm}
                   icon={<FileText className="w-4 h-4" />}
                   color="violet"
-                  templateUrl="/documents/consent_form_template.pdf"
-                  templateName="IChO2026_Consent_Form.pdf"
                 />
 
-                {/* Commitment Form */}
-                <FileUploadField
-                  id="commitment_form"
-                  label="Signed Commitment Form"
-                  required
-                  accept="image/*,.pdf"
-                  file={commitmentForm}
-                  onChange={setCommitmentForm}
-                  icon={<FileCheck className="w-4 h-4" />}
-                  color="violet"
-                  templateUrl="/documents/commitment_form_template.pdf"
-                  templateName="IChO2026_Commitment_Form.pdf"
-                />
+                {/* Commitment Form - Only for Contestants */}
+                {formData.role === 'CONTESTANT' && (
+                  <FileUploadField
+                    id="commitment_form"
+                    label="Signed Commitment Form (Students only)"
+                    required
+                    accept="image/*,.pdf"
+                    file={commitmentForm}
+                    onChange={setCommitmentForm}
+                    icon={<FileCheck className="w-4 h-4" />}
+                    color="violet"
+                  />
+                )}
               </div>
             </div>
 
@@ -1638,23 +1670,22 @@ function EditMemberDialog({
                 accept="image/*"
               />
               <FileUploadFieldEdit
-                label="Consent Form"
+                label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Team Leader)' : ''}`}
                 hasExisting={!!participant.consent_form_signed}
                 file={consentForm}
                 onChange={setConsentForm}
                 accept="image/*,.pdf"
-                templateUrl="/documents/consent_form_template.pdf"
-                templateName="IChO2026_Consent_Form.pdf"
               />
-              <FileUploadFieldEdit
-                label="Commitment Form"
-                hasExisting={!!participant.commitment_form_signed}
-                file={commitmentForm}
-                onChange={setCommitmentForm}
-                accept="image/*,.pdf"
-                templateUrl="/documents/commitment_form_template.pdf"
-                templateName="IChO2026_Commitment_Form.pdf"
-              />
+              {/* Commitment Form - Only for Contestants */}
+              {formData.role === 'CONTESTANT' && (
+                <FileUploadFieldEdit
+                  label="Commitment Form (Students only)"
+                  hasExisting={!!participant.commitment_form_signed}
+                  file={commitmentForm}
+                  onChange={setCommitmentForm}
+                  accept="image/*,.pdf"
+                />
+              )}
             </div>
           </div>
 
