@@ -100,6 +100,87 @@ const formatActionName = (action: string) => {
   return action.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 };
 
+// Format field names to be human-readable
+const formatFieldName = (field: string) => {
+  return field
+    .replace(/_/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase())
+    .trim();
+};
+
+// Format field values for display
+const formatFieldValue = (key: string, value: unknown): string => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") {
+    // Check if it looks like a currency amount
+    if (key.includes("amount") || key.includes("fee") || key.includes("total")) {
+      return `$${value.toLocaleString()}`;
+    }
+    return value.toLocaleString();
+  }
+  if (typeof value === "string") {
+    // Format status values
+    if (key === "status" || key === "stage") {
+      return value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+    }
+    // Format type values
+    if (key === "type") {
+      return value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+    }
+    // Check for dates
+    if (value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+      try {
+        return format(parseISO(value), "MMM d, yyyy h:mm a");
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+};
+
+// Get color for status values
+const getStatusColor = (value: string) => {
+  const upperValue = value.toUpperCase();
+  if (upperValue === "APPROVED" || upperValue === "COMPLETED" || upperValue === "ACTIVE") {
+    return "text-emerald-700 bg-emerald-50";
+  }
+  if (upperValue === "REJECTED" || upperValue === "FAILED" || upperValue === "LOCKED") {
+    return "text-red-700 bg-red-50";
+  }
+  if (upperValue === "PENDING" || upperValue === "OPEN") {
+    return "text-amber-700 bg-amber-50";
+  }
+  return "";
+};
+
+// Render a single field nicely
+const renderField = (key: string, value: unknown) => {
+  const formattedValue = formatFieldValue(key, value);
+  const isStatus = key === "status" || key === "stage" || key === "type";
+  const statusColor = isStatus && typeof value === "string" ? getStatusColor(value) : "";
+
+  return (
+    <div key={key} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+      <span className="text-sm text-gray-500">{formatFieldName(key)}</span>
+      {isStatus && statusColor ? (
+        <span className={`text-sm font-medium px-2 py-0.5 rounded ${statusColor}`}>
+          {formattedValue}
+        </span>
+      ) : (
+        <span className="text-sm font-medium text-gray-900">{formattedValue}</span>
+      )}
+    </div>
+  );
+};
+
 
 const availableActions = [
   "CREATE", "UPDATE", "DELETE",
@@ -422,33 +503,37 @@ export default function AuditLogsPage() {
                 </div>
               )}
 
-              {/* Before/After JSON */}
+              {/* Before/After Data */}
               {(selectedLog.before_json || selectedLog.after_json) && (
                 <div className="space-y-3">
-                  {selectedLog.before_json && (
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                        Before
-                      </p>
-                      <ScrollArea className="h-24 rounded-lg border bg-gray-50 p-3">
-                        <pre className="text-xs font-mono text-gray-700">
-                          {JSON.stringify(selectedLog.before_json, null, 2)}
-                        </pre>
-                      </ScrollArea>
+                  {selectedLog.before_json && Object.keys(selectedLog.before_json).length > 0 && (
+                    <div className="rounded-lg border border-red-200 overflow-hidden">
+                      <div className="px-3 py-2 bg-red-50 border-b border-red-200">
+                        <p className="text-xs font-medium text-red-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                          Before
+                        </p>
+                      </div>
+                      <div className="px-3 py-1 bg-white">
+                        {Object.entries(selectedLog.before_json).map(([key, value]) =>
+                          renderField(key, value)
+                        )}
+                      </div>
                     </div>
                   )}
-                  {selectedLog.after_json && (
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                        After
-                      </p>
-                      <ScrollArea className="h-24 rounded-lg border bg-gray-50 p-3">
-                        <pre className="text-xs font-mono text-gray-700">
-                          {JSON.stringify(selectedLog.after_json, null, 2)}
-                        </pre>
-                      </ScrollArea>
+                  {selectedLog.after_json && Object.keys(selectedLog.after_json).length > 0 && (
+                    <div className="rounded-lg border border-emerald-200 overflow-hidden">
+                      <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-200">
+                        <p className="text-xs font-medium text-emerald-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                          After
+                        </p>
+                      </div>
+                      <div className="px-3 py-1 bg-white">
+                        {Object.entries(selectedLog.after_json).map(([key, value]) =>
+                          renderField(key, value)
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
