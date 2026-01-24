@@ -3,7 +3,7 @@
  * Handles participant-related API calls
  */
 
-import { api } from '../api';
+import { api, apiDownload } from '../api';
 import type {
   Participant,
   ParticipantCreateRequest,
@@ -148,6 +148,20 @@ export const participantsService = {
     const formData = new FormData();
     formData.append('passport_scan', file);
     return api.uploadPatch<Participant>(`/v1/participants/${participantId}/`, formData);
+  },
+
+  /**
+   * Download consent form template
+   */
+  async downloadConsentFormTemplate(): Promise<Blob> {
+    return apiDownload('/v1/participants/templates/consent/download/');
+  },
+
+  /**
+   * Download commitment form template
+   */
+  async downloadCommitmentFormTemplate(): Promise<Blob> {
+    return apiDownload('/v1/participants/templates/commitment/download/');
   },
 };
 

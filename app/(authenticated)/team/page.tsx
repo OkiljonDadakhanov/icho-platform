@@ -270,6 +270,67 @@ export default function TeamPage() {
         </Card>
       )}
 
+      {/* Form Templates Download Card */}
+      <Card className="p-6 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-100 rounded-full">
+            <FileText className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-blue-900 text-lg mb-1">Required Forms for Contestants</h3>
+            <p className="text-blue-800 mb-4">
+              Download, fill out, sign, and upload these forms for each contestant during registration.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={async () => {
+                  try {
+                    const blob = await participantsService.downloadConsentFormTemplate()
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = 'Photography_Audio_Video_Consent_Form.pdf'
+                    a.click()
+                    URL.revokeObjectURL(url)
+                    toast.success("Consent form template downloaded")
+                  } catch (err) {
+                    console.error("Failed to download consent form:", err)
+                    toast.error("Failed to download consent form")
+                  }
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Consent Form Template
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={async () => {
+                  try {
+                    const blob = await participantsService.downloadCommitmentFormTemplate()
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = 'Student_Commitment_Form.pdf'
+                    a.click()
+                    URL.revokeObjectURL(url)
+                    toast.success("Commitment form template downloaded")
+                  } catch (err) {
+                    console.error("Failed to download commitment form:", err)
+                    toast.error("Failed to download commitment form")
+                  }
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Commitment Form Template
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {error && isPaymentApproved && (
         <Alert variant="destructive" className="animate-in shake duration-300">
           <AlertCircle className="h-4 w-4" />
