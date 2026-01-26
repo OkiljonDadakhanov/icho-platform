@@ -186,7 +186,9 @@ export interface TravelInfo {
   id: string;
   participant: string;
   arrival_datetime: string;
+  arrival_timezone?: string;
   departure_datetime: string;
+  departure_timezone?: string;
   flight_number?: string;
   airline?: string;
   ticket_file?: string;
@@ -370,7 +372,9 @@ export interface ParticipantUpdateRequest extends Partial<ParticipantCreateReque
 export interface TravelInfoRequest {
   participant_id: string;
   arrival_datetime: string;
+  arrival_timezone?: string;
   departure_datetime: string;
+  departure_timezone?: string;
   flight_number?: string;
   airline?: string;
 }

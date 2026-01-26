@@ -16,7 +16,14 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Edit, Plane, Calendar, Clock, X, AlertCircle, PlaneTakeoff, PlaneLanding, Sparkles } from "lucide-react"
+import { Plus, Edit, Plane, Calendar, Clock, X, AlertCircle, PlaneTakeoff, PlaneLanding, Sparkles, Globe } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/auth-context"
 import { travelService } from "@/lib/services/travel"
@@ -24,6 +31,13 @@ import { participantsService } from "@/lib/services/participants"
 import { Loading } from "@/components/ui/loading"
 import type { TravelInfo, Participant } from "@/lib/types"
 import { mapRoleToFrontend } from "@/lib/types"
+
+// Common UTC timezone offsets
+const TIMEZONE_OPTIONS = [
+  "UTC-12", "UTC-11", "UTC-10", "UTC-9", "UTC-8", "UTC-7", "UTC-6", "UTC-5",
+  "UTC-4", "UTC-3", "UTC-2", "UTC-1", "UTC+0", "UTC+1", "UTC+2", "UTC+3",
+  "UTC+4", "UTC+5", "UTC+6", "UTC+7", "UTC+8", "UTC+9", "UTC+10", "UTC+11", "UTC+12"
+]
 
 export default function TravelPage() {
   const { user } = useAuth()
@@ -60,7 +74,7 @@ export default function TravelPage() {
   const participantsWithTravel = new Set(travelInfos.map(t => t.participant))
   const missingTravel = participants.filter(p => !participantsWithTravel.has(p.id))
 
-  const handleAddTravel = async (participantIds: string[], data: { arrival_datetime: string; departure_datetime: string; flight_number?: string; airline?: string }) => {
+  const handleAddTravel = async (participantIds: string[], data: { arrival_datetime: string; arrival_timezone?: string; departure_datetime: string; departure_timezone?: string; flight_number?: string; airline?: string }) => {
     try {
       setIsSaving(true)
       await Promise.all(
@@ -281,6 +295,9 @@ export default function TravelPage() {
                             <p className="text-xs text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               {new Date(travel.arrival_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {travel.arrival_timezone && (
+                                <span className="ml-1 text-[#2f3090] font-medium">({travel.arrival_timezone})</span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -295,6 +312,9 @@ export default function TravelPage() {
                             <p className="text-xs text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               {new Date(travel.departure_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {travel.departure_timezone && (
+                                <span className="ml-1 text-[#2f3090] font-medium">({travel.departure_timezone})</span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -337,7 +357,7 @@ function AddTravelDialog({
 }: {
   participants: Participant[]
   existingTravelParticipants: Set<string>
-  onAdd: (participantIds: string[], data: { arrival_datetime: string; departure_datetime: string; flight_number?: string; airline?: string }) => void
+  onAdd: (participantIds: string[], data: { arrival_datetime: string; arrival_timezone?: string; departure_datetime: string; departure_timezone?: string; flight_number?: string; airline?: string }) => void
   isSaving: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -345,8 +365,10 @@ function AddTravelDialog({
   const [formData, setFormData] = useState({
     arrival_date: "",
     arrival_time: "",
+    arrival_timezone: "",
     departure_date: "",
     departure_time: "",
+    departure_timezone: "",
     flight_number: "",
     airline: "",
   })
@@ -375,15 +397,19 @@ function AddTravelDialog({
 
     onAdd(selectedParticipants, {
       arrival_datetime: `${formData.arrival_date}T${formData.arrival_time}:00`,
+      arrival_timezone: formData.arrival_timezone || undefined,
       departure_datetime: `${formData.departure_date}T${formData.departure_time}:00`,
+      departure_timezone: formData.departure_timezone || undefined,
       flight_number: formData.flight_number || undefined,
       airline: formData.airline || undefined,
     })
     setFormData({
       arrival_date: "",
       arrival_time: "",
+      arrival_timezone: "",
       departure_date: "",
       departure_time: "",
+      departure_timezone: "",
       flight_number: "",
       airline: "",
     })
@@ -471,7 +497,7 @@ function AddTravelDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -492,9 +518,26 @@ function AddTravelDialog({
                 className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20"
               />
             </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700">Timezone</Label>
+              <Select
+                value={formData.arrival_timezone}
+                onValueChange={(value) => setFormData({ ...formData, arrival_timezone: value })}
+              >
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONE_OPTIONS.map((tz) => (
+                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -514,6 +557,23 @@ function AddTravelDialog({
                 onChange={(e) => setFormData({ ...formData, departure_time: e.target.value })}
                 className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700">Timezone</Label>
+              <Select
+                value={formData.departure_timezone}
+                onValueChange={(value) => setFormData({ ...formData, departure_timezone: value })}
+              >
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONE_OPTIONS.map((tz) => (
+                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -574,8 +634,10 @@ function EditTravelDialog({
   const [formData, setFormData] = useState({
     arrival_date: arrivalDate.toISOString().split('T')[0],
     arrival_time: arrivalDate.toTimeString().slice(0, 5),
+    arrival_timezone: travel.arrival_timezone || "",
     departure_date: departureDate.toISOString().split('T')[0],
     departure_time: departureDate.toTimeString().slice(0, 5),
+    departure_timezone: travel.departure_timezone || "",
     flight_number: travel.flight_number || "",
     airline: travel.airline || "",
   })
@@ -584,7 +646,9 @@ function EditTravelDialog({
     e.preventDefault()
     onEdit(travel.id, {
       arrival_datetime: `${formData.arrival_date}T${formData.arrival_time}:00`,
+      arrival_timezone: formData.arrival_timezone || undefined,
       departure_datetime: `${formData.departure_date}T${formData.departure_time}:00`,
+      departure_timezone: formData.departure_timezone || undefined,
       flight_number: formData.flight_number || undefined,
       airline: formData.airline || undefined,
     })
@@ -615,7 +679,7 @@ function EditTravelDialog({
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -636,9 +700,26 @@ function EditTravelDialog({
                 className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20"
               />
             </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700">Timezone</Label>
+              <Select
+                value={formData.arrival_timezone}
+                onValueChange={(value) => setFormData({ ...formData, arrival_timezone: value })}
+              >
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONE_OPTIONS.map((tz) => (
+                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -658,6 +739,23 @@ function EditTravelDialog({
                 onChange={(e) => setFormData({ ...formData, departure_time: e.target.value })}
                 className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700">Timezone</Label>
+              <Select
+                value={formData.departure_timezone}
+                onValueChange={(value) => setFormData({ ...formData, departure_timezone: value })}
+              >
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONE_OPTIONS.map((tz) => (
+                    <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
