@@ -45,9 +45,9 @@ export default function CoordinatorsPage() {
       const data = await preRegistrationService.getCoordinators()
       setCoordinators(data)
       setError(null)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to fetch coordinators:", err)
-      setError("Failed to load coordinator information")
+      setError(err?.message || "Failed to load coordinator information")
     } finally {
       setIsLoading(false)
     }
@@ -60,9 +60,9 @@ export default function CoordinatorsPage() {
       await fetchCoordinators()
       setEditingCoordinatorId(null)
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update coordinator:", err)
-      setError("Failed to update coordinator")
+      setError(err?.message || "Failed to update coordinator")
     } finally {
       setIsSaving(false)
     }
@@ -90,9 +90,9 @@ export default function CoordinatorsPage() {
       await preRegistrationService.deleteCoordinator(coordinatorId)
       await fetchCoordinators()
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete coordinator:", err)
-      setError("Failed to delete coordinator")
+      setError(err?.message || "Failed to delete coordinator")
     } finally {
       setIsDeleting(null)
     }
