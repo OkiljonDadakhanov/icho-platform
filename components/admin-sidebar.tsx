@@ -108,8 +108,8 @@ export function AdminSidebar() {
           {/* Header */}
           <div className="p-5 border-b border-slate-700">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-xl flex items-center justify-center shadow-lg">
-                <Shield className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg overflow-hidden p-1">
+                <img src="/images/icho_logo.png" alt="IChO" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white">IChO 2026</h2>

@@ -78,8 +78,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2f3090] to-[#00795d] p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#2f3090] rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">IChO</span>
+          <div className="w-24 h-24 mx-auto mb-4">
+            <img src="/images/icho_logo.png" alt="IChO 2026" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">IChO 2026</h1>
           <p className="text-gray-600 mt-1">Country Registration Portal</p>

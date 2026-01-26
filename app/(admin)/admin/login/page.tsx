@@ -49,8 +49,8 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-slate-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-24 h-24 mx-auto mb-4">
+            <img src="/images/icho_logo.png" alt="IChO 2026" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Portal</h1>
           <p className="text-gray-600 mt-1">IChO 2026 Administration</p>
