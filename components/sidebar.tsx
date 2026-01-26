@@ -69,14 +69,14 @@ export function Sidebar() {
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b bg-[#2f3090]">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">IChO</span>
+          <div className="p-5 border-b bg-[#2f3090]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md overflow-hidden p-1">
+                <img src="/images/icho_logo.png" alt="IChO" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-white">IChO 2026</h2>
-                <p className="text-xs text-white/80">UZBEKISTAN</p>
+                <h2 className="text-base font-bold text-white tracking-wide">SOCenter</h2>
+                <p className="text-xs text-white/70 tracking-wider">IChO 2026</p>
               </div>
             </div>
           </div>
