@@ -14,36 +14,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   ArrowLeft,
   Key,
-  ToggleLeft,
-  ToggleRight,
   Users,
   CreditCard,
   CheckCircle2,
   XCircle,
   Clock,
-  Copy,
-  Check,
-  RefreshCw,
   Globe,
   Mail,
   Calendar,
   FileText,
-  Plane,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminCountry, type AdminParticipant } from "@/lib/services/admin";
-import { toast } from "sonner";
 
 export default function CountryDetailsPage() {
   const params = useParams();
@@ -54,11 +39,6 @@ export default function CountryDetailsPage() {
   const [participants, setParticipants] = useState<AdminParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
-  const [copiedPassword, setCopiedPassword] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,45 +63,6 @@ export default function CountryDetailsPage() {
       fetchData();
     }
   }, [countryId]);
-
-  const handleToggleStatus = async () => {
-    if (!country) return;
-
-    try {
-      setIsTogglingStatus(true);
-      const updated = await adminService.toggleCountryStatus(country.id, !country.is_active);
-      setCountry(updated);
-      toast.success(`${country.name} has been ${country.is_active ? "deactivated" : "activated"}`);
-    } catch (err: any) {
-      toast.error("Failed to update country status");
-    } finally {
-      setIsTogglingStatus(false);
-    }
-  };
-
-  const handleRegeneratePassword = async () => {
-    if (!country) return;
-
-    try {
-      setIsRegenerating(true);
-      const result = await adminService.regeneratePassword(country.id);
-      setGeneratedPassword(result.password);
-      toast.success("Password regenerated successfully");
-    } catch (err: any) {
-      toast.error("Failed to regenerate password");
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
-  const copyPassword = () => {
-    if (generatedPassword) {
-      navigator.clipboard.writeText(generatedPassword);
-      setCopiedPassword(true);
-      setTimeout(() => setCopiedPassword(false), 2000);
-      toast.success("Password copied to clipboard");
-    }
-  };
 
   const getPaymentBadge = (status?: string) => {
     switch (status) {
@@ -205,32 +146,6 @@ export default function CountryDetailsPage() {
             <h1 className="text-3xl font-bold text-gray-900">{country.name || "Unknown Country"}</h1>
             <p className="text-gray-500">{country.iso_code || "N/A"}</p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setGeneratedPassword(null);
-              setShowPasswordDialog(true);
-            }}
-          >
-            <Key className="w-4 h-4 mr-2" />
-            Regenerate Password
-          </Button>
-          <Button
-            variant={country.is_active ? "destructive" : "default"}
-            onClick={handleToggleStatus}
-            disabled={isTogglingStatus}
-          >
-            {isTogglingStatus ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : country.is_active ? (
-              <ToggleLeft className="w-4 h-4 mr-2" />
-            ) : (
-              <ToggleRight className="w-4 h-4 mr-2" />
-            )}
-            {country.is_active ? "Deactivate" : "Activate"}
-          </Button>
         </div>
       </div>
 
@@ -430,72 +345,6 @@ export default function CountryDetailsPage() {
         )}
       </Card>
 
-      {/* Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Regenerate Password</DialogTitle>
-            <DialogDescription>
-              Generate a new password for {country.name}. The old password will be
-              invalidated.
-            </DialogDescription>
-          </DialogHeader>
-
-          {generatedPassword ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500 mb-2">New Password</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-lg">
-                    {generatedPassword}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyPassword}
-                    className={copiedPassword ? "text-emerald-600" : ""}
-                  >
-                    {copiedPassword ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-                Make sure to copy and securely share this password with the country
-                representative.
-              </p>
-            </div>
-          ) : (
-            <div className="py-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Are you sure you want to regenerate the password for{" "}
-                <strong>{country.name}</strong>? This action cannot be undone.
-              </p>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              {generatedPassword ? "Close" : "Cancel"}
-            </Button>
-            {!generatedPassword && (
-              <Button
-                onClick={handleRegeneratePassword}
-                disabled={isRegenerating}
-                className="bg-gradient-to-r from-[#2f3090] to-[#00795d]"
-              >
-                {isRegenerating && (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                Regenerate
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

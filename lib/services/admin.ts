@@ -137,24 +137,10 @@ export const adminService = {
   },
 
   /**
-   * Toggle country active status
+   * Export analytics to Excel
    */
-  async toggleCountryStatus(countryId: string, isActive: boolean): Promise<AdminCountry> {
-    return api.patch<AdminCountry>(`/v1/admin/countries/${countryId}/`, { is_active: isActive });
-  },
-
-  /**
-   * Regenerate country password
-   */
-  async regeneratePassword(countryId: string): Promise<{ password: string }> {
-    return api.post<{ password: string }>(`/v1/admin/countries/${countryId}/regenerate-password/`);
-  },
-
-  /**
-   * Export credentials to Excel
-   */
-  async exportCredentials(): Promise<Blob> {
-    return apiDownload('/admin/credentials/export.xlsx');
+  async exportAnalytics(): Promise<Blob> {
+    return apiDownload('/v1/admin/analytics/export.xlsx');
   },
 
   // ============= Payments Management =============

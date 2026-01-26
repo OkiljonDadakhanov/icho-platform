@@ -85,16 +85,16 @@ export default function AdminDashboardPage() {
             size="sm"
             className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
             onClick={async () => {
-              const blob = await adminService.exportCredentials();
+              const blob = await adminService.exportAnalytics();
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = "credentials.xlsx";
+              a.download = "icho_analytics.xlsx";
               a.click();
             }}
           >
             <Download className="w-4 h-4" />
-            Export Credentials
+            Export Analytics
           </Button>
         </div>
       </div>

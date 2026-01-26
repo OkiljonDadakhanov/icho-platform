@@ -192,6 +192,18 @@ const availableActions = [
   "PARTICIPANT_CREATE", "PARTICIPANT_UPDATE", "PARTICIPANT_DELETE",
 ];
 
+const availableEntityTypes = [
+  "Participant",
+  "Payment",
+  "CountryAccount",
+  "CountryStageStatus",
+  "TravelInfo",
+  "DocumentFile",
+  "PreRegistration",
+  "Coordinator",
+  "Invoice",
+];
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
@@ -199,6 +211,7 @@ export default function AuditLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
+  const [entityTypeFilter, setEntityTypeFilter] = useState("all");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -229,6 +242,10 @@ export default function AuditLogsPage() {
       filtered = filtered.filter((log) => log.action === actionFilter);
     }
 
+    if (entityTypeFilter !== "all") {
+      filtered = filtered.filter((log) => log.entity_type === entityTypeFilter);
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -242,7 +259,7 @@ export default function AuditLogsPage() {
 
     setFilteredLogs(filtered);
     setCurrentPage(1);
-  }, [actionFilter, searchQuery, logs]);
+  }, [actionFilter, entityTypeFilter, searchQuery, logs]);
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / pageSize);
@@ -314,7 +331,7 @@ export default function AuditLogsPage() {
             />
           </div>
           <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="w-full md:w-56">
+            <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>
             <SelectContent>
@@ -322,6 +339,19 @@ export default function AuditLogsPage() {
               {availableActions.map((action) => (
                 <SelectItem key={action} value={action}>
                   {formatActionName(action)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
+            <SelectTrigger className="w-full md:w-44">
+              <SelectValue placeholder="Entity type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Entities</SelectItem>
+              {availableEntityTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
                 </SelectItem>
               ))}
             </SelectContent>

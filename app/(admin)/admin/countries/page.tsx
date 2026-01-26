@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -18,34 +25,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Search,
   Download,
   MoreHorizontal,
   Eye,
-  Key,
-  ToggleLeft,
-  ToggleRight,
   Users,
-  CreditCard,
   CheckCircle2,
   XCircle,
   Clock,
-  Copy,
-  Check,
-  RefreshCw,
   Globe,
+  Filter,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -60,11 +52,8 @@ export default function CountriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState<AdminCountry | null>(null);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
-  const [copiedPassword, setCopiedPassword] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   const handleViewDetails = (country: AdminCountry) => {
     router.push(`/admin/countries/${country.id}`);
@@ -90,72 +79,50 @@ export default function CountriesPage() {
   }, []);
 
   useEffect(() => {
+    let filtered = countries;
+
+    // Apply search filter
     if (searchQuery) {
-      const filtered = countries.filter(
+      filtered = filtered.filter(
         (country) =>
           country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           country.iso_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
           country.account?.username.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredCountries(filtered);
-    } else {
-      setFilteredCountries(countries);
     }
-  }, [searchQuery, countries]);
 
-  const handleToggleStatus = async (country: AdminCountry) => {
-    try {
-      // const updated = await adminService.toggleCountryStatus(country.id, !country.is_active);
-      setCountries((prev) =>
-        prev.map((c) =>
-          c.id === country.id ? { ...c, is_active: !c.is_active } : c
-        )
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((country) =>
+        statusFilter === "active" ? country.is_active : !country.is_active
       );
-      toast.success(`${country.name} has been ${country.is_active ? "deactivated" : "activated"}`);
-    } catch (err: any) {
-      toast.error("Failed to update country status");
     }
-  };
 
-  const handleRegeneratePassword = async () => {
-    if (!selectedCountry) return;
+    // Apply payment filter
+    if (paymentFilter !== "all") {
+      filtered = filtered.filter((country) => {
+        if (paymentFilter === "none") {
+          return !country.payment_status;
+        }
+        return country.payment_status === paymentFilter;
+      });
+    }
 
+    setFilteredCountries(filtered);
+  }, [searchQuery, statusFilter, paymentFilter, countries]);
+
+  const handleExportAnalytics = async () => {
     try {
-      setIsRegenerating(true);
-      // const result = await adminService.regeneratePassword(selectedCountry.id);
-      // Simulate API response
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const newPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-4).toUpperCase();
-      setGeneratedPassword(newPassword);
-      toast.success("Password regenerated successfully");
-    } catch (err: any) {
-      toast.error("Failed to regenerate password");
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
-  const copyPassword = () => {
-    if (generatedPassword) {
-      navigator.clipboard.writeText(generatedPassword);
-      setCopiedPassword(true);
-      setTimeout(() => setCopiedPassword(false), 2000);
-      toast.success("Password copied to clipboard");
-    }
-  };
-
-  const handleExportCredentials = async () => {
-    try {
-      const blob = await adminService.exportCredentials();
+      const blob = await adminService.exportAnalytics();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "country_credentials.xlsx";
+      a.download = "icho_analytics.xlsx";
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Credentials exported successfully");
+      toast.success("Analytics exported successfully");
     } catch (err: any) {
-      toast.error("Failed to export credentials");
+      toast.error("Failed to export analytics");
     }
   };
 
@@ -211,10 +178,10 @@ export default function CountriesPage() {
         </div>
         <Button
           className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
-          onClick={handleExportCredentials}
+          onClick={handleExportAnalytics}
         >
           <Download className="w-4 h-4" />
-          Export Credentials
+          Export Analytics
         </Button>
       </div>
 
@@ -284,6 +251,28 @@ export default function CountriesPage() {
               className="pl-10"
             />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger className="w-full md:w-44">
+              <SelectValue placeholder="Payment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Payments</SelectItem>
+              <SelectItem value="APPROVED">Approved</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+              <SelectItem value="none">No Payment</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="rounded-lg border">
@@ -359,34 +348,6 @@ export default function CountriesPage() {
                           <Eye className="w-4 h-4" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="gap-2"
-                          onClick={() => {
-                            setSelectedCountry(country);
-                            setGeneratedPassword(null);
-                            setShowPasswordDialog(true);
-                          }}
-                        >
-                          <Key className="w-4 h-4" />
-                          Regenerate Password
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="gap-2"
-                          onClick={() => handleToggleStatus(country)}
-                        >
-                          {country.is_active ? (
-                            <>
-                              <ToggleLeft className="w-4 h-4" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <ToggleRight className="w-4 h-4" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -400,73 +361,11 @@ export default function CountriesPage() {
           <div className="text-center py-12">
             <Globe className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-1">No countries found</h3>
-            <p className="text-gray-500">Try adjusting your search query</p>
+            <p className="text-gray-500">Try adjusting your search or filters</p>
           </div>
         )}
       </Card>
 
-      {/* Password Dialog */}
-      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Regenerate Password</DialogTitle>
-            <DialogDescription>
-              Generate a new password for {selectedCountry?.name}. The old password will be invalidated.
-            </DialogDescription>
-          </DialogHeader>
-
-          {generatedPassword ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500 mb-2">New Password</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-lg">
-                    {generatedPassword}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyPassword}
-                    className={copiedPassword ? "text-emerald-600" : ""}
-                  >
-                    {copiedPassword ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-                Make sure to copy and securely share this password with the country representative.
-              </p>
-            </div>
-          ) : (
-            <div className="py-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Are you sure you want to regenerate the password for <strong>{selectedCountry?.name}</strong>?
-                This action cannot be undone.
-              </p>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              {generatedPassword ? "Close" : "Cancel"}
-            </Button>
-            {!generatedPassword && (
-              <Button
-                onClick={handleRegeneratePassword}
-                disabled={isRegenerating}
-                className="bg-gradient-to-r from-[#2f3090] to-[#00795d]"
-              >
-                {isRegenerating && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
-                Regenerate
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
