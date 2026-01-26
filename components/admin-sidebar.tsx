@@ -15,6 +15,7 @@ import {
   LogOut,
   Settings,
   Shield,
+  Plane,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -45,6 +46,12 @@ const adminNavigation = [
     href: "/admin/participants",
     icon: Users,
     description: "All registrations",
+  },
+  {
+    name: "Travel",
+    href: "/admin/travel",
+    icon: Plane,
+    description: "Travel & accommodation",
   },
   {
     name: "Workflow",

@@ -43,6 +43,42 @@ export interface AdminParticipant extends Participant {
   country_iso?: string;
 }
 
+export interface AdminTravelInfo {
+  id: string;
+  participant_id: string;
+  participant_name: string;
+  participant_role: string;
+  country: string;
+  country_name: string;
+  country_iso: string;
+  arrival_datetime: string | null;
+  departure_datetime: string | null;
+  flight_number: string;
+  airline: string;
+  ticket_file: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminAccommodation {
+  id: string;
+  participant_id: string;
+  participant_name: string;
+  participant_role: string;
+  country: string;
+  country_name: string;
+  country_iso: string;
+  room_type: string;
+  preferred_roommate: string | null;
+  accessibility_requirements: string;
+  early_check_in: boolean;
+  late_check_out: boolean;
+  additional_nights_before: number;
+  additional_nights_after: number;
+  notes: string;
+  created_at: string;
+}
+
 export interface AdminStats {
   total_countries: number;
   active_countries: number;
@@ -271,7 +307,33 @@ export const adminService = {
     return apiDownload(`/v1/admin/audit-logs/export.xlsx${query}`);
   },
 
-  // ============= Travel Export =============
+  // ============= Travel Management =============
+
+  /**
+   * Get all travel info across all countries
+   */
+  async getTravelInfo(filters?: {
+    country?: string;
+    search?: string;
+  }): Promise<AdminTravelInfo[]> {
+    const params = new URLSearchParams();
+    if (filters?.country && filters.country !== 'all') params.append('country', filters.country);
+    if (filters?.search) params.append('search', filters.search);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return api.get<AdminTravelInfo[]>(`/v1/admin/travel/${query}`);
+  },
+
+  /**
+   * Get all accommodation preferences across all countries
+   */
+  async getAccommodation(filters?: {
+    country?: string;
+  }): Promise<AdminAccommodation[]> {
+    const params = new URLSearchParams();
+    if (filters?.country && filters.country !== 'all') params.append('country', filters.country);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return api.get<AdminAccommodation[]>(`/v1/admin/accommodation/${query}`);
+  },
 
   /**
    * Export travel data to Excel
