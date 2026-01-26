@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { preRegistrationService } from "@/lib/services/pre-registration"
@@ -421,6 +421,20 @@ export default function PaymentPage() {
             <p className="text-sm text-gray-600">
               Please upload your bank transfer receipt or payment confirmation. Accepted formats: PDF, JPG, PNG (max 5MB)
             </p>
+
+            {!payment?.proof_file && paymentStatus !== "REJECTED" && (
+              <Alert className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-300">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800">
+                  <strong>Important:</strong> After uploading payment proof, the following changes will be restricted:
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                    <li>Pre-registration details (delegation size, number of participants)</li>
+                    <li>Team member information (adding, editing, or removing participants)</li>
+                  </ul>
+                  <p className="mt-2 text-sm">Please ensure all your information is correct before proceeding.</p>
+                </AlertDescription>
+              </Alert>
+            )}
 
             {payment?.proof_file && paymentStatus !== "REJECTED" ? (
               <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl flex items-center justify-between">
