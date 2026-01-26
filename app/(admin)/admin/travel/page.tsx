@@ -507,8 +507,11 @@ export default function TravelPage() {
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
                         src={`https://flagcdn.com/w20/${selectedTravel.country_iso?.toLowerCase()}.png`}
-                        alt={selectedTravel.country_name}
+                        alt=""
                         className="w-5 h-4 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://flagcdn.com/w20/un.png";
+                        }}
                       />
                       {selectedTravel.country_name}
                     </div>
@@ -606,8 +609,11 @@ export default function TravelPage() {
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
                         src={`https://flagcdn.com/w20/${selectedAccommodation.country_iso?.toLowerCase()}.png`}
-                        alt={selectedAccommodation.country_name}
+                        alt=""
                         className="w-5 h-4 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://flagcdn.com/w20/un.png";
+                        }}
                       />
                       {selectedAccommodation.country_name}
                     </div>
