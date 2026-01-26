@@ -159,7 +159,7 @@ export default function PreRegistrationPage() {
         setCoordinatorId(null);
         setCoordinatorPassportScan(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       const error = err as { message?: string };
       setError(error.message || "Failed to load pre-registration data");
     } finally {
@@ -273,7 +273,7 @@ export default function PreRegistrationPage() {
 
       toast.success("Pre-registration submitted successfully!");
       await loadPreRegistration();
-    } catch (err) {
+    } catch (err: any) {
       const error = err as { message?: string };
       toast.error(error.message || "Failed to submit pre-registration");
     } finally {
@@ -305,7 +305,7 @@ export default function PreRegistrationPage() {
       const coordinator = await upsertCoordinator();
       await uploadPassportScanIfNeeded(coordinator.id);
       toast.success("Draft saved successfully!");
-    } catch (err) {
+    } catch (err: any) {
       const error = err as { message?: string };
       toast.error(error.message || "Failed to save draft");
     } finally {

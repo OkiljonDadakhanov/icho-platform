@@ -49,9 +49,9 @@ export default function TravelPage() {
       setParticipants(participantsData)
       setTravelInfos(travelData)
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch data:", err)
-      setError("Failed to load data")
+      setError(err?.message || "Failed to load data")
     } finally {
       setIsLoading(false)
     }
@@ -72,9 +72,9 @@ export default function TravelPage() {
         )
       )
       await fetchData()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to add travel info:", err)
-      setError("Failed to add travel information")
+      setError(err?.message || "Failed to add travel information")
     } finally {
       setIsSaving(false)
     }
@@ -85,9 +85,9 @@ export default function TravelPage() {
       setIsSaving(true)
       await travelService.updateTravelInfo(id, data)
       await fetchData()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update travel info:", err)
-      setError("Failed to update travel information")
+      setError(err?.message || "Failed to update travel information")
     } finally {
       setIsSaving(false)
     }
@@ -98,9 +98,9 @@ export default function TravelPage() {
       setIsSaving(true)
       await travelService.deleteTravelInfo(id)
       await fetchData()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete travel info:", err)
-      setError("Failed to delete travel information")
+      setError(err?.message || "Failed to delete travel information")
     } finally {
       setIsSaving(false)
     }

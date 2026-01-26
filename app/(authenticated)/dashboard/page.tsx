@@ -30,9 +30,9 @@ export default function DashboardPage() {
         const data = await participantsService.getAllParticipants()
         setParticipants(data)
         setError(null)
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch participants:", err)
-        setError("Failed to load participants")
+        setError(err?.message || "Failed to load participants")
       } finally {
         setIsLoading(false)
       }

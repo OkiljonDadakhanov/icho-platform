@@ -93,9 +93,9 @@ export default function PaymentsPage() {
         setPayments(paymentsData);
         setSingleRoomInvoices(singleRoomData);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch payments:", err);
-        setError("Failed to load payments");
+        setError(err?.message || "Failed to load payments");
       } finally {
         setIsLoading(false);
       }
@@ -189,7 +189,7 @@ export default function PaymentsPage() {
           : `Payment for ${selectedPayment.country_name} rejected`
       );
       setShowReviewDialog(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
@@ -240,7 +240,7 @@ export default function PaymentsPage() {
           : `Single room payment for ${selectedSingleRoom.participant_name} rejected`
       );
       setShowSingleRoomDialog(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
@@ -501,7 +501,7 @@ export default function PaymentsPage() {
                                 console.log(`Downloaded blob: ${blob.size} bytes, type: ${blob.type}`);
                                 const url = URL.createObjectURL(blob);
                                 window.open(url, "_blank");
-                              } catch (err) {
+                              } catch (err: any) {
                                 console.error("Failed to open proof:", err);
                                 toast.error("Failed to open payment proof");
                               }
@@ -745,7 +745,7 @@ export default function PaymentsPage() {
                                     const blob = await adminService.downloadSingleRoomProof(invoice.id);
                                     const url = URL.createObjectURL(blob);
                                     window.open(url, "_blank");
-                                  } catch (err) {
+                                  } catch (err: any) {
                                     console.error("Failed to open proof:", err);
                                     toast.error("Failed to open payment proof");
                                   }

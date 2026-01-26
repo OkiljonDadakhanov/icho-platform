@@ -78,9 +78,9 @@ export default function CountriesPage() {
         setCountries(data);
         setFilteredCountries(data);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch countries:", err);
-        setError("Failed to load countries");
+        setError(err?.message || "Failed to load countries");
       } finally {
         setIsLoading(false);
       }
@@ -112,7 +112,7 @@ export default function CountriesPage() {
         )
       );
       toast.success(`${country.name} has been ${country.is_active ? "deactivated" : "activated"}`);
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to update country status");
     }
   };
@@ -128,7 +128,7 @@ export default function CountriesPage() {
       const newPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-4).toUpperCase();
       setGeneratedPassword(newPassword);
       toast.success("Password regenerated successfully");
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to regenerate password");
     } finally {
       setIsRegenerating(false);
@@ -154,7 +154,7 @@ export default function CountriesPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Credentials exported successfully");
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to export credentials");
     }
   };

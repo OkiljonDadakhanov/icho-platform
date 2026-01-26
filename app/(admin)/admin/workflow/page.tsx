@@ -141,9 +141,9 @@ export default function WorkflowPage() {
         }
         setCountryStages(stages);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch workflow data:", err);
-        setError("Failed to load workflow data");
+        setError(err?.message || "Failed to load workflow data");
       } finally {
         setIsLoading(false);
       }
@@ -162,7 +162,7 @@ export default function WorkflowPage() {
       );
       setEditingDeadline(null);
       toast.success(`${stageNames[deadline.stage]} deadline updated`);
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to update deadline");
     }
   };
@@ -194,7 +194,7 @@ export default function WorkflowPage() {
 
       toast.success(`${selectedCountryStage.stage} unlocked for ${selectedCountryStage.country_name}`);
       setShowUnlockDialog(false);
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to unlock stage");
     } finally {
       setIsSubmitting(false);
@@ -212,7 +212,7 @@ export default function WorkflowPage() {
         )
       );
       toast.success(`${stageNames[countryStage.stage]} locked for ${countryStage.country_name}`);
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to lock stage");
     }
   };

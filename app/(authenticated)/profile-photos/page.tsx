@@ -33,9 +33,9 @@ export default function ProfilePhotosPage() {
       const data = await participantsService.getAllParticipants()
       setParticipants(data)
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch participants:", err)
-      setError("Failed to load participants")
+      setError(err?.message || "Failed to load participants")
     } finally {
       setIsLoading(false)
     }
@@ -47,9 +47,9 @@ export default function ProfilePhotosPage() {
       await participantsService.uploadProfilePhoto(participantId, file)
       await fetchParticipants()
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to upload photo:", err)
-      setError("Failed to upload photo")
+      setError(err?.message || "Failed to upload photo")
     } finally {
       setUploadingFor(null)
     }

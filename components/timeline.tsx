@@ -84,9 +84,9 @@ export function Timeline() {
         setStages(timelineStages)
         setCurrentStage(progress.current_stage)
         setError(null)
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch timeline data:", err)
-        setError("Failed to load timeline")
+        setError(err?.message || "Failed to load timeline")
       } finally {
         setIsLoading(false)
       }

@@ -46,9 +46,9 @@ export default function PaymentPage() {
       setSingleRoomInvoices(singleRoomData)
       setInvoice(paymentData?.invoice || null)
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch data:", err)
-      setError("Failed to load payment information. Please try again later.")
+      setError(err?.message || "Failed to load payment information. Please try again later.")
     } finally {
       setIsLoading(false)
     }
@@ -104,7 +104,7 @@ export default function PaymentPage() {
       await paymentsService.uploadPaymentProof(file)
       await fetchData()
       setError(null)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to upload payment proof:", err)
       const errorMessage = (err as { message?: string })?.message || "Failed to upload payment proof. Please try again."
       setError(errorMessage)
@@ -128,7 +128,7 @@ export default function PaymentPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to download invoice:", err)
       const errorMessage = (err as { message?: string })?.message || "Failed to download invoice. Please try again."
       setError(errorMessage)
@@ -146,7 +146,7 @@ export default function PaymentPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to download single room invoice:", err)
       toast.error("Failed to download invoice. Please try again.")
     }
@@ -161,7 +161,7 @@ export default function PaymentPage() {
       await paymentsService.uploadSingleRoomProof(invoiceId, file)
       await fetchData()
       toast.success("Payment proof uploaded successfully")
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to upload single room proof:", err)
       const errorMessage = (err as { message?: string })?.message || "Failed to upload payment proof. Please try again."
       toast.error(errorMessage)

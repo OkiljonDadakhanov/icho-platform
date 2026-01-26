@@ -71,9 +71,9 @@ export default function CountryDetailsPage() {
         setCountry(countryData);
         setParticipants(participantsData);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch country details:", err);
-        setError("Failed to load country details");
+        setError(err?.message || "Failed to load country details");
       } finally {
         setIsLoading(false);
       }
@@ -92,7 +92,7 @@ export default function CountryDetailsPage() {
       const updated = await adminService.toggleCountryStatus(country.id, !country.is_active);
       setCountry(updated);
       toast.success(`${country.name} has been ${country.is_active ? "deactivated" : "activated"}`);
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to update country status");
     } finally {
       setIsTogglingStatus(false);
@@ -107,7 +107,7 @@ export default function CountryDetailsPage() {
       const result = await adminService.regeneratePassword(country.id);
       setGeneratedPassword(result.password);
       toast.success("Password regenerated successfully");
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to regenerate password");
     } finally {
       setIsRegenerating(false);

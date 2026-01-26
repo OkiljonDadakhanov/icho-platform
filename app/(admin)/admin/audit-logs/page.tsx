@@ -211,9 +211,9 @@ export default function AuditLogsPage() {
         const data = await adminService.getAuditLogs({ page: 1, page_size: 100 });
         setLogs(data.results);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch audit logs:", err);
-        setError("Failed to load audit logs");
+        setError(err?.message || "Failed to load audit logs");
       } finally {
         setIsLoading(false);
       }
@@ -263,7 +263,7 @@ export default function AuditLogsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Audit logs exported successfully");
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to export audit logs");
     }
   };

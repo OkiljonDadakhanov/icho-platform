@@ -84,9 +84,9 @@ export default function ParticipantsPage() {
         const data = await adminService.getParticipants();
         setParticipants(data);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch participants:", err);
-        setError("Failed to load participants");
+        setError(err?.message || "Failed to load participants");
       } finally {
         setIsLoading(false);
       }
@@ -133,7 +133,7 @@ export default function ParticipantsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Participants exported successfully");
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to export participants");
     }
   };

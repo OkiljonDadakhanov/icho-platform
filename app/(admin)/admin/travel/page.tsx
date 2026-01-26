@@ -87,9 +87,9 @@ export default function TravelPage() {
         setTravelInfo(travelData);
         setAccommodation(accommodationData);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch travel data:", err);
-        setError("Failed to load travel data");
+        setError(err?.message || "Failed to load travel data");
       } finally {
         setIsLoading(false);
       }
@@ -150,7 +150,7 @@ export default function TravelPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Travel data exported successfully");
-    } catch (err) {
+    } catch (err: any) {
       toast.error("Failed to export travel data");
     }
   };
