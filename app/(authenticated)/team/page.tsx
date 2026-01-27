@@ -1019,7 +1019,7 @@ function AddMemberDialog({
                   Accommodation Preference
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  By default, team leaders share a twin room with another team leader from a different country.
+                  By default, team leaders may share a twin room with another team leader from a different country.
                 </p>
                 <div className="space-y-3">
                   <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
@@ -1598,7 +1598,7 @@ function EditMemberDialog({
                 Accommodation Preference
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                By default, team leaders share a twin room with another team leader from a different country.
+                By default, team leaders may share a twin room with another team leader from a different country.
               </p>
               {participant.single_room_invoice_status && (
                 <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 text-sm ${
