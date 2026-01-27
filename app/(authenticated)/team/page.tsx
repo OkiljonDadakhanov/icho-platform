@@ -858,10 +858,15 @@ function AddMemberDialog({
                   <Input
                     id="date_of_birth"
                     type="date"
+                    max={new Date().toISOString().split("T")[0]}
+                    min="1920-01-01"
                     value={formData.date_of_birth}
                     onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                     className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all"
                   />
+                  {!formData.date_of_birth && formData.first_name && formData.last_name && (
+                    <p className="text-xs text-amber-600">Please enter a valid date of birth to continue</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role" className="text-gray-600 flex items-center gap-1">
@@ -1475,6 +1480,8 @@ function EditMemberDialog({
                 <Input
                   type="date"
                   required
+                  max={new Date().toISOString().split("T")[0]}
+                  min="1920-01-01"
                   value={formData.date_of_birth}
                   onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
                   className="border-gray-200 focus:border-blue-500"
