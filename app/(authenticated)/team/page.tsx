@@ -1198,6 +1198,8 @@ function AddMemberDialog({
   )
 }
 
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10MB
+
 function FileUploadField({
   id,
   label,
@@ -1221,6 +1223,16 @@ function FileUploadField({
   templateUrl?: string
   templateName?: string
 }) {
+  const [sizeError, setSizeError] = useState<string | null>(null)
+
+  const handleChange = (selectedFile: File | null) => {
+    setSizeError(null)
+    if (selectedFile && selectedFile.size > MAX_UPLOAD_SIZE) {
+      setSizeError("File size exceeds 10MB limit.")
+      return
+    }
+    onChange(selectedFile)
+  }
   const colorClasses = {
     violet: {
       bg: "bg-violet-100",
@@ -1285,13 +1297,16 @@ function FileUploadField({
           id={id}
           type="file"
           accept={accept}
-          onChange={(e) => onChange(e.target.files?.[0] || null)}
+          onChange={(e) => handleChange(e.target.files?.[0] || null)}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
         <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
           Browse
         </span>
       </div>
+      {sizeError && (
+        <p className="text-sm text-red-500">{sizeError}</p>
+      )}
     </div>
   )
 }

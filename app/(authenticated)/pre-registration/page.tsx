@@ -38,7 +38,11 @@ const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
 const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 function validatePassportFile(file: File): string | null {
-  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+  const dotIndex = file.name.lastIndexOf(".");
+  if (dotIndex === -1) {
+    return "Invalid file type. Only PDF, JPG, and PNG files are allowed.";
+  }
+  const ext = file.name.toLowerCase().slice(dotIndex);
   if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
     return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`;
   }
@@ -119,6 +123,12 @@ export default function PreRegistrationPage() {
         break;
       case "dateOfBirth":
         if (!value) return "Date of birth is required";
+        {
+          const dob = new Date(value);
+          const today = new Date();
+          if (dob > today) return "Date of birth cannot be in the future";
+          if (dob < new Date("1920-01-01")) return "Date of birth is too far in the past";
+        }
         break;
       case "role":
         if (!value.trim()) return "Role is required";
@@ -259,6 +269,11 @@ export default function PreRegistrationPage() {
     if (fieldErrors.length > 0) {
       const missingFields = fieldErrors.map(e => e.field).join(", ");
       toast.error(`Missing or invalid: ${missingFields}`);
+      return false;
+    }
+
+    if (passportFileError) {
+      toast.error("Please select a valid passport scan file");
       return false;
     }
 
@@ -505,6 +520,7 @@ export default function PreRegistrationPage() {
                   const error = validatePassportFile(file);
                   if (error) {
                     setPassportFileError(error);
+                    setPassportScanFile(null);
                     return;
                   }
                 }

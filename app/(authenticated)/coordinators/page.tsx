@@ -26,7 +26,11 @@ const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"]
 const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 function validatePassportFile(file: File): string | null {
-  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."))
+  const dotIndex = file.name.lastIndexOf(".")
+  if (dotIndex === -1) {
+    return "Invalid file type. Only PDF, JPG, and PNG files are allowed."
+  }
+  const ext = file.name.toLowerCase().slice(dotIndex)
   if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
     return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`
   }
@@ -308,6 +312,7 @@ function EditCoordinatorDialog({
       const error = validatePassportFile(file)
       if (error) {
         setFileError(error)
+        setPassportScan(null)
         return
       }
     }
@@ -473,6 +478,7 @@ function AddCoordinatorDialog({
       const error = validatePassportFile(file)
       if (error) {
         setFileError(error)
+        setPassportScan(null)
         return
       }
     }
