@@ -33,6 +33,21 @@ const isValidPhone = (phone: string): boolean => {
   return phoneRegex.test(phone);
 };
 
+// File validation helper
+const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
+const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+function validatePassportFile(file: File): string | null {
+  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+  if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
+    return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`;
+  }
+  if (file.size > MAX_PASSPORT_FILE_SIZE) {
+    return "File size exceeds 10MB limit.";
+  }
+  return null;
+}
+
 interface FormData {
   firstName: string;
   lastName: string;
@@ -57,6 +72,7 @@ export default function PreRegistrationPage() {
   const [coordinatorId, setCoordinatorId] = useState<string | null>(null);
   const [coordinatorPassportScan, setCoordinatorPassportScan] = useState<string | null>(null);
   const [passportScanFile, setPassportScanFile] = useState<File | null>(null);
+  const [passportFileError, setPassportFileError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -368,8 +384,16 @@ export default function PreRegistrationPage() {
               placeholder="Enter first name"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              onBlur={() => handleBlur("firstName")}
               disabled={!canEdit}
+              className={touched.firstName && getFieldError("firstName", formData.firstName) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
             />
+            {touched.firstName && getFieldError("firstName", formData.firstName) && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {getFieldError("firstName", formData.firstName)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -379,8 +403,16 @@ export default function PreRegistrationPage() {
               placeholder="Enter last name"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              onBlur={() => handleBlur("lastName")}
               disabled={!canEdit}
+              className={touched.lastName && getFieldError("lastName", formData.lastName) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
             />
+            {touched.lastName && getFieldError("lastName", formData.lastName) && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {getFieldError("lastName", formData.lastName)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -390,8 +422,16 @@ export default function PreRegistrationPage() {
               placeholder="e.g., National Coordinator"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onBlur={() => handleBlur("role")}
               disabled={!canEdit}
+              className={touched.role && getFieldError("role", formData.role) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
             />
+            {touched.role && getFieldError("role", formData.role) && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {getFieldError("role", formData.role)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -417,10 +457,20 @@ export default function PreRegistrationPage() {
             <Input
               id="dob"
               type="date"
+              max={new Date().toISOString().split("T")[0]}
+              min="1920-01-01"
               value={formData.dateOfBirth}
               onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+              onBlur={() => handleBlur("dateOfBirth")}
               disabled={!canEdit}
+              className={touched.dateOfBirth && getFieldError("dateOfBirth", formData.dateOfBirth) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
             />
+            {touched.dateOfBirth && getFieldError("dateOfBirth", formData.dateOfBirth) && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {getFieldError("dateOfBirth", formData.dateOfBirth)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -432,8 +482,16 @@ export default function PreRegistrationPage() {
               onChange={(e) =>
                 setFormData({ ...formData, passportNumber: e.target.value.toUpperCase() })
               }
+              onBlur={() => handleBlur("passportNumber")}
               disabled={!canEdit}
+              className={touched.passportNumber && getFieldError("passportNumber", formData.passportNumber) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
             />
+            {touched.passportNumber && getFieldError("passportNumber", formData.passportNumber) && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {getFieldError("passportNumber", formData.passportNumber)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2 md:col-span-2">
@@ -441,16 +499,32 @@ export default function PreRegistrationPage() {
             <FileInput
               id="passport_scan"
               accept=".pdf,.jpg,.jpeg,.png"
-              onFileChange={(file) => setPassportScanFile(file)}
+              onFileChange={(file) => {
+                setPassportFileError(null);
+                if (file) {
+                  const error = validatePassportFile(file);
+                  if (error) {
+                    setPassportFileError(error);
+                    return;
+                  }
+                }
+                setPassportScanFile(file);
+              }}
               disabled={!canEdit}
             />
-            {passportScanFile && (
+            {passportFileError && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {passportFileError}
+              </p>
+            )}
+            {!passportFileError && passportScanFile && (
               <p className="text-sm text-muted-foreground">Selected: {passportScanFile.name}</p>
             )}
-            {!passportScanFile && coordinatorPassportScan && (
+            {!passportFileError && !passportScanFile && coordinatorPassportScan && (
               <p className="text-sm text-muted-foreground">Existing passport scan uploaded.</p>
             )}
-            {!passportScanFile && !coordinatorPassportScan && (
+            {!passportFileError && !passportScanFile && !coordinatorPassportScan && (
               <p className="text-sm text-muted-foreground">Required before submitting pre-registration.</p>
             )}
           </div>
