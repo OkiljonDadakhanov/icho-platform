@@ -401,11 +401,11 @@ function EditCoordinatorDialog({
               <div className="p-2 bg-white rounded-lg border flex-shrink-0">
                 <FileText className="w-4 h-4 text-gray-500" />
               </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex-1 min-w-0 overflow-hidden max-w-[200px]">
                 {passportScan ? (
                   <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm truncate block">{passportScan.name}</span>
+                    <span className="text-sm truncate block max-w-[160px]" title={passportScan.name}>{passportScan.name}</span>
                   </div>
                 ) : coordinator.passport_scan ? (
                   <span className="text-sm text-green-600">Already uploaded</span>
@@ -621,11 +621,11 @@ function AddCoordinatorDialog({
               <div className="p-2 bg-white rounded-lg border flex-shrink-0">
                 <FileText className="w-4 h-4 text-gray-500" />
               </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex-1 min-w-0 overflow-hidden max-w-[200px]">
                 {passportScan ? (
                   <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm truncate block">{passportScan.name}</span>
+                    <span className="text-sm truncate block max-w-[160px]" title={passportScan.name}>{passportScan.name}</span>
                   </div>
                 ) : (
                   <span className="text-sm text-gray-500">No file uploaded</span>
