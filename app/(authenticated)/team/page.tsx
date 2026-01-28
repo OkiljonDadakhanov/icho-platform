@@ -606,9 +606,17 @@ function AddMemberDialog({
       case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
       case 'CONTESTANT': return roleCounts.contestants >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
+      case 'GUEST': return roleCounts.guests >= limit
       default: return false
     }
   }
+
+  // Check if all slots are filled (all roles at their limits)
+  const isAllSlotsFilled =
+    isRoleDisabled('TEAM_LEADER') &&
+    isRoleDisabled('CONTESTANT') &&
+    isRoleDisabled('OBSERVER') &&
+    isRoleDisabled('GUEST')
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -756,10 +764,14 @@ function AddMemberDialog({
       if (!newOpen) setCurrentStep(1)
     }}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+        <Button
+          className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          disabled={isAllSlotsFilled}
+          title={isAllSlotsFilled ? "All member slots are filled" : undefined}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Add Member
-          <Sparkles className="w-4 h-4 ml-2 opacity-70" />
+          {isAllSlotsFilled ? "All Slots Filled" : "Add Member"}
+          {!isAllSlotsFilled && <Sparkles className="w-4 h-4 ml-2 opacity-70" />}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[98vw] sm:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto p-0">
