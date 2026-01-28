@@ -181,6 +181,14 @@ export const adminService = {
     return apiDownload(`/v1/admin/payments/${paymentId}/proof/download/`);
   },
 
+  /**
+   * Export payments to Excel
+   */
+  async exportPayments(status?: string): Promise<Blob> {
+    const params = status && status !== 'all' ? `?status=${status}` : '';
+    return apiDownload(`/v1/admin/payments/export.xlsx${params}`);
+  },
+
   // ============= Participants Management =============
 
   /**

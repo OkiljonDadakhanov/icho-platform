@@ -45,6 +45,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -81,6 +82,8 @@ export default function PaymentsPage() {
   const [singleRoomAction, setSingleRoomAction] = useState<"approve" | "reject" | null>(null);
   const [singleRoomComment, setSingleRoomComment] = useState("");
   const [activeTab, setActiveTab] = useState<"delegation" | "single-room">("delegation");
+  const [isExporting, setIsExporting] = useState(false);
+  const [loadingProofId, setLoadingProofId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -308,9 +311,35 @@ export default function PaymentsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Review and manage payment proofs</p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download className="w-4 h-4" />
-          Export Report
+        <Button
+          variant="outline"
+          className="gap-2"
+          disabled={isExporting}
+          onClick={async () => {
+            try {
+              setIsExporting(true);
+              const blob = await adminService.exportPayments(statusFilter);
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "payments_report.xlsx";
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success("Payment report exported successfully");
+            } catch (err: any) {
+              console.error("Failed to export payments:", err);
+              toast.error("Failed to export payment report");
+            } finally {
+              setIsExporting(false);
+            }
+          }}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Report"}
         </Button>
       </div>
 
@@ -494,21 +523,27 @@ export default function PaymentsPage() {
                             variant="ghost"
                             size="sm"
                             className="gap-1 text-gray-600"
+                            disabled={loadingProofId === payment.id}
                             onClick={async () => {
                               try {
-                                console.log(`Downloading proof for payment ID: ${payment.id}, country: ${payment.country_name}`);
+                                setLoadingProofId(payment.id);
                                 const blob = await adminService.downloadPaymentProof(payment.id);
-                                console.log(`Downloaded blob: ${blob.size} bytes, type: ${blob.type}`);
                                 const url = URL.createObjectURL(blob);
                                 window.open(url, "_blank");
                               } catch (err: any) {
                                 console.error("Failed to open proof:", err);
                                 toast.error("Failed to open payment proof");
+                              } finally {
+                                setLoadingProofId(null);
                               }
                             }}
                           >
-                            <Eye className="w-4 h-4" />
-                            View Proof
+                            {loadingProofId === payment.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                            {loadingProofId === payment.id ? "Loading..." : "View Proof"}
                           </Button>
                         ) : (
                           <span className="text-sm text-gray-400 px-2">
@@ -740,19 +775,27 @@ export default function PaymentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="gap-1 text-gray-600"
+                                disabled={loadingProofId === `sr-${invoice.id}`}
                                 onClick={async () => {
                                   try {
+                                    setLoadingProofId(`sr-${invoice.id}`);
                                     const blob = await adminService.downloadSingleRoomProof(invoice.id);
                                     const url = URL.createObjectURL(blob);
                                     window.open(url, "_blank");
                                   } catch (err: any) {
                                     console.error("Failed to open proof:", err);
                                     toast.error("Failed to open payment proof");
+                                  } finally {
+                                    setLoadingProofId(null);
                                   }
                                 }}
                               >
-                                <Eye className="w-4 h-4" />
-                                View Proof
+                                {loadingProofId === `sr-${invoice.id}` ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                                {loadingProofId === `sr-${invoice.id}` ? "Loading..." : "View Proof"}
                               </Button>
                             ) : (
                               <span className="text-sm text-gray-400 px-2">
