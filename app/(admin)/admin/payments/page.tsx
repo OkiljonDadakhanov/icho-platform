@@ -50,6 +50,7 @@ import {
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminPayment } from "@/lib/services/admin";
+import { getAuthenticatedUrl } from "@/lib/api";
 import type { SingleRoomInvoice } from "@/lib/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -83,7 +84,6 @@ export default function PaymentsPage() {
   const [singleRoomComment, setSingleRoomComment] = useState("");
   const [activeTab, setActiveTab] = useState<"delegation" | "single-room">("delegation");
   const [isExporting, setIsExporting] = useState(false);
-  const [loadingProofId, setLoadingProofId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -523,27 +523,13 @@ export default function PaymentsPage() {
                             variant="ghost"
                             size="sm"
                             className="gap-1 text-gray-600"
-                            disabled={loadingProofId === payment.id}
-                            onClick={async () => {
-                              try {
-                                setLoadingProofId(payment.id);
-                                const blob = await adminService.downloadPaymentProof(payment.id);
-                                const url = URL.createObjectURL(blob);
-                                window.open(url, "_blank");
-                              } catch (err: any) {
-                                console.error("Failed to open proof:", err);
-                                toast.error("Failed to open payment proof");
-                              } finally {
-                                setLoadingProofId(null);
-                              }
+                            onClick={() => {
+                              const url = getAuthenticatedUrl(`/v1/admin/payments/${payment.id}/proof/download/`);
+                              window.open(url, "_blank");
                             }}
                           >
-                            {loadingProofId === payment.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                            {loadingProofId === payment.id ? "Loading..." : "View Proof"}
+                            <Eye className="w-4 h-4" />
+                            View Proof
                           </Button>
                         ) : (
                           <span className="text-sm text-gray-400 px-2">
@@ -775,27 +761,13 @@ export default function PaymentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="gap-1 text-gray-600"
-                                disabled={loadingProofId === `sr-${invoice.id}`}
-                                onClick={async () => {
-                                  try {
-                                    setLoadingProofId(`sr-${invoice.id}`);
-                                    const blob = await adminService.downloadSingleRoomProof(invoice.id);
-                                    const url = URL.createObjectURL(blob);
-                                    window.open(url, "_blank");
-                                  } catch (err: any) {
-                                    console.error("Failed to open proof:", err);
-                                    toast.error("Failed to open payment proof");
-                                  } finally {
-                                    setLoadingProofId(null);
-                                  }
+                                onClick={() => {
+                                  const url = getAuthenticatedUrl(`/v1/admin/single-room-invoices/${invoice.id}/proof/download/`);
+                                  window.open(url, "_blank");
                                 }}
                               >
-                                {loadingProofId === `sr-${invoice.id}` ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Eye className="w-4 h-4" />
-                                )}
-                                {loadingProofId === `sr-${invoice.id}` ? "Loading..." : "View Proof"}
+                                <Eye className="w-4 h-4" />
+                                View Proof
                               </Button>
                             ) : (
                               <span className="text-sm text-gray-400 px-2">

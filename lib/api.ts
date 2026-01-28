@@ -380,3 +380,9 @@ export const apiPatch = <T>(endpoint: string, data: unknown) => api.patch<T>(end
 export const apiDelete = <T>(endpoint: string) => api.delete<T>(endpoint);
 export const apiUpload = <T>(endpoint: string, formData: FormData) => api.upload<T>(endpoint, formData);
 export const apiDownload = (endpoint: string) => api.download(endpoint);
+export const getAuthenticatedUrl = (endpoint: string) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${baseUrl}${endpoint}${separator}token=${token}`;
+};
