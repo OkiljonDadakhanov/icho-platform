@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, FileText, InfoIcon, Loader2, CheckCircle2, Mail, AlertCircle } from "lucide-react"
+import { Download, FileText, InfoIcon, Loader2, CheckCircle2, Mail, AlertCircle, RefreshCw } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { invitationsService } from "@/lib/services/invitations"
 import { participantsService } from "@/lib/services/participants"
@@ -212,6 +212,11 @@ export default function InvitationsPage() {
                   const invitation = invitations[participant.id]
                   const isGenerating = generatingFor === participant.id
 
+                  // Check if participant was updated after invitation was generated
+                  const needsRegeneration = invitation?.status === "GENERATED" &&
+                    invitation.generated_at &&
+                    new Date(participant.updated_at) > new Date(invitation.generated_at)
+
                   return (
                     <tr
                       key={participant.id}
@@ -243,20 +248,27 @@ export default function InvitationsPage() {
                       <td className="py-4 px-4 text-gray-600">{new Date(participant.date_of_birth).toLocaleDateString()}</td>
                       <td className="py-4 px-4">
                         {invitation ? (
-                          <Badge
-                            className={`text-xs ${
-                              invitation.status === "GENERATED"
-                                ? "bg-[#00795d] text-white"
-                                : invitation.status === "GENERATING"
-                                  ? "bg-yellow-500 text-white"
-                                  : invitation.status === "FAILED"
-                                    ? "bg-red-500 text-white"
-                                    : "bg-gray-500 text-white"
-                            }`}
-                          >
-                            {invitation.status === "GENERATED" && <CheckCircle2 className="w-3 h-3 mr-1" />}
-                            {invitation.status}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge
+                              className={`text-xs w-fit ${
+                                needsRegeneration
+                                  ? "bg-amber-500 text-white"
+                                  : invitation.status === "GENERATED"
+                                    ? "bg-[#00795d] text-white"
+                                    : invitation.status === "GENERATING"
+                                      ? "bg-yellow-500 text-white"
+                                      : invitation.status === "FAILED"
+                                        ? "bg-red-500 text-white"
+                                        : "bg-gray-500 text-white"
+                              }`}
+                            >
+                              {invitation.status === "GENERATED" && !needsRegeneration && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                              {needsRegeneration ? "Needs Update" : invitation.status}
+                            </Badge>
+                            {needsRegeneration && (
+                              <span className="text-xs text-amber-600">Info changed</span>
+                            )}
+                          </div>
                         ) : (
                           <Badge className="bg-gray-200 text-gray-600 text-xs">
                             Not Generated
@@ -265,15 +277,37 @@ export default function InvitationsPage() {
                       </td>
                       <td className="py-4 px-4">
                         {invitation?.status === "GENERATED" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10 group-hover:scale-105 transition-all"
-                            onClick={() => handleDownloadInvitation(invitation.id)}
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Download PDF
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10 group-hover:scale-105 transition-all"
+                              onClick={() => handleDownloadInvitation(invitation.id)}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </Button>
+                            {needsRegeneration && (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all"
+                                onClick={() => handleGenerateInvitation(participant.id)}
+                                disabled={isGenerating}
+                              >
+                                {isGenerating ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Regenerating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Regenerate
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         ) : (
                           <Button
                             size="sm"
