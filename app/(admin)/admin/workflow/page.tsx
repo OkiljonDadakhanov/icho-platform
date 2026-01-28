@@ -452,7 +452,7 @@ export default function WorkflowPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <img
-                          src={`https://flagcdn.com/w40/${cs.country_iso?.toLowerCase() || "un"}.png`}
+                          src={`https://flagcdn.com/w40/${cs.country_iso?.toLowerCase().slice(0, 2) || "un"}.png`}
                           alt={cs.country_name || "Country"}
                           className="w-8 h-6 object-cover rounded shadow-sm"
                           onError={(e) => {

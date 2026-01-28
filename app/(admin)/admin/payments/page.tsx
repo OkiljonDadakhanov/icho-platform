@@ -446,7 +446,7 @@ export default function PaymentsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <img
-                          src={`https://flagcdn.com/w40/${payment.country_iso?.toLowerCase()}.png`}
+                          src={`https://flagcdn.com/w40/${payment.country_iso?.toLowerCase().slice(0, 2)}.png`}
                           alt={payment.country_name}
                           className="w-8 h-6 object-cover rounded shadow-sm"
                           onError={(e) => {

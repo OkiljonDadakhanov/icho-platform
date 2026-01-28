@@ -309,7 +309,7 @@ export default function ParticipantsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <img
-                          src={`https://flagcdn.com/w20/${participant.country_iso?.toLowerCase()}.png`}
+                          src={`https://flagcdn.com/w20/${participant.country_iso?.toLowerCase().slice(0, 2)}.png`}
                           alt={participant.country_name}
                           className="w-5 h-4 object-cover rounded"
                           onError={(e) => {
@@ -389,7 +389,7 @@ export default function ParticipantsPage() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
-                        src={`https://flagcdn.com/w20/${selectedParticipant.country_iso?.toLowerCase()}.png`}
+                        src={`https://flagcdn.com/w20/${selectedParticipant.country_iso?.toLowerCase().slice(0, 2)}.png`}
                         alt={selectedParticipant.country_name}
                         className="w-5 h-4 object-cover rounded"
                       />
