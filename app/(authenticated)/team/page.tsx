@@ -240,8 +240,8 @@ export default function TeamPage() {
               <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Observers</span>
             </div>
-            <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
-              <span className="text-xl font-semibold">{guests}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${PARTICIPANT_LIMITS.GUEST !== null && guests >= PARTICIPANT_LIMITS.GUEST ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
+              <span className="text-xl font-semibold">{guests}{PARTICIPANT_LIMITS.GUEST !== null ? `/${PARTICIPANT_LIMITS.GUEST}` : ''}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
             </div>
           </div>
