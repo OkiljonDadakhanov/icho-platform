@@ -16,7 +16,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "IChO 2026 Registration - Uzbekistan",
   description: "58th International Chemistry Olympiad Registration System",
-  generator: "v0.app",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({
