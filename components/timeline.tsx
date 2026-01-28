@@ -51,48 +51,60 @@ export function Timeline() {
   const [error, setError] = useState<string | null>(null)
   const [currentStage, setCurrentStage] = useState<WorkflowStage | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        const [deadlines, progress] = await Promise.all([
-          workflowService.getStageDeadlines(),
-          workflowService.getDelegationProgress()
-        ])
+  const fetchData = async (showLoading = true) => {
+    try {
+      if (showLoading) setIsLoading(true)
+      const [deadlines, progress] = await Promise.all([
+        workflowService.getStageDeadlines(),
+        workflowService.getDelegationProgress()
+      ])
 
-        // Create a map of deadlines by stage
-        const deadlineMap = new Map<WorkflowStage, string>()
-        deadlines.forEach(d => {
-          deadlineMap.set(d.stage, d.deadline_at)
-        })
+      // Create a map of deadlines by stage
+      const deadlineMap = new Map<WorkflowStage, string>()
+      deadlines.forEach(d => {
+        deadlineMap.set(d.stage, d.deadline_at)
+      })
 
-        // Create a map of statuses by stage from progress
-        const statusMap = new Map<WorkflowStage, StageStatus>()
-        progress.stages.forEach(s => {
-          statusMap.set(s.stage, s.status)
-        })
+      // Create a map of statuses by stage from progress
+      const statusMap = new Map<WorkflowStage, StageStatus>()
+      progress.stages.forEach(s => {
+        statusMap.set(s.stage, s.status)
+      })
 
-        // Build timeline stages
-        const timelineStages: TimelineStage[] = STAGE_ORDER.map(stage => ({
-          stage,
-          label: STAGE_CONFIG[stage].label,
-          description: STAGE_CONFIG[stage].description,
-          deadline: deadlineMap.get(stage),
-          status: statusMap.get(stage) || 'LOCKED'
-        }))
+      // Build timeline stages
+      const timelineStages: TimelineStage[] = STAGE_ORDER.map(stage => ({
+        stage,
+        label: STAGE_CONFIG[stage].label,
+        description: STAGE_CONFIG[stage].description,
+        deadline: deadlineMap.get(stage),
+        status: statusMap.get(stage) || 'LOCKED'
+      }))
 
-        setStages(timelineStages)
-        setCurrentStage(progress.current_stage)
-        setError(null)
-      } catch (err: any) {
-        console.error("Failed to fetch timeline data:", err)
-        setError(err?.message || "Failed to load timeline")
-      } finally {
-        setIsLoading(false)
-      }
+      setStages(timelineStages)
+      setCurrentStage(progress.current_stage)
+      setError(null)
+    } catch (err: any) {
+      console.error("Failed to fetch timeline data:", err)
+      setError(err?.message || "Failed to load timeline")
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchData()
+
+    // Refresh when window regains focus
+    const handleFocus = () => fetchData(false)
+    window.addEventListener('focus', handleFocus)
+
+    // Also refresh every 30 seconds
+    const interval = setInterval(() => fetchData(false), 30000)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      clearInterval(interval)
+    }
   }, [])
 
   if (isLoading) {
