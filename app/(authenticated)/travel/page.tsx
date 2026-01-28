@@ -375,6 +375,18 @@ function AddTravelDialog({
 
   const availableParticipants = participants.filter(p => !existingTravelParticipants.has(p.id))
 
+  // Validate arrival is before departure
+  const getDateTimeError = (): string | null => {
+    if (formData.arrival_date && formData.arrival_time && formData.departure_date && formData.departure_time) {
+      const arrival = new Date(`${formData.arrival_date}T${formData.arrival_time}`)
+      const departure = new Date(`${formData.departure_date}T${formData.departure_time}`)
+      if (arrival >= departure) {
+        return 'Arrival must be before departure'
+      }
+    }
+    return null
+  }
+
   const toggleParticipant = (participantId: string) => {
     setSelectedParticipants(prev =>
       prev.includes(participantId)
@@ -598,6 +610,13 @@ function AddTravelDialog({
             </div>
           </div>
 
+          {getDateTimeError() && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-600">{getDateTimeError()}</p>
+            </div>
+          )}
+
           <DialogFooter className="pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="border-gray-300">
               Cancel
@@ -605,7 +624,7 @@ function AddTravelDialog({
             <Button
               type="submit"
               className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d]"
-              disabled={isSaving || selectedParticipants.length === 0}
+              disabled={isSaving || selectedParticipants.length === 0 || !!getDateTimeError()}
             >
               {isSaving ? "Saving..." : `Add Travel Info${selectedParticipants.length > 1 ? ` (${selectedParticipants.length})` : ''}`}
             </Button>

@@ -689,11 +689,65 @@ function AddMemberDialog({
     setCurrentStep(1)
   }
 
+  // Field validation with error messages
+  const getFieldError = (field: string): string | null => {
+    switch (field) {
+      case 'first_name':
+        if (!formData.first_name) return 'First name is required'
+        if (formData.first_name.length > 100) return 'First name must be less than 100 characters'
+        return null
+      case 'last_name':
+        if (!formData.last_name) return 'Last name is required'
+        if (formData.last_name.length > 100) return 'Last name must be less than 100 characters'
+        return null
+      case 'paternal_name':
+        if (formData.paternal_name && formData.paternal_name.length > 100) return 'Paternal name must be less than 100 characters'
+        return null
+      case 'badge_name':
+        if (formData.badge_name && formData.badge_name.length > 100) return 'Badge name must be less than 100 characters'
+        return null
+      case 'email':
+        if (!formData.email) return 'Email is required'
+        if (!isValidEmail(formData.email)) return 'Please enter a valid email address'
+        return null
+      case 'passport_number':
+        if (!formData.passport_number) return 'Passport number is required'
+        if (formData.passport_number.length > 50) return 'Passport number must be less than 50 characters'
+        return null
+      case 'date_of_birth':
+        if (!formData.date_of_birth) return 'Date of birth is required'
+        const dob = new Date(formData.date_of_birth)
+        const today = new Date()
+        if (dob > today) return 'Date of birth cannot be in the future'
+        if (dob < new Date('1920-01-01')) return 'Date of birth is too far in the past'
+        return null
+      case 'role':
+        if (!formData.role) return 'Role is required'
+        if (isRoleDisabled(formData.role as ParticipantRole)) return 'This role has reached its limit'
+        return null
+      case 'gender':
+        if (!formData.gender) return 'Gender is required'
+        return null
+      case 'tshirt_size':
+        if (!formData.tshirt_size) return 'T-shirt size is required'
+        return null
+      case 'dietary_requirements':
+        if (!formData.dietary_requirements) return 'Dietary requirements is required'
+        return null
+      case 'other_dietary_requirements':
+        if (formData.dietary_requirements === 'OTHER' && !formData.other_dietary_requirements) return 'Please specify your dietary requirements'
+        return null
+      default:
+        return null
+    }
+  }
+
   const isRoleValid = formData.role && !isRoleDisabled(formData.role as ParticipantRole)
   const isEmailValid = formData.email && isValidEmail(formData.email)
-  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && formData.passport_number && formData.date_of_birth && isRoleValid && formData.gender
+  const isDobValid = formData.date_of_birth && !getFieldError('date_of_birth')
+  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && formData.passport_number && isDobValid && isRoleValid && formData.gender &&
+    !getFieldError('first_name') && !getFieldError('last_name') && !getFieldError('passport_number')
   const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements)
-  // Documents are optional for now - TODO: make required in production
   const canSubmit = canProceedStep1 && canProceedStep2 && formData.regulations_accepted
 
   return (
@@ -778,8 +832,12 @@ function AddMemberDialog({
                     placeholder="John"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
+                    maxLength={100}
+                    className={`border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all ${formData.first_name && getFieldError('first_name') ? 'border-red-500' : ''}`}
                   />
+                  {formData.first_name && getFieldError('first_name') && (
+                    <p className="text-sm text-red-500">{getFieldError('first_name')}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="last_name" className="text-gray-600 flex items-center gap-1">
@@ -790,8 +848,12 @@ function AddMemberDialog({
                     placeholder="Doe"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
+                    maxLength={100}
+                    className={`border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all ${formData.last_name && getFieldError('last_name') ? 'border-red-500' : ''}`}
                   />
+                  {formData.last_name && getFieldError('last_name') && (
+                    <p className="text-sm text-red-500">{getFieldError('last_name')}</p>
+                  )}
                 </div>
               </div>
 
@@ -805,6 +867,7 @@ function AddMemberDialog({
                     placeholder="Optional"
                     value={formData.paternal_name}
                     onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
+                    maxLength={100}
                     className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
                   />
                 </div>
@@ -817,6 +880,7 @@ function AddMemberDialog({
                     placeholder="Display name on badge"
                     value={formData.badge_name}
                     onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
+                    maxLength={100}
                     className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
                   />
                 </div>
@@ -861,8 +925,12 @@ function AddMemberDialog({
                     placeholder="FA8475924"
                     value={formData.passport_number}
                     onChange={(e) => setFormData({ ...formData, passport_number: e.target.value.toUpperCase() })}
-                    className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all font-mono"
+                    maxLength={50}
+                    className={`border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all font-mono ${formData.passport_number && getFieldError('passport_number') ? 'border-red-500' : ''}`}
                   />
+                  {formData.passport_number && getFieldError('passport_number') && (
+                    <p className="text-xs text-red-500">{getFieldError('passport_number')}</p>
+                  )}
                 </div>
               </div>
 
@@ -878,10 +946,10 @@ function AddMemberDialog({
                     min="1920-01-01"
                     value={formData.date_of_birth}
                     onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                    className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all"
+                    className={`border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all ${formData.date_of_birth && getFieldError('date_of_birth') ? 'border-red-500' : ''}`}
                   />
-                  {!formData.date_of_birth && formData.first_name && formData.last_name && (
-                    <p className="text-xs text-amber-600">Please enter a valid date of birth to continue</p>
+                  {getFieldError('date_of_birth') && (
+                    <p className="text-xs text-red-500">{getFieldError('date_of_birth')}</p>
                   )}
                 </div>
                 <div className="space-y-2">
