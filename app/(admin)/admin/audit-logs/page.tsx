@@ -29,7 +29,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
-  Download,
   Eye,
   Activity,
   UserPlus,
@@ -268,23 +267,6 @@ export default function AuditLogsPage() {
     currentPage * pageSize
   );
 
-  const handleExport = async () => {
-    try {
-      const blob = await adminService.exportAuditLogs({
-        action: actionFilter !== "all" ? actionFilter : undefined,
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "audit_logs.xlsx";
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Audit logs exported successfully");
-    } catch (err: any) {
-      toast.error("Failed to export audit logs");
-    }
-  };
-
   const viewDetails = (log: AuditLog) => {
     setSelectedLog(log);
     setShowDetailDialog(true);
@@ -306,16 +288,25 @@ export default function AuditLogsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
           <p className="text-gray-500 mt-1">Track all system activity and changes</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </Button>
-          <Button className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d]" onClick={handleExport}>
-            <Download className="w-4 h-4" />
-            Export
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={async () => {
+            try {
+              setIsLoading(true);
+              const data = await adminService.getAuditLogs({ page: 1, page_size: 100 });
+              setLogs(data.results);
+              toast.success("Audit logs refreshed");
+            } catch (err: any) {
+              toast.error("Failed to refresh audit logs");
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </Button>
       </div>
 
       {/* Filters */}
