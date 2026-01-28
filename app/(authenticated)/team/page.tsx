@@ -52,16 +52,17 @@ import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment } from "@/lib/types"
+import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment, PreRegistration } from "@/lib/types"
+import { preRegistrationService } from "@/lib/services/pre-registration"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
 import { getErrorMessage } from "@/lib/error-utils"
 import Link from "next/link"
 
-// Participant limits per delegation
-const PARTICIPANT_LIMITS: Record<string, number | null> = {
+// Default limits (used as fallback if pre-registration not loaded)
+const DEFAULT_LIMITS: Record<string, number | null> = {
   TEAM_LEADER: 2,
   CONTESTANT: 4,
-  OBSERVER: 2,
+  OBSERVER: 5,
   GUEST: null, // Unlimited
 }
 
@@ -69,10 +70,19 @@ export default function TeamPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
   const [payment, setPayment] = useState<Payment | null>(null)
+  const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Participant limits from pre-registration (or defaults)
+  const PARTICIPANT_LIMITS: Record<string, number | null> = preRegistration ? {
+    TEAM_LEADER: preRegistration.num_team_leaders,
+    CONTESTANT: preRegistration.num_contestants,
+    OBSERVER: preRegistration.num_observers,
+    GUEST: preRegistration.num_guests > 0 ? preRegistration.num_guests : null,
+  } : DEFAULT_LIMITS
 
   const countryName = user?.country?.name || "Your Country"
 
@@ -88,12 +98,14 @@ export default function TeamPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, paymentData] = await Promise.all([
+      const [participantsData, paymentData, preRegData] = await Promise.all([
         participantsService.getAllParticipants().catch(() => []),
         paymentsService.getPayment().catch(() => null),
+        preRegistrationService.getPreRegistration().catch(() => null),
       ])
       setParticipants(participantsData)
       setPayment(paymentData)
+      setPreRegistration(preRegData)
       setError(null)
     } catch (err: any) {
       console.error("Failed to fetch data:", err)
@@ -390,6 +402,7 @@ export default function TeamPage() {
               onAdd={handleAddMember}
               isSaving={isSaving}
               roleCounts={{ teamLeaders, contestants, observers, guests }}
+              participantLimits={PARTICIPANT_LIMITS}
             />
           )}
         </div>
@@ -501,6 +514,7 @@ export default function TeamPage() {
                             onDelete={handleDeleteMember}
                             isSaving={isSaving}
                             roleCounts={{ teamLeaders, contestants, observers, guests }}
+                            participantLimits={PARTICIPANT_LIMITS}
                           />
                         )}
                       </td>
@@ -575,16 +589,18 @@ function AddMemberDialog({
   onAdd,
   isSaving,
   roleCounts,
+  participantLimits,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
   roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number }
+  participantLimits: Record<string, number | null>
 }) {
   // Check if roles have reached their limits
   const isRoleDisabled = (role: ParticipantRole) => {
-    const limit = PARTICIPANT_LIMITS[role]
+    const limit = participantLimits[role]
     if (limit === null || limit === undefined) return false // Unlimited or unknown role
     switch (role) {
       case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
@@ -883,19 +899,19 @@ function AddMemberDialog({
                       <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#2f3090]"></span>
-                          Team Leader {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
+                          Team Leader {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${participantLimits.TEAM_LEADER} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Contestant {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
+                          Contestant {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${participantLimits.CONTESTANT} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${participantLimits.OBSERVER} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="GUEST">
@@ -1317,18 +1333,20 @@ function EditMemberDialog({
   onDelete,
   isSaving,
   roleCounts,
+  participantLimits,
 }: {
   participant: Participant
   onEdit: (id: string, data: Partial<ParticipantCreateRequest>) => void
   onDelete: (id: string) => void
   isSaving: boolean
   roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number }
+  participantLimits: Record<string, number | null>
 }) {
   // Check if roles have reached their limits (excluding current participant's role)
   const isRoleDisabled = (role: ParticipantRole) => {
     // If the participant already has this role, it's not disabled
     if (participant.role === role) return false
-    const limit = PARTICIPANT_LIMITS[role]
+    const limit = participantLimits[role]
     if (limit === null || limit === undefined) return false // Unlimited or unknown role
     switch (role) {
       case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
@@ -1366,7 +1384,7 @@ function EditMemberDialog({
 
     // Validate role limits if role is being changed
     if (formData.role !== participant.role && isRoleDisabled(formData.role)) {
-      const limit = PARTICIPANT_LIMITS[formData.role]
+      const limit = participantLimits[formData.role]
       toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
       return
     }
@@ -1513,13 +1531,13 @@ function EditMemberDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
-                      Team Leader {isRoleDisabled('TEAM_LEADER') && `(${PARTICIPANT_LIMITS.TEAM_LEADER}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
+                      Team Leader {isRoleDisabled('TEAM_LEADER') && `(${participantLimits.TEAM_LEADER}/${participantLimits.TEAM_LEADER} max)`}
                     </SelectItem>
                     <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
-                      Contestant {isRoleDisabled('CONTESTANT') && `(${PARTICIPANT_LIMITS.CONTESTANT}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
+                      Contestant {isRoleDisabled('CONTESTANT') && `(${participantLimits.CONTESTANT}/${participantLimits.CONTESTANT} max)`}
                     </SelectItem>
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
-                      Observer {isRoleDisabled('OBSERVER') && `(${PARTICIPANT_LIMITS.OBSERVER}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                      Observer {isRoleDisabled('OBSERVER') && `(${participantLimits.OBSERVER}/${participantLimits.OBSERVER} max)`}
                     </SelectItem>
                     <SelectItem value="GUEST">Guest</SelectItem>
                   </SelectContent>
