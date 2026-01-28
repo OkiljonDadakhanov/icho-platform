@@ -41,6 +41,7 @@ import {
   GraduationCap,
   Eye as EyeIcon,
   User as UserIcon,
+  Loader2,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -70,6 +71,7 @@ export default function TravelPage() {
   const [selectedAccommodation, setSelectedAccommodation] = useState<AdminAccommodation | null>(null);
   const [showTravelDialog, setShowTravelDialog] = useState(false);
   const [showAccommodationDialog, setShowAccommodationDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get unique countries from travel info
   const countries = Array.from(
@@ -142,16 +144,20 @@ export default function TravelPage() {
 
   const handleExport = async () => {
     try {
+      setIsExporting(true);
       const blob = await adminService.exportTravelData();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "travel_export.xlsx";
+      a.download = "icho_travel.xlsx";
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Travel data exported successfully");
     } catch (err: any) {
+      console.error("Failed to export travel data:", err);
       toast.error("Failed to export travel data");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -187,9 +193,17 @@ export default function TravelPage() {
           <h1 className="text-3xl font-bold text-gray-900">Travel & Accommodation</h1>
           <p className="text-gray-500 mt-1">Manage travel info and accommodation preferences</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d]" onClick={handleExport}>
-          <Download className="w-4 h-4" />
-          Export to Excel
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Travel"}
         </Button>
       </div>
 

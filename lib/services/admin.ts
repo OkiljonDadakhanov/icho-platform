@@ -137,9 +137,9 @@ export const adminService = {
   },
 
   /**
-   * Export analytics to Excel
+   * Export countries/analytics to Excel
    */
-  async exportAnalytics(): Promise<Blob> {
+  async exportCountries(): Promise<Blob> {
     return apiDownload('/v1/admin/analytics/export.xlsx');
   },
 

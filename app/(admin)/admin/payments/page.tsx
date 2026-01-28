@@ -312,8 +312,7 @@ export default function PaymentsPage() {
           <p className="text-gray-500 mt-1">Review and manage payment proofs</p>
         </div>
         <Button
-          variant="outline"
-          className="gap-2"
+          className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
           disabled={isExporting}
           onClick={async () => {
             try {
@@ -322,13 +321,13 @@ export default function PaymentsPage() {
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = "payments_report.xlsx";
+              a.download = "icho_payments.xlsx";
               a.click();
               URL.revokeObjectURL(url);
-              toast.success("Payment report exported successfully");
+              toast.success("Payments exported successfully");
             } catch (err: any) {
               console.error("Failed to export payments:", err);
-              toast.error("Failed to export payment report");
+              toast.error("Failed to export payments");
             } finally {
               setIsExporting(false);
             }
@@ -339,7 +338,7 @@ export default function PaymentsPage() {
           ) : (
             <Download className="w-4 h-4" />
           )}
-          {isExporting ? "Exporting..." : "Export Report"}
+          {isExporting ? "Exporting..." : "Export Payments"}
         </Button>
       </div>
 

@@ -43,6 +43,7 @@ import {
   Globe,
   Shirt,
   UtensilsCrossed,
+  Loader2,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -71,6 +72,7 @@ export default function ParticipantsPage() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [selectedParticipant, setSelectedParticipant] = useState<AdminParticipant | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get unique countries for filter
   const countries = Array.from(
@@ -122,6 +124,7 @@ export default function ParticipantsPage() {
 
   const handleExport = async () => {
     try {
+      setIsExporting(true);
       const blob = await adminService.exportParticipants({
         country: countryFilter !== "all" ? countryFilter : undefined,
         role: roleFilter !== "all" ? roleFilter : undefined,
@@ -129,12 +132,15 @@ export default function ParticipantsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "participants.xlsx";
+      a.download = "icho_participants.xlsx";
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Participants exported successfully");
     } catch (err: any) {
+      console.error("Failed to export participants:", err);
       toast.error("Failed to export participants");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -165,9 +171,17 @@ export default function ParticipantsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Participants</h1>
           <p className="text-gray-500 mt-1">All registered participants across countries</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d]" onClick={handleExport}>
-          <Download className="w-4 h-4" />
-          Export to Excel
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Participants"}
         </Button>
       </div>
 
