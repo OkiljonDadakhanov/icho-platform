@@ -472,19 +472,11 @@ export default function TeamPage() {
                         </Badge>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-9 h-9 ring-2 ring-white shadow-sm">
-                            <AvatarImage src={participant.profile_photo} />
-                            <AvatarFallback className="text-xs bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white font-medium">
-                              {initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <span className="font-medium text-gray-800">{participant.full_name}</span>
-                            {participant.badge_name && (
-                              <p className="text-xs text-gray-500">Badge: {participant.badge_name}</p>
-                            )}
-                          </div>
+                        <div>
+                          <span className="font-medium text-gray-800">{participant.full_name}</span>
+                          {participant.badge_name && (
+                            <p className="text-xs text-gray-500">Badge: {participant.badge_name}</p>
+                          )}
                         </div>
                       </td>
                       <td className="py-4 px-4">
