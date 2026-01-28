@@ -55,6 +55,29 @@ export default function InvitationsPage() {
     try {
       setGeneratingFor(participantId)
       await invitationsService.requestInvitation(participantId)
+
+      // Poll for status updates until generation completes
+      const maxAttempts = 30 // 30 seconds max
+      let attempts = 0
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+        const invitationsData = await invitationsService.getAllInvitations()
+        const invitation = invitationsData.find(inv => inv.participant === participantId)
+
+        if (invitation && (invitation.status === "GENERATED" || invitation.status === "FAILED")) {
+          // Update the invitations state
+          const invitationMap: Record<string, InvitationLetter> = {}
+          invitationsData.forEach(inv => {
+            invitationMap[inv.participant] = inv
+          })
+          setInvitations(invitationMap)
+          break
+        }
+        attempts++
+      }
+
+      // Final fetch to ensure UI is up to date
       await fetchData()
     } catch (err: unknown) {
       console.error("Failed to generate invitation:", err)
