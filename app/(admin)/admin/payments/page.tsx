@@ -50,7 +50,7 @@ import {
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminPayment } from "@/lib/services/admin";
-import { getAuthenticatedUrl } from "@/lib/api";
+import { apiDownloadAndOpen } from "@/lib/api";
 import type { SingleRoomInvoice } from "@/lib/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -532,10 +532,7 @@ export default function PaymentsPage() {
                             variant="ghost"
                             size="sm"
                             className="gap-1 text-gray-600"
-                            onClick={() => {
-                              const url = getAuthenticatedUrl(`/v1/admin/payments/${payment.id}/proof/download/`);
-                              window.open(url, "_blank");
-                            }}
+                            onClick={() => apiDownloadAndOpen(`/v1/admin/payments/${payment.id}/proof/download/`)}
                           >
                             <Eye className="w-4 h-4" />
                             View Proof
@@ -770,10 +767,7 @@ export default function PaymentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="gap-1 text-gray-600"
-                                onClick={() => {
-                                  const url = getAuthenticatedUrl(`/v1/payments/admin/single-room-invoices/${invoice.id}/proof/download/`);
-                                  window.open(url, "_blank");
-                                }}
+                                onClick={() => apiDownloadAndOpen(`/v1/payments/admin/single-room-invoices/${invoice.id}/proof/download/`)}
                               >
                                 <Eye className="w-4 h-4" />
                                 View Proof

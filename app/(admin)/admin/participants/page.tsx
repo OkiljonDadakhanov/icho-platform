@@ -51,7 +51,7 @@ import {
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminParticipant } from "@/lib/services/admin";
-import { getAuthenticatedUrl } from "@/lib/api";
+import { apiDownloadAndOpen } from "@/lib/api";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
@@ -481,10 +481,7 @@ export default function ParticipantsPage() {
                       variant="outline"
                       size="sm"
                       className="justify-start gap-2"
-                      onClick={() => {
-                        const url = getAuthenticatedUrl(`/v1/participants/${selectedParticipant.id}/passport/download/`);
-                        window.open(url, "_blank");
-                      }}
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/passport/download/`)}
                     >
                       <FileImage className="w-4 h-4 text-blue-500" />
                       Passport Scan
@@ -502,10 +499,7 @@ export default function ParticipantsPage() {
                       variant="outline"
                       size="sm"
                       className="justify-start gap-2"
-                      onClick={() => {
-                        const url = getAuthenticatedUrl(`/v1/participants/${selectedParticipant.id}/consent-form/download/`);
-                        window.open(url, "_blank");
-                      }}
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/consent-form/download/`)}
                     >
                       <FileCheck className="w-4 h-4 text-green-500" />
                       Consent Form
@@ -523,10 +517,7 @@ export default function ParticipantsPage() {
                       variant="outline"
                       size="sm"
                       className="justify-start gap-2"
-                      onClick={() => {
-                        const url = getAuthenticatedUrl(`/v1/participants/${selectedParticipant.id}/commitment-form/download/`);
-                        window.open(url, "_blank");
-                      }}
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/commitment-form/download/`)}
                     >
                       <FileCheck className="w-4 h-4 text-purple-500" />
                       Commitment Form
@@ -544,10 +535,7 @@ export default function ParticipantsPage() {
                       variant="outline"
                       size="sm"
                       className="justify-start gap-2"
-                      onClick={() => {
-                        const url = getAuthenticatedUrl(`/v1/participants/${selectedParticipant.id}/photo/download/`);
-                        window.open(url, "_blank");
-                      }}
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/photo/download/`)}
                     >
                       <UserIcon className="w-4 h-4 text-orange-500" />
                       Profile Photo

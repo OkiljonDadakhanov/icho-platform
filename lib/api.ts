@@ -367,6 +367,15 @@ export class ApiClient {
 
     return response.blob();
   }
+
+  // Download file and open in new tab (secure - no token in URL)
+  async downloadAndOpen(endpoint: string): Promise<void> {
+    const blob = await this.download(endpoint);
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    // Clean up blob URL after a delay to allow the new tab to load
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
 }
 
 // Export singleton instance
@@ -380,6 +389,8 @@ export const apiPatch = <T>(endpoint: string, data: unknown) => api.patch<T>(end
 export const apiDelete = <T>(endpoint: string) => api.delete<T>(endpoint);
 export const apiUpload = <T>(endpoint: string, formData: FormData) => api.upload<T>(endpoint, formData);
 export const apiDownload = (endpoint: string) => api.download(endpoint);
+export const apiDownloadAndOpen = (endpoint: string) => api.downloadAndOpen(endpoint);
+// Deprecated: Use apiDownloadAndOpen instead for secure file viewing
 export const getAuthenticatedUrl = (endpoint: string) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
