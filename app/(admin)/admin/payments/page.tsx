@@ -294,7 +294,7 @@ export default function PaymentsPage() {
   const rejectedCount = payments.filter((p) => p.status === "REJECTED").length;
   const totalAmount = payments
     .filter((p) => p.status === "APPROVED")
-    .reduce((acc, p) => acc + (p.invoice?.amount || 0), 0);
+    .reduce((acc, p) => acc + (Number(p.invoice_amount) || p.invoice?.amount || 0), 0);
 
   // Single room stats
   const singleRoomPendingCount = singleRoomInvoices.filter((inv) => inv.status === "PENDING" && inv.proof_file).length;
@@ -303,7 +303,7 @@ export default function PaymentsPage() {
   const singleRoomAwaitingProof = singleRoomInvoices.filter((inv) => !inv.proof_file).length;
   const singleRoomTotalAmount = singleRoomInvoices
     .filter((inv) => inv.status === "APPROVED")
-    .reduce((acc, inv) => acc + (inv.amount || 0), 0);
+    .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
 
   if (isLoading) {
     return <Loading message="Loading payments..." />;
