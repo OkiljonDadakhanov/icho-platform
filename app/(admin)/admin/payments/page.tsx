@@ -138,7 +138,12 @@ export default function PaymentsPage() {
 
     // Filter by status
     if (singleRoomStatusFilter !== "all") {
-      filtered = filtered.filter((inv) => inv.status === singleRoomStatusFilter);
+      if (singleRoomStatusFilter === "PENDING") {
+        // Only show invoices with proof uploaded that are pending review
+        filtered = filtered.filter((inv) => inv.status === "PENDING" && inv.proof_file);
+      } else {
+        filtered = filtered.filter((inv) => inv.status === singleRoomStatusFilter);
+      }
     }
 
     // Filter by search query
