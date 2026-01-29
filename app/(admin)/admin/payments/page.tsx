@@ -771,7 +771,7 @@ export default function PaymentsPage() {
                                 size="sm"
                                 className="gap-1 text-gray-600"
                                 onClick={() => {
-                                  const url = getAuthenticatedUrl(`/v1/admin/single-room-invoices/${invoice.id}/proof/download/`);
+                                  const url = getAuthenticatedUrl(`/v1/payments/admin/single-room-invoices/${invoice.id}/proof/download/`);
                                   window.open(url, "_blank");
                                 }}
                               >
