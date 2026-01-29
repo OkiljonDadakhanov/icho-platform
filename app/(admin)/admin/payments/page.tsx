@@ -112,7 +112,12 @@ export default function PaymentsPage() {
 
     // Filter by status
     if (statusFilter !== "all") {
-      filtered = filtered.filter((p) => p.status === statusFilter);
+      if (statusFilter === "PENDING") {
+        // Only show payments with proof uploaded that are pending review
+        filtered = filtered.filter((p) => p.status === "PENDING" && p.proof_file);
+      } else {
+        filtered = filtered.filter((p) => p.status === statusFilter);
+      }
     }
 
     // Filter by search query
@@ -279,7 +284,7 @@ export default function PaymentsPage() {
     }
   };
 
-  const pendingCount = payments.filter((p) => p.status === "PENDING").length;
+  const pendingCount = payments.filter((p) => p.status === "PENDING" && p.proof_file).length;
   const approvedCount = payments.filter((p) => p.status === "APPROVED").length;
   const rejectedCount = payments.filter((p) => p.status === "REJECTED").length;
   const totalAmount = payments
