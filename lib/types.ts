@@ -12,6 +12,15 @@ export type ParticipantRole =
   | 'MENTOR'
   | 'HEAD_MENTOR';
 
+// Fee role types (includes TEAM for flat team fee)
+export type FeeRoleType =
+  | 'TEAM'
+  | 'TEAM_LEADER'
+  | 'CONTESTANT'
+  | 'OBSERVER'
+  | 'GUEST'
+  | 'SINGLE_ROOM_SURCHARGE';
+
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
@@ -44,7 +53,7 @@ export type InvitationStatus = 'PENDING' | 'GENERATING' | 'GENERATED' | 'FAILED'
 
 export interface FeeRule {
   id: string;
-  role: ParticipantRole;
+  role: FeeRoleType;
   unit_fee: number;
   currency: string;
   is_active: boolean;
