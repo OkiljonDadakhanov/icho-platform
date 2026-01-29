@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
             size="sm"
             className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
             onClick={async () => {
-              const blob = await adminService.exportAnalytics();
+              const blob = await adminService.exportCountries();
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
