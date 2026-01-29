@@ -69,29 +69,26 @@ export default function PaymentPage() {
   }
 
   const breakdown = useMemo(() => {
-    const teamLeaderFee = getFee("TEAM_LEADER")
-    const contestantFee = getFee("CONTESTANT")
+    // Flat team fee for contestants + team leaders
+    const teamFee = getFee("TEAM")
+    // Per-person fees for observers and guests
     const observerFee = getFee("OBSERVER")
     const guestFee = getFee("GUEST")
 
     return {
-      teamLeaders: teamLeaders * teamLeaderFee,
-      teamLeaderFee,
+      // Flat team registration fee
+      teamFee,
       teamLeadersCount: teamLeaders,
-      contestants: contestants * contestantFee,
-      contestantFee,
       contestantsCount: contestants,
+      // Per-person fees
       observers: observers * observerFee,
       observerFee,
       observersCount: observers,
       guests: guests * guestFee,
       guestFee,
       guestsCount: guests,
-      total:
-        teamLeaders * teamLeaderFee +
-        contestants * contestantFee +
-        observers * observerFee +
-        guests * guestFee,
+      // Total = flat team fee + per-person observers + per-person guests
+      total: teamFee + observers * observerFee + guests * guestFee,
     }
   }, [teamLeaders, contestants, observers, guests, feeRules])
 
@@ -346,24 +343,23 @@ export default function PaymentPage() {
               Fee Breakdown (from Pre-registration)
             </h3>
             <div className="space-y-2 text-sm">
-              {teamLeaders > 0 && (
-                <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+              {/* Flat Team Registration Fee */}
+              <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
+                <div className="flex flex-col">
                   <span className="text-gray-700">
-                    <Badge className="bg-[#2f3090] text-white mr-2 text-xs">Leaders</Badge>
-                    {teamLeaders} x ${breakdown.teamLeaderFee}
+                    <Badge className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white mr-2 text-xs">Team</Badge>
+                    Team Registration (flat fee)
                   </span>
-                  <span className="font-semibold text-gray-800">${breakdown.teamLeaders.toLocaleString()}</span>
+                  {(teamLeaders > 0 || contestants > 0) && (
+                    <span className="text-xs text-gray-500 mt-1 ml-1">
+                      Includes: {teamLeaders > 0 && `${teamLeaders} team leader${teamLeaders !== 1 ? 's' : ''}`}
+                      {teamLeaders > 0 && contestants > 0 && ', '}
+                      {contestants > 0 && `${contestants} contestant${contestants !== 1 ? 's' : ''}`}
+                    </span>
+                  )}
                 </div>
-              )}
-              {contestants > 0 && (
-                <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
-                  <span className="text-gray-700">
-                    <Badge className="bg-[#00795d] text-white mr-2 text-xs">Contestants</Badge>
-                    {contestants} x ${breakdown.contestantFee}
-                  </span>
-                  <span className="font-semibold text-gray-800">${breakdown.contestants.toLocaleString()}</span>
-                </div>
-              )}
+                <span className="font-semibold text-gray-800">${breakdown.teamFee.toLocaleString()}</span>
+              </div>
               {observers > 0 && (
                 <div className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
                   <span className="text-gray-700">
