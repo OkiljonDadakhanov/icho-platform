@@ -47,6 +47,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AuthenticatedAvatar } from "@/components/ui/authenticated-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
@@ -542,23 +543,25 @@ function PhotoUploadCell({
 
   if (disabled) {
     return (
-      <Avatar className="w-11 h-11 ring-2 ring-white shadow-md">
-        <AvatarImage src={participant.profile_photo} />
-        <AvatarFallback className="text-xs bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+      <AuthenticatedAvatar
+        participantId={participant.id}
+        hasPhoto={!!participant.profile_photo}
+        initials={initials}
+        className="w-11 h-11 ring-2 ring-white shadow-md"
+        fallbackClassName="text-xs bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white"
+      />
     )
   }
 
   return (
     <div className="flex items-center gap-2 group/photo">
-      <Avatar className="w-11 h-11 ring-2 ring-white shadow-md transition-all duration-200 group-hover/photo:ring-[#2f3090]">
-        <AvatarImage src={participant.profile_photo} />
-        <AvatarFallback className="text-xs bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white font-medium">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
+      <AuthenticatedAvatar
+        participantId={participant.id}
+        hasPhoto={!!participant.profile_photo}
+        initials={initials}
+        className="w-11 h-11 ring-2 ring-white shadow-md transition-all duration-200 group-hover/photo:ring-[#2f3090]"
+        fallbackClassName="text-xs bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white font-medium"
+      />
       <input
         type="file"
         accept="image/*"
@@ -1487,12 +1490,13 @@ function EditMemberDialog({
       <DialogContent className="w-[98vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 ring-2 ring-[#2f3090]/20">
-              <AvatarImage src={participant.profile_photo} />
-              <AvatarFallback className="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white font-medium">
-                {participant.first_name?.[0]}{participant.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
+            <AuthenticatedAvatar
+              participantId={participant.id}
+              hasPhoto={!!participant.profile_photo}
+              initials={`${participant.first_name?.[0] || ''}${participant.last_name?.[0] || ''}`}
+              className="w-12 h-12 ring-2 ring-[#2f3090]/20"
+              fallbackClassName="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white font-medium"
+            />
             <div>
               <DialogTitle className="text-xl">Edit Member</DialogTitle>
               <DialogDescription>Update information for {participant.full_name}</DialogDescription>
