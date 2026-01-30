@@ -67,6 +67,7 @@ export default function TravelPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [roomTypeFilter, setRoomTypeFilter] = useState("all");
   const [selectedTravel, setSelectedTravel] = useState<AdminTravelInfo | null>(null);
   const [selectedAccommodation, setSelectedAccommodation] = useState<AdminAccommodation | null>(null);
   const [showTravelDialog, setShowTravelDialog] = useState(false);
@@ -130,6 +131,10 @@ export default function TravelPage() {
       filtered = filtered.filter((a) => a.country === countryFilter);
     }
 
+    if (roomTypeFilter !== "all") {
+      filtered = filtered.filter((a) => a.room_type === roomTypeFilter);
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -140,7 +145,7 @@ export default function TravelPage() {
     }
 
     setFilteredAccommodation(filtered);
-  }, [countryFilter, searchQuery, accommodation]);
+  }, [countryFilter, roomTypeFilter, searchQuery, accommodation]);
 
   const handleExport = async () => {
     try {
@@ -176,6 +181,7 @@ export default function TravelPage() {
   const withFlights = travelInfo.filter((t) => t.flight_number).length;
   const totalAccommodation = accommodation.length;
   const singleRooms = accommodation.filter((a) => a.room_type === "SINGLE").length;
+  const sharedRooms = accommodation.filter((a) => a.room_type === "SHARED").length;
 
   if (isLoading) {
     return <Loading message="Loading travel data..." />;
@@ -208,7 +214,7 @@ export default function TravelPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -238,7 +244,18 @@ export default function TravelPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{totalAccommodation}</p>
-              <p className="text-sm text-gray-500">Accommodation</p>
+              <p className="text-sm text-gray-500">Total Participants</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Users className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{sharedRooms}</p>
+              <p className="text-sm text-gray-500">Shared Rooms</p>
             </div>
           </div>
         </Card>
@@ -293,6 +310,18 @@ export default function TravelPage() {
                 ))}
               </SelectContent>
             </Select>
+            {activeTab === "accommodation" && (
+              <Select value={roomTypeFilter} onValueChange={setRoomTypeFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Filter by room type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Room Types</SelectItem>
+                  <SelectItem value="SHARED">Shared Room</SelectItem>
+                  <SelectItem value="SINGLE">Single Room</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <TabsContent value="travel" className="mt-0">
