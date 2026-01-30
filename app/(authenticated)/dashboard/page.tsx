@@ -69,7 +69,7 @@ export default function DashboardPage() {
               <Home className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{countryName}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{countryName} Team</h1>
               <p className="text-white/70 mt-1">Please use this site to fill out the details for your delegation.</p>
             </div>
           </div>
