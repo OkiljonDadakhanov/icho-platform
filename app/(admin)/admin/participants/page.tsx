@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AuthenticatedAvatar } from "@/components/ui/authenticated-avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
@@ -312,12 +312,13 @@ export default function ParticipantsPage() {
                   <TableRow key={participant.id} className="hover:bg-gray-50">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="w-9 h-9">
-                          <AvatarImage src={participant.profile_photo} />
-                          <AvatarFallback className="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-sm">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        <AuthenticatedAvatar
+                          participantId={participant.id}
+                          hasPhoto={!!participant.profile_photo}
+                          initials={initials}
+                          className="w-9 h-9"
+                          fallbackClassName="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-sm"
+                        />
                         <div>
                           <p className="font-medium text-gray-900">{participant.full_name}</p>
                           <p className="text-xs text-gray-500">{participant.passport_number}</p>
@@ -393,12 +394,13 @@ export default function ParticipantsPage() {
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-center gap-4 pb-4 border-b">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={selectedParticipant.profile_photo} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-xl">
-                    {selectedParticipant.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <AuthenticatedAvatar
+                  participantId={selectedParticipant.id}
+                  hasPhoto={!!selectedParticipant.profile_photo}
+                  initials={selectedParticipant.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                  className="w-16 h-16"
+                  fallbackClassName="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-xl"
+                />
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">{selectedParticipant.full_name}</h3>
                   <div className="flex items-center gap-2 mt-1">

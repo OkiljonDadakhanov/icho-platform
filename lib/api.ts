@@ -397,3 +397,27 @@ export const getAuthenticatedUrl = (endpoint: string) => {
   const separator = endpoint.includes('?') ? '&' : '?';
   return `${baseUrl}${endpoint}${separator}token=${token}`;
 };
+
+/**
+ * Get authenticated URL for media files (profile photos, documents, etc.)
+ * Handles both full URLs and relative paths from the backend.
+ */
+export const getAuthenticatedMediaUrl = (mediaUrl: string | null | undefined): string | undefined => {
+  if (!mediaUrl) return undefined;
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  if (!token) return undefined;
+
+  // If it's already a full URL, add token
+  if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) {
+    const separator = mediaUrl.includes('?') ? '&' : '?';
+    return `${mediaUrl}${separator}token=${token}`;
+  }
+
+  // For relative paths like /media/profile_photos/..., construct full URL
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  // Remove /api suffix to get base URL for media
+  const baseUrl = apiUrl.replace(/\/api\/?$/, '');
+  const separator = mediaUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${mediaUrl}${separator}token=${token}`;
+};
