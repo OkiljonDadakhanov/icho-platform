@@ -51,10 +51,10 @@ export default function InvitationsPage() {
     }
   }
 
-  const handleGenerateInvitation = async (participantId: string) => {
+  const handleGenerateInvitation = async (participantId: string, force: boolean = false) => {
     try {
       setGeneratingFor(participantId)
-      await invitationsService.requestInvitation(participantId)
+      await invitationsService.requestInvitation(participantId, force)
 
       // Poll for status updates until generation completes
       const maxAttempts = 30 // 30 seconds max
@@ -291,7 +291,7 @@ export default function InvitationsPage() {
                               <Button
                                 size="sm"
                                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all"
-                                onClick={() => handleGenerateInvitation(participant.id)}
+                                onClick={() => handleGenerateInvitation(participant.id, true)}
                                 disabled={isGenerating}
                               >
                                 {isGenerating ? (

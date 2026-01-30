@@ -27,7 +27,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AuthenticatedAvatar } from "@/components/ui/authenticated-avatar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
   Download,
@@ -37,10 +36,8 @@ import {
   Eye as EyeIcon,
   User as UserIcon,
   Mail,
-  Phone,
   Calendar,
   FileText,
-  Globe,
   Shirt,
   UtensilsCrossed,
   Loader2,
@@ -296,73 +293,47 @@ export default function ParticipantsPage() {
                 <TableHead className="font-semibold">Role</TableHead>
                 <TableHead className="font-semibold">Gender</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredParticipants.map((participant) => {
-                const initials = participant.full_name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2);
-
-                return (
-                  <TableRow key={participant.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <AuthenticatedAvatar
-                          participantId={participant.id}
-                          hasPhoto={!!participant.profile_photo}
-                          initials={initials}
-                          className="w-9 h-9"
-                          fallbackClassName="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-sm"
-                        />
-                        <div>
-                          <p className="font-medium text-gray-900">{participant.full_name}</p>
-                          <p className="text-xs text-gray-500">{participant.passport_number}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={`https://flagcdn.com/w20/${participant.country_iso?.toLowerCase().slice(0, 2)}.png`}
-                          alt={participant.country_name}
-                          className="w-5 h-4 object-cover rounded"
-                          onError={(e) => {
-                            e.currentTarget.src = "https://flagcdn.com/w20/un.png";
-                          }}
-                        />
-                        <span className="text-sm">{participant.country_name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={roleColors[participant.role] || "bg-gray-500 text-white"}>
-                        {mapRoleToFrontend(participant.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {mapGenderToFrontend(participant.gender)}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">{participant.email}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => viewDetails(participant)}
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {filteredParticipants.map((participant) => (
+                <TableRow
+                  key={participant.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => viewDetails(participant)}
+                >
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-gray-900">{participant.full_name}</p>
+                      <p className="text-xs text-gray-500">{participant.passport_number}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={`https://flagcdn.com/w20/${participant.country_iso?.toLowerCase().slice(0, 2)}.png`}
+                        alt={participant.country_name}
+                        className="w-5 h-4 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://flagcdn.com/w20/un.png";
+                        }}
+                      />
+                      <span className="text-sm">{participant.country_name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={roleColors[participant.role] || "bg-gray-500 text-white"}>
+                      {mapRoleToFrontend(participant.role)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {mapGenderToFrontend(participant.gender)}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600">{participant.email}</span>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
