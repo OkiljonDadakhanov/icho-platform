@@ -45,6 +45,8 @@ import {
   FileCheck,
   ExternalLink,
   AlertTriangle,
+  Bed,
+  BadgeCheck,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -375,6 +377,12 @@ export default function ParticipantsPage() {
                 />
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">{selectedParticipant.full_name}</h3>
+                  {selectedParticipant.badge_name && selectedParticipant.badge_name !== selectedParticipant.full_name && (
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <BadgeCheck className="w-3 h-3" />
+                      Badge: {selectedParticipant.badge_name}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mt-1">
                     <Badge className={roleColors[selectedParticipant.role]}>
                       {mapRoleToFrontend(selectedParticipant.role)}
@@ -427,6 +435,16 @@ export default function ParticipantsPage() {
                   </div>
                 </div>
 
+                {selectedParticipant.paternal_name && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <UserIcon className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-xs text-gray-500">Paternal Name</p>
+                      <p className="text-sm font-medium">{selectedParticipant.paternal_name}</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <Shirt className="w-5 h-5 text-gray-400" />
                   <div>
@@ -451,7 +469,7 @@ export default function ParticipantsPage() {
                 </div>
 
                 {selectedParticipant.medical_requirements && (
-                  <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200 col-span-2">
                     <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-amber-700">Medical Requirements</p>
@@ -462,6 +480,38 @@ export default function ParticipantsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Accommodation Preference (non-contestants only) */}
+              {selectedParticipant.role !== "CONTESTANT" && (
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-gray-500 mb-3">Accommodation Preference</p>
+                  <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <Bed className="w-5 h-5 text-indigo-500" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedParticipant.prefers_single_room ? "Single Room Requested" : "Shared Room (Default)"}
+                      </p>
+                      {selectedParticipant.prefers_single_room && selectedParticipant.single_room_invoice_status && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Invoice Status:{" "}
+                          <Badge
+                            variant="outline"
+                            className={
+                              selectedParticipant.single_room_invoice_status === "APPROVED"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : selectedParticipant.single_room_invoice_status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            }
+                          >
+                            {selectedParticipant.single_room_invoice_status}
+                          </Badge>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Documents */}
               <div className="pt-4 border-t">
