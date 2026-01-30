@@ -1696,13 +1696,16 @@ function EditMemberDialog({
             )}
 
             <div className="space-y-2 mt-4">
-              <Label className="text-gray-600">Medical Requirements</Label>
+              <Label className="text-gray-600">
+                Medical Requirements <span className="text-gray-400 text-xs">(optional)</span>
+              </Label>
               <Input
                 placeholder="Any allergies, medical conditions, or special requirements"
                 value={formData.medical_requirements}
                 onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
                 className="border-gray-200"
               />
+              <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
             </div>
           </div>
 
