@@ -43,7 +43,8 @@ import {
   FileCheck,
   Trash2,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -53,7 +54,7 @@ import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment, PreRegistration } from "@/lib/types"
+import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, ColorVisionDeficiency, Payment, PreRegistration } from "@/lib/types"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
 import { getErrorMessage } from "@/lib/error-utils"
@@ -625,6 +626,7 @@ function AddMemberDialog({
     other_dietary_requirements: "",
     passport_number: "",
     medical_requirements: "",
+    color_vision_deficiency: "" as ColorVisionDeficiency | "",
     email: "",
     regulations_accepted: false,
     prefers_single_room: false,
@@ -659,6 +661,7 @@ function AddMemberDialog({
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
       passport_number: formData.passport_number,
       medical_requirements: formData.medical_requirements || undefined,
+      color_vision_deficiency: formData.role === 'CONTESTANT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
       email: formData.email,
       regulations_accepted: formData.regulations_accepted,
       prefers_single_room: formData.role !== 'CONTESTANT' ? formData.prefers_single_room : undefined,
@@ -681,6 +684,7 @@ function AddMemberDialog({
       other_dietary_requirements: "",
       passport_number: "",
       medical_requirements: "",
+      color_vision_deficiency: "",
       email: "",
       regulations_accepted: false,
       prefers_single_room: false,
@@ -1150,6 +1154,36 @@ function AddMemberDialog({
                 </div>
               </div>
             )}
+
+            {/* Color Vision Information (contestants only) */}
+            {formData.role === 'CONTESTANT' && (
+              <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100 animate-in slide-in-from-top-2 duration-200">
+                <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-cyan-600" />
+                  Color Vision Information
+                </h3>
+                <div className="space-y-2">
+                  <Label className="text-gray-600">
+                    Do you have Color blindness or color vision deficiency (CVD)? <span className="text-gray-400 text-xs">(optional)</span>
+                  </Label>
+                  <Select
+                    value={formData.color_vision_deficiency}
+                    onValueChange={(value) => setFormData({ ...formData, color_vision_deficiency: value as ColorVisionDeficiency })}
+                  >
+                    <SelectTrigger className="border-gray-200 focus:border-cyan-500 focus:ring-cyan-500/20">
+                      <SelectValue placeholder="Select if applicable" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NONE">None (no color blindness)</SelectItem>
+                      <SelectItem value="RED_GREEN">Red-Green (Protan/Deutan)</SelectItem>
+                      <SelectItem value="BLUE_YELLOW">Blue-Yellow (Tritan)</SelectItem>
+                      <SelectItem value="COMPLETE">Complete color blindness (Monochromacy)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">This helps us prepare accessible exam materials if needed.</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step 3: Documents */}
@@ -1445,6 +1479,7 @@ function EditMemberDialog({
     other_dietary_requirements: participant.other_dietary_requirements || "",
     passport_number: participant.passport_number,
     medical_requirements: participant.medical_requirements || "",
+    color_vision_deficiency: (participant.color_vision_deficiency || "") as ColorVisionDeficiency | "",
     email: participant.email || "",
     regulations_accepted: participant.regulations_accepted,
     prefers_single_room: participant.prefers_single_room || false,
@@ -1476,6 +1511,7 @@ function EditMemberDialog({
     onEdit(participant.id, {
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
+      color_vision_deficiency: formData.role === 'CONTESTANT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
       prefers_single_room: formData.role !== 'CONTESTANT' ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
@@ -1717,6 +1753,36 @@ function EditMemberDialog({
               <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
             </div>
           </div>
+
+          {/* Color Vision Information (contestants only) */}
+          {formData.role === 'CONTESTANT' && (
+            <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100">
+              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <Eye className="w-4 h-4 text-cyan-600" />
+                Color Vision Information
+              </h3>
+              <div className="space-y-2">
+                <Label className="text-gray-600">
+                  Do you have Color blindness or color vision deficiency (CVD)? <span className="text-gray-400 text-xs">(optional)</span>
+                </Label>
+                <Select
+                  value={formData.color_vision_deficiency}
+                  onValueChange={(value) => setFormData({ ...formData, color_vision_deficiency: value as ColorVisionDeficiency })}
+                >
+                  <SelectTrigger className="border-gray-200 focus:border-cyan-500 focus:ring-cyan-500/20">
+                    <SelectValue placeholder="Select if applicable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None (no color blindness)</SelectItem>
+                    <SelectItem value="RED_GREEN">Red-Green (Protan/Deutan)</SelectItem>
+                    <SelectItem value="BLUE_YELLOW">Blue-Yellow (Tritan)</SelectItem>
+                    <SelectItem value="COMPLETE">Complete color blindness (Monochromacy)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">This helps us prepare accessible exam materials if needed.</p>
+              </div>
+            </div>
+          )}
 
           {/* Room Preference (all except contestants) */}
           {formData.role && formData.role !== 'CONTESTANT' && (

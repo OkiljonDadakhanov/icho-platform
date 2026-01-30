@@ -27,6 +27,8 @@ export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
 
 export type DietaryRequirement = 'NORMAL' | 'HALAL' | 'VEGETARIAN' | 'VEGAN' | 'KOSHER' | 'OTHER';
 
+export type ColorVisionDeficiency = 'NONE' | 'RED_GREEN' | 'BLUE_YELLOW' | 'COMPLETE';
+
 export type PaymentStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type SingleRoomInvoiceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -130,6 +132,7 @@ export interface Participant {
   dietary_requirements: DietaryRequirement;
   other_dietary_requirements?: string;
   medical_requirements?: string;
+  color_vision_deficiency?: ColorVisionDeficiency;
   email: string;
   consent_form_signed?: string;
   commitment_form_signed?: string;
@@ -367,6 +370,7 @@ export interface ParticipantCreateRequest {
   dietary_requirements: DietaryRequirement;
   other_dietary_requirements?: string;
   medical_requirements?: string;
+  color_vision_deficiency?: ColorVisionDeficiency;
   email: string;
   passport_scan?: File;
   profile_photo?: File;
