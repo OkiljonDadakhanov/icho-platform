@@ -76,6 +76,7 @@ export interface AdminAccommodation {
   additional_nights_before: number;
   additional_nights_after: number;
   notes: string;
+  single_room_invoice_status: string | null;
   created_at: string;
 }
 

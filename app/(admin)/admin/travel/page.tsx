@@ -404,7 +404,7 @@ export default function TravelPage() {
                     <TableHead className="font-semibold">Country</TableHead>
                     <TableHead className="font-semibold">Role</TableHead>
                     <TableHead className="font-semibold">Room Type</TableHead>
-                    <TableHead className="font-semibold">Roommate</TableHead>
+                    <TableHead className="font-semibold">Invoice Status</TableHead>
                     <TableHead className="font-semibold">Special</TableHead>
                     <TableHead className="font-semibold text-right">Actions</TableHead>
                   </TableRow>
@@ -439,8 +439,19 @@ export default function TravelPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {accom.preferred_roommate ? (
-                          <span className="text-sm">{accom.preferred_roommate}</span>
+                        {accom.room_type === "SINGLE" && accom.single_room_invoice_status ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              accom.single_room_invoice_status === "APPROVED"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : accom.single_room_invoice_status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            }
+                          >
+                            {accom.single_room_invoice_status}
+                          </Badge>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
@@ -634,6 +645,27 @@ export default function TravelPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Single Room Invoice Status */}
+              {selectedAccommodation.room_type === "SINGLE" && selectedAccommodation.single_room_invoice_status && (
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  selectedAccommodation.single_room_invoice_status === "APPROVED"
+                    ? "bg-green-50 border border-green-200"
+                    : selectedAccommodation.single_room_invoice_status === "REJECTED"
+                    ? "bg-red-50 border border-red-200"
+                    : "bg-yellow-50 border border-yellow-200"
+                }`}>
+                  <span className={`text-sm font-medium ${
+                    selectedAccommodation.single_room_invoice_status === "APPROVED"
+                      ? "text-green-700"
+                      : selectedAccommodation.single_room_invoice_status === "REJECTED"
+                      ? "text-red-700"
+                      : "text-yellow-700"
+                  }`}>
+                    Single room invoice status: {selectedAccommodation.single_room_invoice_status}
+                  </span>
+                </div>
+              )}
 
               {/* Details */}
               <div className="grid grid-cols-2 gap-4">
