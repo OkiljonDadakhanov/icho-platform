@@ -73,29 +73,53 @@ export default function PaymentPage() {
     return 0
   }
 
+  // Use stored fee breakdown from pre-registration (matches invoice) or calculate as fallback
   const breakdown = useMemo(() => {
-    // Flat team fee for contestants + team leaders
+    const storedBreakdown = preRegistration?.fee_breakdown
+    const storedTotal = preRegistration?.fee_total
+
+    // If we have stored breakdown from submission, use it (matches invoice exactly)
+    if (storedBreakdown && storedTotal) {
+      const teamFee = Number(storedBreakdown.TEAM || 0)
+      const observerTotal = Number(storedBreakdown.OBSERVER || 0)
+      const guestTotal = Number(storedBreakdown.GUEST || 0)
+
+      // Calculate per-unit fees from totals
+      const observerFee = observers > 0 ? observerTotal / observers : getFee("OBSERVER")
+      const guestFee = guests > 0 ? guestTotal / guests : getFee("GUEST")
+
+      return {
+        teamFee,
+        teamLeadersCount: teamLeaders,
+        contestantsCount: contestants,
+        observers: observerTotal,
+        observerFee,
+        observersCount: observers,
+        guests: guestTotal,
+        guestFee,
+        guestsCount: guests,
+        total: storedTotal,
+      }
+    }
+
+    // Fallback: calculate from fee rules (for preview before submission)
     const teamFee = getFee("TEAM")
-    // Per-person fees for observers and guests
     const observerFee = getFee("OBSERVER")
     const guestFee = getFee("GUEST")
 
     return {
-      // Flat team registration fee
       teamFee,
       teamLeadersCount: teamLeaders,
       contestantsCount: contestants,
-      // Per-person fees
       observers: observers * observerFee,
       observerFee,
       observersCount: observers,
       guests: guests * guestFee,
       guestFee,
       guestsCount: guests,
-      // Total = flat team fee + per-person observers + per-person guests
       total: teamFee + observers * observerFee + guests * guestFee,
     }
-  }, [teamLeaders, contestants, observers, guests, feeRules])
+  }, [preRegistration, teamLeaders, contestants, observers, guests, feeRules])
 
   const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -389,7 +413,7 @@ export default function PaymentPage() {
                 </div>
               )}
               <div className="flex justify-between items-center font-semibold pt-3 mt-2 border-t border-amber-200">
-                <span className="text-gray-800">Estimated Total</span>
+                <span className="text-gray-800">Total</span>
                 <span className="text-lg text-[#2f3090]">${breakdown.total.toLocaleString()}</span>
               </div>
             </div>
