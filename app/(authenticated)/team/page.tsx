@@ -751,7 +751,8 @@ function AddMemberDialog({
   const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && formData.passport_number && isDobValid && isRoleValid && formData.gender &&
     !getFieldError('first_name') && !getFieldError('last_name') && !getFieldError('passport_number')
   const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements)
-  const canSubmit = canProceedStep1 && canProceedStep2 && formData.regulations_accepted
+  const hasRequiredDocuments = passportScan && profilePhoto && consentForm && (formData.role !== 'CONTESTANT' || commitmentForm)
+  const canSubmit = canProceedStep1 && canProceedStep2 && formData.regulations_accepted && hasRequiredDocuments
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
@@ -1454,6 +1455,14 @@ function EditMemberDialog({
   const [commitmentForm, setCommitmentForm] = useState<File | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  // Validation: documents required if participant doesn't already have them
+  const hasRequiredDocuments =
+    (passportScan || participant.passport_scan) &&
+    (profilePhoto || participant.profile_photo) &&
+    (consentForm || participant.consent_form_signed) &&
+    (formData.role !== 'CONTESTANT' || commitmentForm || participant.commitment_form_signed)
+  const canSubmitEdit = hasRequiredDocuments && formData.regulations_accepted
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -1871,8 +1880,8 @@ function EditMemberDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={isSaving}
-                className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] min-w-[120px]"
+                disabled={isSaving || !canSubmitEdit}
+                className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] min-w-[120px] disabled:opacity-50"
               >
                 {isSaving ? (
                   <>
