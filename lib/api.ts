@@ -44,7 +44,9 @@ export class ApiClient {
       // Use Secure in production (HTTPS), SameSite=Lax for CSRF protection
       const isSecure = window.location.protocol === 'https:';
       const secureFlag = isSecure ? '; Secure' : '';
-      document.cookie = `accessToken=${accessToken}; path=/; max-age=${60 * 30}; SameSite=Lax${secureFlag}`; // 30 minutes
+      // Cookie lifetime should match refresh token so middleware doesn't redirect prematurely
+      // The API client handles actual token validation and refresh
+      document.cookie = `accessToken=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secureFlag}`; // 7 days (match refresh token)
       document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secureFlag}`; // 7 days
     }
   }
