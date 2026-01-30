@@ -661,7 +661,7 @@ function AddMemberDialog({
       medical_requirements: formData.medical_requirements || undefined,
       email: formData.email,
       regulations_accepted: formData.regulations_accepted,
-      prefers_single_room: formData.role === 'TEAM_LEADER' ? formData.prefers_single_room : undefined,
+      prefers_single_room: formData.role !== 'CONTESTANT' ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
@@ -1107,15 +1107,15 @@ function AddMemberDialog({
               </div>
             </div>
 
-            {/* Room Preference (Team Leaders only) */}
-            {formData.role === 'TEAM_LEADER' && (
+            {/* Room Preference (all except contestants) */}
+            {formData.role && formData.role !== 'CONTESTANT' && (
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-200">
                 <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <UsersRound className="w-4 h-4 text-indigo-600" />
                   Accommodation Preference
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  By default, team leaders may share a twin room with another team leader from a different country.
+                  By default, participants may share a twin room with another participant from a different country.
                 </p>
                 <div className="space-y-3">
                   <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
@@ -1129,7 +1129,7 @@ function AddMemberDialog({
                     />
                     <div>
                       <p className="font-medium text-gray-800">Share twin room (included)</p>
-                      <p className="text-sm text-gray-500">Share with another team leader from a different country</p>
+                      <p className="text-sm text-gray-500">Share with another participant from a different country</p>
                     </div>
                   </label>
                   <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
@@ -1467,7 +1467,7 @@ function EditMemberDialog({
     onEdit(participant.id, {
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
-      prefers_single_room: formData.role === 'TEAM_LEADER' ? formData.prefers_single_room : undefined,
+      prefers_single_room: formData.role !== 'CONTESTANT' ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
@@ -1706,15 +1706,15 @@ function EditMemberDialog({
             </div>
           </div>
 
-          {/* Room Preference (Team Leaders only) */}
-          {formData.role === 'TEAM_LEADER' && (
+          {/* Room Preference (all except contestants) */}
+          {formData.role && formData.role !== 'CONTESTANT' && (
             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <UsersRound className="w-4 h-4 text-indigo-600" />
                 Accommodation Preference
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                By default, team leaders may share a twin room with another team leader from a different country.
+                By default, participants may share a twin room with another participant from a different country.
               </p>
               {participant.single_room_invoice_status && (
                 <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 text-sm ${
@@ -1742,7 +1742,7 @@ function EditMemberDialog({
                   />
                   <div>
                     <p className="font-medium text-gray-800">Share twin room (included)</p>
-                    <p className="text-sm text-gray-500">Share with another team leader from a different country</p>
+                    <p className="text-sm text-gray-500">Share with another participant from a different country</p>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
