@@ -127,7 +127,7 @@ export default function CountryDetailsPage() {
   const getRoleBadge = (role: string) => {
     return (
       <Badge className={`${roleColors[role] || "bg-gray-500 text-white"} border-0`}>
-        {mapRoleToFrontend(role)}
+        {role.replace("_", " ")}
       </Badge>
     );
   };
