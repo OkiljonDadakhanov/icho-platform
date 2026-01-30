@@ -65,7 +65,12 @@ export default function PaymentPage() {
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role)
-    return rule ? Number(rule.unit_fee) : 500
+    if (rule) return Number(rule.unit_fee)
+    // Defaults if no rule found
+    if (role === "TEAM") return 3000
+    if (role === "OBSERVER") return 1500
+    if (role === "GUEST") return 3000
+    return 0
   }
 
   const breakdown = useMemo(() => {
