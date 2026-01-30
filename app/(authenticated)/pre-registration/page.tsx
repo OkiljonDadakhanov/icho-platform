@@ -195,16 +195,15 @@ export default function PreRegistrationPage() {
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role);
-    return rule ? Number(rule.unit_fee) : 500; // Default to 500 if no rule found
+    return rule ? Number(rule.unit_fee) : 0;
   };
 
   const calculateTotal = () => {
-    return (
-      formData.teamLeaders * getFee("TEAM_LEADER") +
-      formData.contestants * getFee("CONTESTANT") +
-      formData.observers * getFee("OBSERVER") +
-      formData.guests * getFee("GUEST")
-    );
+    // Flat team fee ($3000) + per-person fees for observers and guests
+    const teamFee = getFee("TEAM") || 3000;
+    const observerFee = formData.observers * getFee("OBSERVER");
+    const guestFee = formData.guests * getFee("GUEST");
+    return teamFee + observerFee + guestFee;
   };
 
   const buildCoordinatorPayload = (): CoordinatorUpsertRequest => ({
@@ -687,17 +686,12 @@ export default function PreRegistrationPage() {
             ${calculateTotal().toLocaleString()} USD
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
-            {formData.teamLeaders > 0 && (
-              <p>Team Leaders: {formData.teamLeaders} × ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
-            )}
-            {formData.contestants > 0 && (
-              <p>Contestants: {formData.contestants} × ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
-            )}
+            <p>Team Registration (up to 2 leaders + 4 contestants) = ${(getFee("TEAM") || 3000).toLocaleString()}</p>
             {formData.observers > 0 && (
-              <p>Observers: {formData.observers} × ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
+              <p>Observers: {formData.observers} × ${getFee("OBSERVER").toLocaleString()} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
             )}
             {formData.guests > 0 && (
-              <p>Guests: {formData.guests} × ${getFee("GUEST")} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
+              <p>Guests: {formData.guests} × ${getFee("GUEST").toLocaleString()} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
             )}
           </div>
         </div>
