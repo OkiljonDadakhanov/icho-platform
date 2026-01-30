@@ -36,8 +36,8 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setIsOpen(false);
   };
 
