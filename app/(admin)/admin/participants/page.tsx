@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -90,9 +92,9 @@ export default function ParticipantsPage() {
         const data = await adminService.getParticipants();
         setParticipants(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch participants:", err);
-        setError(err?.message || "Failed to load participants");
+        setError(getErrorMessage(err, "Failed to load participants"));
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +142,7 @@ export default function ParticipantsPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Participants exported successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to export participants:", err);
       toast.error("Failed to export participants");
     } finally {

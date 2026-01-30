@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -79,9 +81,9 @@ export default function CountryDetailsPage() {
         setCountry(countryData);
         setParticipants(participantsData);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch country details:", err);
-        setError(err?.message || "Failed to load country details");
+        setError(getErrorMessage(err, "Failed to load country details"));
       } finally {
         setIsLoading(false);
       }

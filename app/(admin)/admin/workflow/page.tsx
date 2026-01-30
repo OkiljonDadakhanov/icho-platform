@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +55,7 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService } from "@/lib/services/admin";
 import { toast } from "sonner";
 import { format, parseISO, isAfter, isBefore, addHours } from "date-fns";
-import type { StageDeadline, WorkflowStage } from "@/lib/types";
+import type { StageDeadline, WorkflowStage, CountryProgressResponse } from "@/lib/types";
 
 // Stage icons mapping
 const stageIcons: Record<string, React.ElementType> = {
@@ -122,10 +124,10 @@ export default function WorkflowPage() {
         // Backend returns: { id, name, iso_code, stages: { STAGE_NAME: { status, is_unlocked, ... } } }
         // Frontend needs: flat list of { id, country_id, country_name, country_iso, stage, status, ... }
         const stages: CountryStage[] = [];
-        for (const country of progressData as any[]) {
+        for (const country of progressData as CountryProgressResponse[]) {
           // If country has stages data, create entries for each stage
           if (country.stages && Object.keys(country.stages).length > 0) {
-            for (const [stageName, stageData] of Object.entries(country.stages as Record<string, any>)) {
+            for (const [stageName, stageData] of Object.entries(country.stages)) {
               stages.push({
                 id: `${country.id}-${stageName}`,
                 country_id: country.id,
@@ -141,9 +143,9 @@ export default function WorkflowPage() {
         }
         setCountryStages(stages);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch workflow data:", err);
-        setError(err?.message || "Failed to load workflow data");
+        setError(getErrorMessage(err, "Failed to load workflow data"));
       } finally {
         setIsLoading(false);
       }
@@ -162,7 +164,7 @@ export default function WorkflowPage() {
       );
       setEditingDeadline(null);
       toast.success(`${stageNames[deadline.stage]} deadline updated`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to update deadline");
     }
   };
@@ -194,7 +196,7 @@ export default function WorkflowPage() {
 
       toast.success(`${selectedCountryStage.stage} unlocked for ${selectedCountryStage.country_name}`);
       setShowUnlockDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to unlock stage");
     } finally {
       setIsSubmitting(false);
@@ -212,7 +214,7 @@ export default function WorkflowPage() {
         )
       );
       toast.success(`${stageNames[countryStage.stage]} locked for ${countryStage.country_name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to lock stage");
     }
   };

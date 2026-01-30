@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -185,9 +187,9 @@ export default function PreRegistrationPage() {
         setCoordinatorId(null);
         setCoordinatorPassportScan(null);
       }
-    } catch (err: any) {
-      const error = err as { message?: string };
-      setError(error.message || "Failed to load pre-registration data");
+    } catch (err: unknown) {
+      
+      setError(getErrorMessage(err, "Failed to load pre-registration data"));
     } finally {
       setIsLoading(false);
     }
@@ -303,9 +305,9 @@ export default function PreRegistrationPage() {
 
       toast.success("Pre-registration submitted successfully!");
       await loadPreRegistration();
-    } catch (err: any) {
-      const error = err as { message?: string };
-      toast.error(error.message || "Failed to submit pre-registration");
+    } catch (err: unknown) {
+      
+      toast.error(getErrorMessage(err, "Failed to submit pre-registration"));
     } finally {
       setIsSubmitting(false);
     }
@@ -335,9 +337,9 @@ export default function PreRegistrationPage() {
       const coordinator = await upsertCoordinator();
       await uploadPassportScanIfNeeded(coordinator.id);
       toast.success("Draft saved successfully!");
-    } catch (err: any) {
-      const error = err as { message?: string };
-      toast.error(error.message || "Failed to save draft");
+    } catch (err: unknown) {
+      
+      toast.error(getErrorMessage(err, "Failed to save draft"));
     } finally {
       setIsSubmitting(false);
     }

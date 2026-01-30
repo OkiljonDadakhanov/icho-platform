@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage, hasStatus, hasMessage } from "@/lib/error-utils";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -39,13 +41,13 @@ export default function LoginPage() {
       setError(null);
       const data = await countriesService.getCountries();
       setCountries(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load countries:", err);
-      const error = err as { message?: string; status?: number };
-      if (error.status === 0 || error.message?.includes('Failed to fetch') || error.message?.includes('CORS')) {
+      const errorMsg = getErrorMessage(err, "");
+      if ((hasStatus(err) && err.status === 0) || errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
         setError("Unable to connect to the server. Please ensure the API server is running and CORS is configured correctly.");
       } else {
-        setError(error.message || "Failed to load countries. Please refresh the page.");
+        setError(getErrorMessage(err, "Failed to load countries. Please refresh the page."));
       }
     } finally {
       setIsLoadingCountries(false);
@@ -66,9 +68,8 @@ export default function LoginPage() {
     try {
       await login({ country: selectedCountry, password });
       router.push("/dashboard");
-    } catch (err) {
-      const error = err as { message?: string };
-      setError(error.message || "Invalid credentials. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Invalid credentials. Please try again."));
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -67,9 +69,9 @@ export default function CoordinatorsPage() {
       const data = await preRegistrationService.getCoordinators()
       setCoordinators(data)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch coordinators:", err)
-      setError(err?.message || "Failed to load coordinator information")
+      setError(getErrorMessage(err, "Failed to load coordinator information"))
     } finally {
       setIsLoading(false)
     }
@@ -83,9 +85,9 @@ export default function CoordinatorsPage() {
       setEditingCoordinatorId(null)
       setError(null)
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update coordinator:", err)
-      const msg = err?.message || "Failed to update coordinator"
+      const msg = getErrorMessage(err, "Failed to update coordinator")
       setError(msg)
       return msg
     } finally {
@@ -101,9 +103,9 @@ export default function CoordinatorsPage() {
       setIsAddDialogOpen(false)
       setError(null)
       return null
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add coordinator:", err)
-      const msg = err?.message || "Failed to add coordinator"
+      const msg = getErrorMessage(err, "Failed to add coordinator")
       return msg
     } finally {
       setIsSaving(false)
@@ -117,9 +119,9 @@ export default function CoordinatorsPage() {
       await preRegistrationService.deleteCoordinator(coordinatorId)
       await fetchCoordinators()
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete coordinator:", err)
-      setError(err?.message || "Failed to delete coordinator")
+      setError(getErrorMessage(err, "Failed to delete coordinator"))
     } finally {
       setIsDeleting(null)
     }

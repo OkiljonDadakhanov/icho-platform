@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -30,9 +32,9 @@ export default function DashboardPage() {
         const data = await participantsService.getAllParticipants()
         setParticipants(data)
         setError(null)
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch participants:", err)
-        setError(err?.message || "Failed to load participants")
+        setError(getErrorMessage(err, "Failed to load participants"))
       } finally {
         setIsLoading(false)
       }

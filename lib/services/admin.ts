@@ -11,6 +11,7 @@ import type {
   AuditLog,
   StageDeadline,
   CountryStageStatus,
+  CountryProgressResponse,
   PaginatedResponse,
   PreRegistration,
   User,
@@ -237,9 +238,10 @@ export const adminService = {
 
   /**
    * Get all countries progress
+   * Returns countries with their stage statuses in nested format
    */
-  async getCountriesProgress(): Promise<CountryStageStatus[]> {
-    return api.get<CountryStageStatus[]>('/v1/admin/countries/progress/');
+  async getCountriesProgress(): Promise<CountryProgressResponse[]> {
+    return api.get<CountryProgressResponse[]>('/v1/admin/countries/progress/');
   },
 
   /**

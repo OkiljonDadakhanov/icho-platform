@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -96,9 +98,9 @@ export default function PaymentsPage() {
         setPayments(paymentsData);
         setSingleRoomInvoices(singleRoomData);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch payments:", err);
-        setError(err?.message || "Failed to load payments");
+        setError(getErrorMessage(err, "Failed to load payments"));
       } finally {
         setIsLoading(false);
       }
@@ -202,7 +204,7 @@ export default function PaymentsPage() {
           : `Payment for ${selectedPayment.country_name} rejected`
       );
       setShowReviewDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
@@ -253,7 +255,7 @@ export default function PaymentsPage() {
           : `Single room payment for ${selectedSingleRoom.participant_name} rejected`
       );
       setShowSingleRoomDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
@@ -335,7 +337,7 @@ export default function PaymentsPage() {
               a.click();
               URL.revokeObjectURL(url);
               toast.success("Payments exported successfully");
-            } catch (err: any) {
+            } catch (err: unknown) {
               console.error("Failed to export payments:", err);
               toast.error("Failed to export payments");
             } finally {

@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useEffect, useState } from "react"
 import { format, isPast, isFuture, isWithinInterval, addDays } from "date-fns"
 import { Check, Clock, Lock, CalendarDays } from "lucide-react"
@@ -83,9 +85,9 @@ export function Timeline() {
       setStages(timelineStages)
       setCurrentStage(progress.current_stage)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch timeline data:", err)
-      setError(err?.message || "Failed to load timeline")
+      setError(getErrorMessage(err, "Failed to load timeline"))
     } finally {
       setIsLoading(false)
     }

@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -63,9 +65,9 @@ export default function TravelPage() {
       setParticipants(participantsData)
       setTravelInfos(travelData)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch data:", err)
-      setError(err?.message || "Failed to load data")
+      setError(getErrorMessage(err, "Failed to load data"))
     } finally {
       setIsLoading(false)
     }
@@ -86,9 +88,9 @@ export default function TravelPage() {
         )
       )
       await fetchData()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add travel info:", err)
-      setError(err?.message || "Failed to add travel information")
+      setError(getErrorMessage(err, "Failed to add travel information"))
     } finally {
       setIsSaving(false)
     }
@@ -99,9 +101,9 @@ export default function TravelPage() {
       setIsSaving(true)
       await travelService.updateTravelInfo(id, data)
       await fetchData()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update travel info:", err)
-      setError(err?.message || "Failed to update travel information")
+      setError(getErrorMessage(err, "Failed to update travel information"))
     } finally {
       setIsSaving(false)
     }
@@ -112,9 +114,9 @@ export default function TravelPage() {
       setIsSaving(true)
       await travelService.deleteTravelInfo(id)
       await fetchData()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete travel info:", err)
-      setError(err?.message || "Failed to delete travel information")
+      setError(getErrorMessage(err, "Failed to delete travel information"))
     } finally {
       setIsSaving(false)
     }

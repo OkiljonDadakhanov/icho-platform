@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -223,9 +225,9 @@ export default function AuditLogsPage() {
         const data = await adminService.getAuditLogs({ page: 1, page_size: 100 });
         setLogs(data.results);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch audit logs:", err);
-        setError(err?.message || "Failed to load audit logs");
+        setError(getErrorMessage(err, "Failed to load audit logs"));
       } finally {
         setIsLoading(false);
       }
@@ -297,7 +299,7 @@ export default function AuditLogsPage() {
               const data = await adminService.getAuditLogs({ page: 1, page_size: 100 });
               setLogs(data.results);
               toast.success("Audit logs refreshed");
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error("Failed to refresh audit logs");
             } finally {
               setIsLoading(false);

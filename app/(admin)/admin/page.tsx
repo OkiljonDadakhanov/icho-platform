@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,9 +46,9 @@ export default function AdminDashboardPage() {
         const data = await adminService.getStats();
         setStats(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch stats:", err);
-        setError(err?.message || "Failed to load dashboard statistics");
+        setError(getErrorMessage(err, "Failed to load dashboard statistics"));
       } finally {
         setIsLoading(false);
       }

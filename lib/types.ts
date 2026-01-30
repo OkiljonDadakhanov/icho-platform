@@ -299,6 +299,21 @@ export interface CountryStageStatus {
   created_at: string;
 }
 
+// Type for admin countries progress endpoint response
+export interface CountryProgressStageData {
+  status: StageStatus;
+  is_unlocked: boolean;
+  unlocked_until?: string;
+  unlock_reason?: string;
+}
+
+export interface CountryProgressResponse {
+  id: string;
+  name: string;
+  iso_code: string;
+  stages: Record<string, CountryProgressStageData>;
+}
+
 export interface Notification {
   id: string;
   user: string;
@@ -489,9 +504,21 @@ export function mapDietaryToFrontend(dietary: DietaryRequirement): string {
   return mapping[dietary] || 'normal';
 }
 
+// Valid t-shirt sizes
+const VALID_TSHIRT_SIZES: readonly TshirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
+// Helper function to check if a string is a valid TshirtSize
+export function isValidTshirtSize(size: string): size is TshirtSize {
+  return VALID_TSHIRT_SIZES.includes(size.toUpperCase() as TshirtSize);
+}
+
 // Helper function to map tshirt size
 export function mapTshirtToBackend(size: string): TshirtSize {
-  return size.toUpperCase() as TshirtSize;
+  const upperSize = size.toUpperCase();
+  if (isValidTshirtSize(upperSize)) {
+    return upperSize;
+  }
+  return 'M'; // Default to M if invalid
 }
 
 export function mapTshirtToFrontend(size: TshirtSize): string {

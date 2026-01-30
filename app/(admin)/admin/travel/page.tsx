@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -90,9 +92,9 @@ export default function TravelPage() {
         setTravelInfo(travelData);
         setAccommodation(accommodationData);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch travel data:", err);
-        setError(err?.message || "Failed to load travel data");
+        setError(getErrorMessage(err, "Failed to load travel data"));
       } finally {
         setIsLoading(false);
       }
@@ -158,7 +160,7 @@ export default function TravelPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Travel data exported successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to export travel data:", err);
       toast.error("Failed to export travel data");
     } finally {

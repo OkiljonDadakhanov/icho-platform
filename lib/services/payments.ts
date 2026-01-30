@@ -4,6 +4,7 @@
  */
 
 import { api, apiDownload } from '../api';
+import { hasStatus } from '../error-utils';
 import type { Payment, Invoice, SingleRoomInvoice } from '../types';
 
 export const paymentsService = {
@@ -13,9 +14,9 @@ export const paymentsService = {
   async getPayment(): Promise<Payment | null> {
     try {
       return await api.get<Payment>('/v1/payments/');
-    } catch (error) {
+    } catch (error: unknown) {
       // Return null if no payment exists yet
-      if ((error as { status: number }).status === 404) {
+      if (hasStatus(error) && error.status === 404) {
         return null;
       }
       throw error;
@@ -29,8 +30,8 @@ export const paymentsService = {
     try {
       const payment = await api.get<Payment>('/v1/payments/');
       return payment?.invoice || null;
-    } catch (error) {
-      if ((error as { status: number }).status === 404) {
+    } catch (error: unknown) {
+      if (hasStatus(error) && error.status === 404) {
         return null;
       }
       throw error;
@@ -82,8 +83,8 @@ export const paymentsService = {
     try {
       const response = await api.get<{ invoices: SingleRoomInvoice[] }>('/v1/payments/single-room-invoices/');
       return response.invoices || [];
-    } catch (error) {
-      if ((error as { status: number }).status === 404) {
+    } catch (error: unknown) {
+      if (hasStatus(error) && error.status === 404) {
         return [];
       }
       throw error;

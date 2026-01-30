@@ -4,6 +4,7 @@
  */
 
 import { api } from '../api';
+import { hasStatus } from '../error-utils';
 import type {
   TravelInfo,
   TravelInfoRequest,
@@ -40,8 +41,8 @@ export const travelService = {
   async getParticipantTravel(participantId: string): Promise<TravelInfo | null> {
     try {
       return await api.get<TravelInfo>(`/v1/participants/${participantId}/travel/`);
-    } catch (error) {
-      if ((error as { status: number }).status === 404) {
+    } catch (error: unknown) {
+      if (hasStatus(error) && error.status === 404) {
         return null;
       }
       throw error;

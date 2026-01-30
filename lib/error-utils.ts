@@ -1,8 +1,68 @@
 /**
- * Error utilities for handling API errors
+ * Error utilities for handling API errors with strong type safety
  */
 
 import type { ApiError } from './api';
+
+/**
+ * Type guard to check if an error is an ApiError
+ */
+export function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as ApiError).status === 'number'
+  );
+}
+
+/**
+ * Type guard to check if an error has a message property
+ */
+export function hasMessage(error: unknown): error is { message: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string'
+  );
+}
+
+/**
+ * Type guard to check if an error has a detail property (Django REST framework format)
+ */
+export function hasDetail(error: unknown): error is { detail: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'detail' in error &&
+    typeof (error as { detail: unknown }).detail === 'string'
+  );
+}
+
+/**
+ * Type guard to check if an error has an error property
+ */
+export function hasErrorField(error: unknown): error is { error: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'error' in error &&
+    typeof (error as { error: unknown }).error === 'string'
+  );
+}
+
+/**
+ * Type guard to check if an error has a status property
+ */
+export function hasStatus(error: unknown): error is { status: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as { status: unknown }).status === 'number'
+  );
+}
 
 /**
  * Extract a user-friendly error message from an API error
@@ -11,17 +71,15 @@ export function getErrorMessage(error: unknown, fallback: string = 'An error occ
   if (!error) return fallback;
 
   // Handle ApiError type
-  if (typeof error === 'object' && error !== null) {
-    const apiError = error as Partial<ApiError>;
-
+  if (isApiError(error)) {
     // Check for specific error message
-    if (apiError.message && apiError.message !== 'An error occurred') {
-      return apiError.message;
+    if (error.message && error.message !== 'An error occurred') {
+      return error.message;
     }
 
     // Check for field-level errors
-    if (apiError.errors) {
-      const errorMessages = Object.entries(apiError.errors)
+    if (error.errors) {
+      const errorMessages = Object.entries(error.errors)
         .map(([field, messages]) => {
           const fieldName = field === 'non_field_errors' ? '' : `${field}: `;
           return `${fieldName}${Array.isArray(messages) ? messages.join(', ') : messages}`;
@@ -32,16 +90,21 @@ export function getErrorMessage(error: unknown, fallback: string = 'An error occ
         return errorMessages.join('. ');
       }
     }
+  }
 
-    // Check for detail field (Django REST framework format)
-    if ('detail' in error && typeof (error as { detail: unknown }).detail === 'string') {
-      return (error as { detail: string }).detail;
-    }
+  // Handle object with message
+  if (hasMessage(error) && error.message !== 'An error occurred') {
+    return error.message;
+  }
 
-    // Check for error field
-    if ('error' in error && typeof (error as { error: unknown }).error === 'string') {
-      return (error as { error: string }).error;
-    }
+  // Check for detail field (Django REST framework format)
+  if (hasDetail(error)) {
+    return error.detail;
+  }
+
+  // Check for error field
+  if (hasErrorField(error)) {
+    return error.error;
   }
 
   // Handle string error

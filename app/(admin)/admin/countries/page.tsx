@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -69,9 +71,9 @@ export default function CountriesPage() {
         setCountries(data);
         setFilteredCountries(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch countries:", err);
-        setError(err?.message || "Failed to load countries");
+        setError(getErrorMessage(err, "Failed to load countries"));
       } finally {
         setIsLoading(false);
       }
@@ -124,7 +126,7 @@ export default function CountriesPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Countries exported successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to export countries:", err);
       toast.error("Failed to export countries");
     } finally {

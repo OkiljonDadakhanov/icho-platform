@@ -109,9 +109,9 @@ export default function TeamPage() {
       setPayment(paymentData)
       setPreRegistration(preRegData)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch data:", err)
-      setError(err?.message || "Failed to load data")
+      setError(getErrorMessage(err, "Failed to load data"))
     } finally {
       setIsLoading(false)
     }
@@ -121,7 +121,7 @@ export default function TeamPage() {
     try {
       const data = await participantsService.getAllParticipants()
       setParticipants(data)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch participants:", err)
     }
   }
@@ -134,7 +134,7 @@ export default function TeamPage() {
       await fetchParticipants()
       setIsAddDialogOpen(false)
       toast.success("Participant added successfully")
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add participant:", JSON.stringify(err, null, 2))
       const message = getErrorMessage(err, "Failed to add participant. Please try again.")
       console.error("Extracted error message:", message)
@@ -152,7 +152,7 @@ export default function TeamPage() {
       await participantsService.updateParticipant(id, data)
       await fetchParticipants()
       toast.success("Participant updated successfully")
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update participant:", err)
       const message = getErrorMessage(err, "Failed to update participant. Please try again.")
       setError(message)
@@ -169,7 +169,7 @@ export default function TeamPage() {
       await participantsService.deleteParticipant(id)
       await fetchParticipants()
       toast.success("Participant deleted successfully")
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete participant:", err)
       const message = getErrorMessage(err, "Failed to delete participant. Please try again.")
       setError(message)
@@ -183,7 +183,7 @@ export default function TeamPage() {
     try {
       await participantsService.uploadProfilePhoto(participantId, file)
       await fetchParticipants()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to upload photo:", err)
       const message = getErrorMessage(err, "Failed to upload photo. Please try again.")
       setError(message)
@@ -313,7 +313,7 @@ export default function TeamPage() {
                       a.click()
                       URL.revokeObjectURL(url)
                       toast.success("Student consent form template downloaded")
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       console.error("Failed to download consent form:", err)
                       toast.error("Failed to download consent form")
                     }
@@ -335,7 +335,7 @@ export default function TeamPage() {
                       a.click()
                       URL.revokeObjectURL(url)
                       toast.success("Commitment form template downloaded")
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       console.error("Failed to download commitment form:", err)
                       toast.error("Failed to download commitment form")
                     }
@@ -364,7 +364,7 @@ export default function TeamPage() {
                       a.click()
                       URL.revokeObjectURL(url)
                       toast.success("Team leader consent form template downloaded")
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       console.error("Failed to download consent form:", err)
                       toast.error("Failed to download consent form")
                     }

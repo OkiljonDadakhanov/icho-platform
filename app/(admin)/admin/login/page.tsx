@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -37,9 +39,8 @@ export default function AdminLoginPage() {
     try {
       await login({ country: username, password });
       router.push("/admin");
-    } catch (err) {
-      const error = err as { message?: string };
-      setError(error.message || "Invalid credentials. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Invalid credentials. Please try again."));
     } finally {
       setIsLoading(false);
     }

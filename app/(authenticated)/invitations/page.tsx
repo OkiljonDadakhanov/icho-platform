@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -44,7 +46,7 @@ export default function InvitationsPage() {
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to fetch data:", err)
-      const message = (err as { message?: string })?.message || "Failed to load data. Please try again.";
+      const message = getErrorMessage(err, "Failed to load data. Please try again.");
       setError(message)
     } finally {
       setIsLoading(false)
@@ -81,7 +83,7 @@ export default function InvitationsPage() {
       await fetchData()
     } catch (err: unknown) {
       console.error("Failed to generate invitation:", err)
-      const message = (err as { message?: string })?.message || "Failed to generate invitation letter. Please try again.";
+      const message = getErrorMessage(err, "Failed to generate invitation letter. Please try again.");
       setError(message)
     } finally {
       setGeneratingFor(null)
@@ -101,7 +103,7 @@ export default function InvitationsPage() {
       document.body.removeChild(a)
     } catch (err: unknown) {
       console.error("Failed to download invitation:", err)
-      const message = (err as { message?: string })?.message || "Failed to download invitation letter. Please try again.";
+      const message = getErrorMessage(err, "Failed to download invitation letter. Please try again.");
       setError(message)
     }
   }
