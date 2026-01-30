@@ -441,7 +441,7 @@ function AddTravelDialog({
           <Sparkles className="w-4 h-4 ml-2 opacity-70" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-xl text-white">
@@ -685,7 +685,7 @@ function EditTravelDialog({
           <Edit className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl overflow-x-hidden">
+      <DialogContent className="w-[95vw] max-w-3xl overflow-x-hidden">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-xl text-white">
