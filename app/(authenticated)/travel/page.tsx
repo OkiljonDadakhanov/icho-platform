@@ -509,7 +509,7 @@ function AddTravelDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -536,8 +536,8 @@ function AddTravelDialog({
                 value={formData.arrival_timezone}
                 onValueChange={(value) => setFormData({ ...formData, arrival_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -549,7 +549,7 @@ function AddTravelDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -576,8 +576,8 @@ function AddTravelDialog({
                 value={formData.departure_timezone}
                 onValueChange={(value) => setFormData({ ...formData, departure_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -698,7 +698,7 @@ function EditTravelDialog({
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -725,8 +725,8 @@ function EditTravelDialog({
                 value={formData.arrival_timezone}
                 onValueChange={(value) => setFormData({ ...formData, arrival_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -738,7 +738,7 @@ function EditTravelDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -765,8 +765,8 @@ function EditTravelDialog({
                 value={formData.departure_timezone}
                 onValueChange={(value) => setFormData({ ...formData, departure_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
