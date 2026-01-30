@@ -44,6 +44,7 @@ import {
   FileImage,
   FileCheck,
   ExternalLink,
+  AlertTriangle,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -441,8 +442,25 @@ export default function ParticipantsPage() {
                     <p className="text-sm font-medium capitalize">
                       {selectedParticipant.dietary_requirements.toLowerCase()}
                     </p>
+                    {selectedParticipant.dietary_requirements === "OTHER" && selectedParticipant.other_dietary_requirements && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        {selectedParticipant.other_dietary_requirements}
+                      </p>
+                    )}
                   </div>
                 </div>
+
+                {selectedParticipant.medical_requirements && (
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-amber-700">Medical Requirements</p>
+                      <p className="text-sm text-amber-900">
+                        {selectedParticipant.medical_requirements}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Documents */}
