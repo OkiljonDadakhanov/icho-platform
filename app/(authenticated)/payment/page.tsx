@@ -80,7 +80,10 @@ export default function PaymentPage() {
 
     // If we have stored breakdown from submission, use it (matches invoice exactly)
     if (storedBreakdown && storedTotal) {
-      const teamFee = Number(storedBreakdown.TEAM || 0)
+      // Handle both old format (TEAM_LEADER + CONTESTANT) and new format (TEAM)
+      const teamFee = storedBreakdown.TEAM
+        ? Number(storedBreakdown.TEAM)
+        : Number(storedBreakdown.TEAM_LEADER || 0) + Number(storedBreakdown.CONTESTANT || 0)
       const observerTotal = Number(storedBreakdown.OBSERVER || 0)
       const guestTotal = Number(storedBreakdown.GUEST || 0)
 
