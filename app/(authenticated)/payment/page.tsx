@@ -259,8 +259,13 @@ export default function PaymentPage() {
         <Alert className="bg-gradient-to-r from-red-50 to-red-50/50 border-red-200">
           <XCircle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
-            Your payment proof was rejected. {payment?.admin_comment && `Reason: ${payment.admin_comment}`}
-            Please upload a valid bank receipt or transfer confirmation.
+            <p className="font-medium">Your payment proof was rejected.</p>
+            {payment?.admin_comment && (
+              <p className="mt-2 p-2 bg-red-100 rounded border border-red-200">
+                <span className="font-semibold">Reason:</span> {payment.admin_comment}
+              </p>
+            )}
+            <p className="mt-2">Please upload a valid bank receipt or transfer confirmation.</p>
           </AlertDescription>
         </Alert>
       )}
