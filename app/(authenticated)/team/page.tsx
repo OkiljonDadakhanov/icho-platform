@@ -1226,7 +1226,7 @@ function AddMemberDialog({
                   />
                 </div>
                 <Label htmlFor="regulations_accepted" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
-                  I have read and agree to the <span className="font-semibold text-[#2f3090]">IChO 2026 regulations and rules</span>.
+                  I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>.
                   I understand and accept all terms and conditions. <span className="text-red-500">*</span>
                 </Label>
               </div>
@@ -1819,7 +1819,7 @@ function EditMemberDialog({
                 className="w-5 h-5 mt-0.5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20"
               />
               <Label htmlFor={`regulations_accepted_${participant.id}`} className="text-sm text-gray-700 cursor-pointer">
-                I have read and agree to the IChO 2026 regulations and rules
+                I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>
               </Label>
             </div>
           </div>
