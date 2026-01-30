@@ -1770,7 +1770,11 @@ function EditMemberDialog({
           <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-4 rounded-xl border border-violet-200">
             <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <Upload className="w-4 h-4 text-violet-600" />
-              Update Documents <span className="text-gray-400 text-sm font-normal">(optional)</span>
+              {participant.passport_scan && participant.profile_photo && participant.consent_form_signed ? (
+                <>Update Documents <span className="text-gray-400 text-sm font-normal">(optional)</span></>
+              ) : (
+                <>Upload Required Documents <span className="text-red-500">*</span></>
+              )}
             </h3>
 
             <div className="grid grid-cols-1 gap-4">
