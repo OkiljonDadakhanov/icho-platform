@@ -85,6 +85,12 @@ export const participantsService = {
     if (data.commitment_form_signed) {
       formData.append('commitment_form_signed', data.commitment_form_signed);
     }
+    if (data.translation_language) {
+      formData.append('translation_language', data.translation_language);
+    }
+    if (data.exam_language) {
+      formData.append('exam_language', data.exam_language);
+    }
 
     return api.upload<Participant>('/v1/participants/', formData);
   },
@@ -114,6 +120,8 @@ export const participantsService = {
     if (data.profile_photo) formData.append('profile_photo', data.profile_photo);
     if (data.consent_form_signed) formData.append('consent_form_signed', data.consent_form_signed);
     if (data.commitment_form_signed) formData.append('commitment_form_signed', data.commitment_form_signed);
+    if (data.translation_language !== undefined) formData.append('translation_language', data.translation_language);
+    if (data.exam_language !== undefined) formData.append('exam_language', data.exam_language);
 
     return api.uploadPatch<Participant>(`/v1/participants/${id}/`, formData);
   },

@@ -5,12 +5,12 @@
 
 // Enums matching backend
 export type ParticipantRole =
+  | 'HEAD_MENTOR'
   | 'TEAM_LEADER'
   | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
-  | 'MENTOR'
-  | 'HEAD_MENTOR';
+  | 'REMOTE_TRANSLATOR';
 
 // Fee role types (includes TEAM for flat team fee)
 export type FeeRoleType =
@@ -136,6 +136,8 @@ export interface Participant {
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
   single_room_invoice_status?: SingleRoomInvoiceStatus | null;
+  translation_language?: string;
+  exam_language?: string;
   created_at: string;
   updated_at: string;
 }
@@ -374,6 +376,8 @@ export interface ParticipantCreateRequest {
   commitment_form_signed?: File;
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
+  translation_language?: string;
+  exam_language?: string;
 }
 
 export interface ParticipantUpdateRequest extends Partial<ParticipantCreateRequest> {}
@@ -416,11 +420,15 @@ export interface DelegationProgress {
 // Helper function to map frontend role to backend role
 export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
+    'Head Mentor': 'HEAD_MENTOR',
     'Team Leader': 'TEAM_LEADER',
+    'Mentor': 'TEAM_LEADER',
     'Deputy Leader': 'TEAM_LEADER',
     'Contestant': 'CONTESTANT',
+    'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
+    'Remote Translator': 'REMOTE_TRANSLATOR',
     'IC Member': 'OBSERVER',
     'ISC Member': 'OBSERVER',
     'ITC Member': 'OBSERVER',
@@ -431,12 +439,12 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
 // Helper function to map backend role to frontend role
 export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
+    'HEAD_MENTOR': 'Head Mentor',
     'TEAM_LEADER': 'Team Leader',
     'CONTESTANT': 'Contestant',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
-    'MENTOR': 'Mentor',
-    'HEAD_MENTOR': 'Head Mentor',
+    'REMOTE_TRANSLATOR': 'Remote Translator',
   };
   return mapping[backendRole] || 'Guest';
 }
