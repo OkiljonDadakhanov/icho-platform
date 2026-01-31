@@ -65,7 +65,7 @@ const DEFAULT_LIMITS: Record<string, number | null> = {
   TEAM_LEADER: 2,
   CONTESTANT: 4,
   OBSERVER: 5,
-  GUEST: null, // Unlimited
+  GUEST: 10,
 }
 
 export default function TeamPage() {
@@ -83,7 +83,7 @@ export default function TeamPage() {
     TEAM_LEADER: preRegistration.num_team_leaders,
     CONTESTANT: preRegistration.num_contestants,
     OBSERVER: preRegistration.num_observers,
-    GUEST: preRegistration.num_guests > 0 ? preRegistration.num_guests : null,
+    GUEST: preRegistration.num_guests > 0 ? preRegistration.num_guests : 10,
   } : DEFAULT_LIMITS
 
   const countryName = user?.country?.name || "Your Country"

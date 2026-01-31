@@ -671,12 +671,13 @@ export default function PreRegistrationPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Guests</Label>
-              <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">No limit</span>
+              <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">Max 10</span>
             </div>
             <NumberStepper
               value={formData.guests}
               onChange={(value) => setFormData({ ...formData, guests: value })}
               min={0}
+              max={10}
               disabled={!canEdit}
             />
           </div>
