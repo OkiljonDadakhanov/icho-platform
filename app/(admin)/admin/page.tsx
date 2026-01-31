@@ -19,6 +19,7 @@ import {
   Download,
   RefreshCw,
   Activity,
+  FileText,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -327,38 +328,49 @@ export default function AdminDashboardPage() {
         {/* Payment Status */}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Status</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                <FileText className="w-7 h-7 text-gray-500" />
                 <div>
-                  <p className="font-semibold text-emerald-900">Approved</p>
-                  <p className="text-sm text-emerald-600">{paymentProgress}% of countries</p>
+                  <p className="font-semibold text-gray-900">Awaiting Proof</p>
+                  <p className="text-sm text-gray-600">No proof uploaded</p>
                 </div>
               </div>
-              <span className="text-3xl font-bold text-emerald-700">{stats.payments.approved}</span>
+              <span className="text-2xl font-bold text-gray-700">{stats.payments.awaiting_proof}</span>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-100">
+            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
               <div className="flex items-center gap-3">
-                <Clock className="w-8 h-8 text-amber-500" />
+                <Clock className="w-7 h-7 text-amber-500" />
                 <div>
                   <p className="font-semibold text-amber-900">Pending Review</p>
                   <p className="text-sm text-amber-600">Awaiting approval</p>
                 </div>
               </div>
-              <span className="text-3xl font-bold text-amber-700">{stats.payments.pending}</span>
+              <span className="text-2xl font-bold text-amber-700">{stats.payments.pending}</span>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100">
+            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-100">
               <div className="flex items-center gap-3">
-                <XCircle className="w-8 h-8 text-red-500" />
+                <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+                <div>
+                  <p className="font-semibold text-emerald-900">Approved</p>
+                  <p className="text-sm text-emerald-600">{paymentProgress}% of countries</p>
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-emerald-700">{stats.payments.approved}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100">
+              <div className="flex items-center gap-3">
+                <XCircle className="w-7 h-7 text-red-500" />
                 <div>
                   <p className="font-semibold text-red-900">Rejected</p>
                   <p className="text-sm text-red-600">Needs resubmission</p>
                 </div>
               </div>
-              <span className="text-3xl font-bold text-red-700">{stats.payments.rejected}</span>
+              <span className="text-2xl font-bold text-red-700">{stats.payments.rejected}</span>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t">

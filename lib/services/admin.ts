@@ -92,6 +92,7 @@ export interface AdminStats {
     guests: number;
   };
   payments: {
+    awaiting_proof: number;
     pending: number;
     approved: number;
     rejected: number;
