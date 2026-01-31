@@ -35,70 +35,31 @@ export const preRegistrationService = {
   },
 
   /**
-   * Get all coordinators for the current country
+   * Get all contact persons for the current country
    */
   async getCoordinators(): Promise<Coordinator[]> {
     return api.get<Coordinator[]>('/pre-registration/coordinators/');
   },
 
   /**
-   * Create a coordinator
+   * Create a contact person
    */
-  async createCoordinator(
-    data: CoordinatorUpsertRequest,
-    passportScan?: File
-  ): Promise<Coordinator> {
-    if (passportScan) {
-      const formData = new FormData();
-      formData.append('full_name', data.full_name);
-      formData.append('role', data.role);
-      formData.append('gender', data.gender);
-      formData.append('date_of_birth', data.date_of_birth);
-      formData.append('passport_number', data.passport_number);
-      formData.append('email', data.email);
-      formData.append('phone', data.phone);
-      if (data.is_primary !== undefined) {
-        formData.append('is_primary', String(data.is_primary));
-      }
-      formData.append('passport_scan', passportScan);
-      return api.upload<Coordinator>('/pre-registration/coordinators/', formData);
-    }
+  async createCoordinator(data: CoordinatorUpsertRequest): Promise<Coordinator> {
     return api.post<Coordinator>('/pre-registration/coordinators/', data);
   },
 
   /**
-   * Update a coordinator
+   * Update a contact person
    */
   async updateCoordinator(id: string, data: Partial<CoordinatorUpsertRequest>): Promise<Coordinator> {
-    const { passport_scan, ...rest } = data;
-
-    if (passport_scan) {
-      const formData = new FormData();
-      Object.entries(rest).forEach(([key, value]) => {
-        if (value !== undefined) {
-          formData.append(key, String(value));
-        }
-      });
-      formData.append('passport_scan', passport_scan);
-      return api.uploadPatch<Coordinator>(`/pre-registration/coordinators/${id}/`, formData);
-    }
-    return api.patch<Coordinator>(`/pre-registration/coordinators/${id}/`, rest);
+    return api.patch<Coordinator>(`/pre-registration/coordinators/${id}/`, data);
   },
 
   /**
-   * Delete a coordinator
+   * Delete a contact person
    */
   async deleteCoordinator(id: string): Promise<void> {
     return api.delete(`/pre-registration/coordinators/${id}/`);
-  },
-
-  /**
-   * Upload coordinator passport scan
-   */
-  async uploadCoordinatorPassport(coordinatorId: string, file: File): Promise<Coordinator> {
-    const formData = new FormData();
-    formData.append('passport_scan', file);
-    return api.upload<Coordinator>(`/pre-registration/coordinators/${coordinatorId}/passport/`, formData);
   },
 
   /**

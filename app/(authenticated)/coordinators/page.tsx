@@ -17,30 +17,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Edit, Users, AlertCircle, CheckCircle2, Upload, FileText, Plus, Trash2 } from "lucide-react"
+import { Edit, Users, AlertCircle, Plus, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
 import type { Coordinator, CoordinatorUpsertRequest } from "@/lib/types"
-
-const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"]
-const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-
-function validatePassportFile(file: File): string | null {
-  const dotIndex = file.name.lastIndexOf(".")
-  if (dotIndex === -1) {
-    return "Invalid file type. Only PDF, JPG, and PNG files are allowed."
-  }
-  const ext = file.name.toLowerCase().slice(dotIndex)
-  if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
-    return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`
-  }
-  if (file.size > MAX_PASSPORT_FILE_SIZE) {
-    return "File size exceeds 10MB limit."
-  }
-  return null
-}
 
 function getTodayDateString(): string {
   return new Date().toISOString().split("T")[0]
@@ -95,10 +77,10 @@ export default function CoordinatorsPage() {
     }
   }
 
-  const handleAddCoordinator = async (data: CoordinatorUpsertRequest, passportScan?: File): Promise<string | null> => {
+  const handleAddCoordinator = async (data: CoordinatorUpsertRequest): Promise<string | null> => {
     try {
       setIsSaving(true)
-      await preRegistrationService.createCoordinator(data, passportScan)
+      await preRegistrationService.createCoordinator(data)
       await fetchCoordinators()
       setIsAddDialogOpen(false)
       setError(null)
@@ -250,21 +232,6 @@ export default function CoordinatorsPage() {
                     <p className="text-muted-foreground">Date of Birth</p>
                     <p className="font-medium">{new Date(coordinator.date_of_birth).toLocaleDateString()}</p>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Passport Number</p>
-                    <p className="font-medium font-mono">{coordinator.passport_number}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Passport Scan</p>
-                    {coordinator.passport_scan ? (
-                      <div className="flex items-center gap-2 text-[#00795d]">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Uploaded</span>
-                      </div>
-                    ) : (
-                      <span className="text-amber-600">Not uploaded</span>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
@@ -304,30 +271,12 @@ function EditCoordinatorDialog({
     email: coordinator.email,
     phone: coordinator.phone,
   })
-  const [passportScan, setPassportScan] = useState<File | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
-
-  const handleFileChange = (file: File | null) => {
-    setFileError(null)
-    if (file) {
-      const error = validatePassportFile(file)
-      if (error) {
-        setFileError(error)
-        setPassportScan(null)
-        return
-      }
-    }
-    setPassportScan(file)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setDialogError(null)
-    const error = await onEdit({
-      ...formData,
-      passport_scan: passportScan || undefined,
-    })
+    const error = await onEdit(formData)
     if (error) {
       setDialogError(error)
     }
@@ -336,7 +285,6 @@ function EditCoordinatorDialog({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
       if (!isOpen) {
-        setFileError(null)
         setDialogError(null)
       }
       onOpenChange(isOpen)
@@ -397,49 +345,11 @@ function EditCoordinatorDialog({
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Passport Scan (PDF/JPG/PNG)</Label>
-            <div className={`flex items-center gap-3 p-3 bg-gray-50 rounded-lg border ${fileError ? "border-red-300" : "border-gray-200"}`}>
-              <div className="p-2 bg-white rounded-lg border flex-shrink-0">
-                <FileText className="w-4 h-4 text-gray-500" />
-              </div>
-              <div className="flex-1 min-w-0 overflow-hidden max-w-[200px]">
-                {passportScan ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm truncate block max-w-[160px]" title={passportScan.name}>{passportScan.name}</span>
-                  </div>
-                ) : coordinator.passport_scan ? (
-                  <span className="text-sm text-green-600">Already uploaded</span>
-                ) : (
-                  <span className="text-sm text-gray-500">No file uploaded</span>
-                )}
-              </div>
-              <label className="cursor-pointer flex-shrink-0">
-                <span className="text-sm font-medium text-[#2f3090] bg-[#2f3090]/10 px-3 py-1.5 rounded-lg hover:bg-[#2f3090]/20 transition-colors flex items-center gap-1">
-                  <Upload className="w-3 h-3" />
-                  {coordinator.passport_scan || passportScan ? "Replace" : "Upload"}
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            {fileError && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                {fileError}
-              </p>
-            )}
-          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving || !!fileError}>
+            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -455,7 +365,7 @@ function AddCoordinatorDialog({
   open,
   onOpenChange,
 }: {
-  onAdd: (data: CoordinatorUpsertRequest, passportScan?: File) => Promise<string | null>
+  onAdd: (data: CoordinatorUpsertRequest) => Promise<string | null>
   isSaving: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -465,32 +375,16 @@ function AddCoordinatorDialog({
     role: "",
     gender: "MALE",
     date_of_birth: "",
-    passport_number: "",
     email: "",
     phone: "",
     is_primary: false,
   })
-  const [passportScan, setPassportScan] = useState<File | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
-
-  const handleFileChange = (file: File | null) => {
-    setFileError(null)
-    if (file) {
-      const error = validatePassportFile(file)
-      if (error) {
-        setFileError(error)
-        setPassportScan(null)
-        return
-      }
-    }
-    setPassportScan(file)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setDialogError(null)
-    const error = await onAdd(formData, passportScan || undefined)
+    const error = await onAdd(formData)
     if (error) {
       setDialogError(error)
     }
@@ -502,13 +396,10 @@ function AddCoordinatorDialog({
       role: "",
       gender: "MALE",
       date_of_birth: "",
-      passport_number: "",
       email: "",
       phone: "",
       is_primary: false,
     })
-    setPassportScan(null)
-    setFileError(null)
     setDialogError(null)
   }
 
@@ -585,15 +476,6 @@ function AddCoordinatorDialog({
               <p className="text-xs text-muted-foreground">Format: dd-mm-yyyy</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="add_passport">Passport Number *</Label>
-            <Input
-              id="add_passport"
-              required
-              value={formData.passport_number}
-              onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
-            />
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="add_email">Email Address *</Label>
@@ -617,47 +499,11 @@ function AddCoordinatorDialog({
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Passport Scan (PDF/JPG/PNG) *</Label>
-            <div className={`flex items-center gap-3 p-3 bg-gray-50 rounded-lg border ${fileError ? "border-red-300" : "border-gray-200"}`}>
-              <div className="p-2 bg-white rounded-lg border flex-shrink-0">
-                <FileText className="w-4 h-4 text-gray-500" />
-              </div>
-              <div className="flex-1 min-w-0 overflow-hidden max-w-[200px]">
-                {passportScan ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm truncate block max-w-[160px]" title={passportScan.name}>{passportScan.name}</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-gray-500">No file uploaded</span>
-                )}
-              </div>
-              <label className="cursor-pointer flex-shrink-0">
-                <span className="text-sm font-medium text-[#2f3090] bg-[#2f3090]/10 px-3 py-1.5 rounded-lg hover:bg-[#2f3090]/20 transition-colors flex items-center gap-1">
-                  <Upload className="w-3 h-3" />
-                  {passportScan ? "Replace" : "Upload"}
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            {fileError && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                {fileError}
-              </p>
-            )}
-          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving || !passportScan || !!fileError}>
+            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving}>
               {isSaving ? "Adding..." : "Add Contact Person"}
             </Button>
           </DialogFooter>

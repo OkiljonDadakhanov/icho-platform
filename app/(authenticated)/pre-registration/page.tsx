@@ -5,7 +5,6 @@ import { getErrorMessage } from "@/lib/error-utils";
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileInput } from "@/components/ui/file-input";
 import { NumberStepper } from "@/components/ui/number-stepper";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -35,32 +34,12 @@ const isValidPhone = (phone: string): boolean => {
   return phoneRegex.test(phone);
 };
 
-// File validation helper
-const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
-const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-function validatePassportFile(file: File): string | null {
-  const dotIndex = file.name.lastIndexOf(".");
-  if (dotIndex === -1) {
-    return "Invalid file type. Only PDF, JPG, and PNG files are allowed.";
-  }
-  const ext = file.name.toLowerCase().slice(dotIndex);
-  if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
-    return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`;
-  }
-  if (file.size > MAX_PASSPORT_FILE_SIZE) {
-    return "File size exceeds 10MB limit.";
-  }
-  return null;
-}
-
 interface FormData {
   firstName: string;
   lastName: string;
   role: string;
   gender: Gender;
   dateOfBirth: string;
-  passportNumber: string;
   email: string;
   phone: string;
   teamLeaders: number;
@@ -76,16 +55,12 @@ export default function PreRegistrationPage() {
   const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null);
   const [feeRules, setFeeRules] = useState<FeeRule[]>([]);
   const [coordinatorId, setCoordinatorId] = useState<string | null>(null);
-  const [coordinatorPassportScan, setCoordinatorPassportScan] = useState<string | null>(null);
-  const [passportScanFile, setPassportScanFile] = useState<File | null>(null);
-  const [passportFileError, setPassportFileError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
     role: "National Contact Person",
     gender: "MALE",
     dateOfBirth: "",
-    passportNumber: "",
     email: "",
     phone: "",
     teamLeaders: 1,
@@ -118,10 +93,6 @@ export default function PreRegistrationPage() {
       case "phone":
         if (!value.trim()) return "Phone number is required";
         if (!isValidPhone(value)) return "Please enter a valid phone number";
-        break;
-      case "passportNumber":
-        if (!value.trim()) return "Passport number is required";
-        if (value.length < 5) return "Passport number seems too short";
         break;
       case "dateOfBirth":
         if (!value) return "Date of birth is required";
@@ -170,7 +141,6 @@ export default function PreRegistrationPage() {
       const coordinator = coordinators.find((item) => item.is_primary) ?? coordinators[0];
       if (coordinator) {
         setCoordinatorId(coordinator.id);
-        setCoordinatorPassportScan(coordinator.passport_scan ?? null);
         const [firstName, ...lastNameParts] = coordinator.full_name.split(" ");
         setFormData((prev) => ({
           ...prev,
@@ -179,13 +149,11 @@ export default function PreRegistrationPage() {
           role: coordinator.role,
           gender: coordinator.gender,
           dateOfBirth: coordinator.date_of_birth,
-          passportNumber: coordinator.passport_number,
           email: coordinator.email,
           phone: coordinator.phone,
         }));
       } else {
         setCoordinatorId(null);
-        setCoordinatorPassportScan(null);
       }
     } catch (err: unknown) {
       
@@ -213,7 +181,6 @@ export default function PreRegistrationPage() {
     role: formData.role,
     gender: formData.gender,
     date_of_birth: formData.dateOfBirth,
-    passport_number: formData.passportNumber,
     email: formData.email,
     phone: formData.phone,
     is_primary: true,
@@ -224,28 +191,16 @@ export default function PreRegistrationPage() {
     if (coordinatorId) {
       const updated = await preRegistrationService.updateCoordinator(coordinatorId, payload);
       setCoordinatorId(updated.id);
-      setCoordinatorPassportScan(updated.passport_scan ?? null);
       return updated;
     }
-    const created = await preRegistrationService.createCoordinator(payload, passportScanFile || undefined);
+    const created = await preRegistrationService.createCoordinator(payload);
     setCoordinatorId(created.id);
-    setCoordinatorPassportScan(created.passport_scan ?? null);
-    if (passportScanFile) {
-      setPassportScanFile(null);
-    }
     return created;
-  };
-
-  const uploadPassportScanIfNeeded = async (currentCoordinatorId: string) => {
-    if (!passportScanFile) return;
-    const updated = await preRegistrationService.uploadCoordinatorPassport(currentCoordinatorId, passportScanFile);
-    setCoordinatorPassportScan(updated.passport_scan ?? null);
-    setPassportScanFile(null);
   };
 
   const validateForm = (): boolean => {
     // Mark all fields as touched to show validation
-    const allFields = ["firstName", "lastName", "email", "phone", "passportNumber", "dateOfBirth", "role"];
+    const allFields = ["firstName", "lastName", "email", "phone", "dateOfBirth", "role"];
     setTouched(allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
 
     // Check each field and collect specific errors
@@ -263,23 +218,12 @@ export default function PreRegistrationPage() {
     } else if (!isValidPhone(formData.phone)) {
       fieldErrors.push({ field: "Phone", error: "invalid format" });
     }
-    if (!formData.passportNumber.trim()) fieldErrors.push({ field: "Passport number", error: "required" });
     if (!formData.dateOfBirth) fieldErrors.push({ field: "Date of birth", error: "required" });
     if (!formData.role.trim()) fieldErrors.push({ field: "Role", error: "required" });
 
     if (fieldErrors.length > 0) {
       const missingFields = fieldErrors.map(e => e.field).join(", ");
       toast.error(`Missing or invalid: ${missingFields}`);
-      return false;
-    }
-
-    if (passportFileError) {
-      toast.error("Please select a valid passport scan file");
-      return false;
-    }
-
-    if (!passportScanFile && !coordinatorPassportScan) {
-      toast.error("Passport scan is required");
       return false;
     }
 
@@ -299,14 +243,13 @@ export default function PreRegistrationPage() {
         num_observers: formData.observers,
         num_guests: formData.guests,
       });
-      const coordinator = await upsertCoordinator();
-      await uploadPassportScanIfNeeded(coordinator.id);
+      await upsertCoordinator();
       await preRegistrationService.submitPreRegistration();
 
       toast.success("Pre-registration submitted successfully!");
       await loadPreRegistration();
     } catch (err: unknown) {
-      
+
       toast.error(getErrorMessage(err, "Failed to submit pre-registration"));
     } finally {
       setIsSubmitting(false);
@@ -334,11 +277,10 @@ export default function PreRegistrationPage() {
         num_observers: formData.observers,
         num_guests: formData.guests,
       });
-      const coordinator = await upsertCoordinator();
-      await uploadPassportScanIfNeeded(coordinator.id);
+      await upsertCoordinator();
       toast.success("Draft saved successfully!");
     } catch (err: unknown) {
-      
+
       toast.error(getErrorMessage(err, "Failed to save draft"));
     } finally {
       setIsSubmitting(false);
@@ -486,63 +428,6 @@ export default function PreRegistrationPage() {
                 <AlertCircle className="h-3 w-3 flex-shrink-0" />
                 {getFieldError("dateOfBirth", formData.dateOfBirth)}
               </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="passport">Passport Number *</Label>
-            <Input
-              id="passport"
-              placeholder="Enter passport number"
-              value={formData.passportNumber}
-              onChange={(e) =>
-                setFormData({ ...formData, passportNumber: e.target.value.toUpperCase() })
-              }
-              onBlur={() => handleBlur("passportNumber")}
-              disabled={!canEdit}
-              className={touched.passportNumber && getFieldError("passportNumber", formData.passportNumber) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
-            />
-            {touched.passportNumber && getFieldError("passportNumber", formData.passportNumber) && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                {getFieldError("passportNumber", formData.passportNumber)}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="passport_scan">Passport Scan (PDF/JPG/PNG) *</Label>
-            <FileInput
-              id="passport_scan"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onFileChange={(file) => {
-                setPassportFileError(null);
-                if (file) {
-                  const error = validatePassportFile(file);
-                  if (error) {
-                    setPassportFileError(error);
-                    setPassportScanFile(null);
-                    return;
-                  }
-                }
-                setPassportScanFile(file);
-              }}
-              disabled={!canEdit}
-            />
-            {passportFileError && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                {passportFileError}
-              </p>
-            )}
-            {!passportFileError && passportScanFile && (
-              <p className="text-sm text-muted-foreground">Selected: {passportScanFile.name}</p>
-            )}
-            {!passportFileError && !passportScanFile && coordinatorPassportScan && (
-              <p className="text-sm text-muted-foreground">Existing passport scan uploaded.</p>
-            )}
-            {!passportFileError && !passportScanFile && !coordinatorPassportScan && (
-              <p className="text-sm text-muted-foreground">Required before submitting pre-registration.</p>
             )}
           </div>
 

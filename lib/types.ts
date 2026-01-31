@@ -87,8 +87,6 @@ export interface Coordinator {
   role: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
-  passport_scan?: string;
   email: string;
   phone: string;
   is_primary: boolean;
@@ -365,11 +363,9 @@ export interface CoordinatorUpsertRequest {
   role: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
   email: string;
   phone: string;
   is_primary?: boolean;
-  passport_scan?: File;
 }
 
 export interface ParticipantCreateRequest {
