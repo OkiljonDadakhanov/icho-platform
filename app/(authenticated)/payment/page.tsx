@@ -192,6 +192,17 @@ export default function PaymentPage() {
     }
   }
 
+  const handleViewSingleRoomProof = async (inv: SingleRoomInvoice) => {
+    try {
+      const blob = await paymentsService.downloadSingleRoomProof(inv.id)
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err: unknown) {
+      console.error("Failed to view single room proof:", err)
+      toast.error("Failed to view payment proof. Please try again.")
+    }
+  }
+
   const handleSingleRoomProofUpload = async (invoiceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -645,6 +656,18 @@ export default function PaymentPage() {
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Download Invoice
+                    </Button>
+                  )}
+
+                  {inv.proof_file && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
+                      onClick={() => handleViewSingleRoomProof(inv)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View Proof
                     </Button>
                   )}
 

@@ -113,6 +113,13 @@ export const paymentsService = {
     formData.append('proof_file', file);
     return api.upload<SingleRoomInvoice>(`/v1/payments/single-room-invoices/${invoiceId}/upload-proof/`, formData);
   },
+
+  /**
+   * Download/view single room payment proof
+   */
+  async downloadSingleRoomProof(invoiceId: string): Promise<Blob> {
+    return apiDownload(`/v1/payments/single-room-invoices/${invoiceId}/proof/download/`);
+  },
 };
 
 export default paymentsService;
