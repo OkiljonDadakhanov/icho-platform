@@ -5,13 +5,12 @@
 
 // Enums matching backend
 export type ParticipantRole =
+  | 'HEAD_MENTOR'
   | 'TEAM_LEADER'
   | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
-  | 'REMOTE_TRANSLATOR'
-  | 'MENTOR'
-  | 'HEAD_MENTOR';
+  | 'REMOTE_TRANSLATOR';
 
 // Fee role types (includes TEAM for flat team fee)
 export type FeeRoleType =
@@ -27,8 +26,6 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
 
 export type DietaryRequirement = 'NORMAL' | 'HALAL' | 'VEGETARIAN' | 'VEGAN' | 'KOSHER' | 'OTHER';
-
-export type ColorVisionDeficiency = 'NONE' | 'RED_GREEN' | 'BLUE_YELLOW' | 'COMPLETE';
 
 export type PaymentStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -88,6 +85,8 @@ export interface Coordinator {
   role: string;
   gender: Gender;
   date_of_birth: string;
+  passport_number: string;
+  passport_scan?: string;
   email: string;
   phone: string;
   is_primary: boolean;
@@ -102,7 +101,6 @@ export interface PreRegistration {
   num_contestants: number;
   num_observers: number;
   num_guests: number;
-  num_remote_translators: number;
   fee_total: number;
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
@@ -132,7 +130,6 @@ export interface Participant {
   dietary_requirements: DietaryRequirement;
   other_dietary_requirements?: string;
   medical_requirements?: string;
-  color_vision_deficiency?: ColorVisionDeficiency;
   email: string;
   consent_form_signed?: string;
   commitment_form_signed?: string;
@@ -140,6 +137,7 @@ export interface Participant {
   prefers_single_room?: boolean;
   single_room_invoice_status?: SingleRoomInvoiceStatus | null;
   translation_language?: string;
+  exam_language?: string;
   created_at: string;
   updated_at: string;
 }
@@ -300,21 +298,6 @@ export interface CountryStageStatus {
   created_at: string;
 }
 
-// Type for admin countries progress endpoint response
-export interface CountryProgressStageData {
-  status: StageStatus;
-  is_unlocked: boolean;
-  unlocked_until?: string;
-  unlock_reason?: string;
-}
-
-export interface CountryProgressResponse {
-  id: string;
-  name: string;
-  iso_code: string;
-  stages: Record<string, CountryProgressStageData>;
-}
-
 export interface Notification {
   id: string;
   user: string;
@@ -359,7 +342,6 @@ export interface PreRegistrationUpdateRequest {
   num_contestants: number;
   num_observers: number;
   num_guests: number;
-  num_remote_translators?: number;
 }
 
 export interface CoordinatorUpsertRequest {
@@ -367,9 +349,11 @@ export interface CoordinatorUpsertRequest {
   role: string;
   gender: Gender;
   date_of_birth: string;
+  passport_number: string;
   email: string;
   phone: string;
   is_primary?: boolean;
+  passport_scan?: File;
 }
 
 export interface ParticipantCreateRequest {
@@ -385,7 +369,6 @@ export interface ParticipantCreateRequest {
   dietary_requirements: DietaryRequirement;
   other_dietary_requirements?: string;
   medical_requirements?: string;
-  color_vision_deficiency?: ColorVisionDeficiency;
   email: string;
   passport_scan?: File;
   profile_photo?: File;
@@ -394,6 +377,7 @@ export interface ParticipantCreateRequest {
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
   translation_language?: string;
+  exam_language?: string;
 }
 
 export interface ParticipantUpdateRequest extends Partial<ParticipantCreateRequest> {}
@@ -436,8 +420,11 @@ export interface DelegationProgress {
 // Helper function to map frontend role to backend role
 export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
+    'Head Mentor': 'HEAD_MENTOR',
+    'Team Leader': 'TEAM_LEADER',
     'Mentor': 'TEAM_LEADER',
-    'Deputy Mentor': 'TEAM_LEADER',
+    'Deputy Leader': 'TEAM_LEADER',
+    'Contestant': 'CONTESTANT',
     'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
@@ -452,13 +439,12 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
 // Helper function to map backend role to frontend role
 export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
-    'TEAM_LEADER': 'Mentor',
-    'CONTESTANT': 'Student',
+    'HEAD_MENTOR': 'Head Mentor',
+    'TEAM_LEADER': 'Team Leader',
+    'CONTESTANT': 'Contestant',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
     'REMOTE_TRANSLATOR': 'Remote Translator',
-    'MENTOR': 'Mentor',
-    'HEAD_MENTOR': 'Head Mentor',
   };
   return mapping[backendRole] || 'Guest';
 }
@@ -507,21 +493,9 @@ export function mapDietaryToFrontend(dietary: DietaryRequirement): string {
   return mapping[dietary] || 'normal';
 }
 
-// Valid t-shirt sizes
-const VALID_TSHIRT_SIZES: readonly TshirtSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
-
-// Helper function to check if a string is a valid TshirtSize
-export function isValidTshirtSize(size: string): size is TshirtSize {
-  return VALID_TSHIRT_SIZES.includes(size.toUpperCase() as TshirtSize);
-}
-
 // Helper function to map tshirt size
 export function mapTshirtToBackend(size: string): TshirtSize {
-  const upperSize = size.toUpperCase();
-  if (isValidTshirtSize(upperSize)) {
-    return upperSize;
-  }
-  return 'M'; // Default to M if invalid
+  return size.toUpperCase() as TshirtSize;
 }
 
 export function mapTshirtToFrontend(size: TshirtSize): string {
