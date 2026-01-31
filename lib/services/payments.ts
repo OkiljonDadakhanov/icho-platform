@@ -54,6 +54,13 @@ export const paymentsService = {
   },
 
   /**
+   * Download/view payment proof
+   */
+  async downloadPaymentProof(): Promise<Blob> {
+    return apiDownload('/v1/payments/proof/download/');
+  },
+
+  /**
    * Regenerate invoice with updated data
    */
   async regenerateInvoice(): Promise<Payment> {

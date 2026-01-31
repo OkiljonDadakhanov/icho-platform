@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle, Eye } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { preRegistrationService } from "@/lib/services/pre-registration"
@@ -129,6 +129,17 @@ export default function PaymentPage() {
       console.error("Failed to download invoice:", err)
       const errorMessage = (err as { message?: string })?.message || "Failed to download invoice. Please try again."
       setError(errorMessage)
+    }
+  }
+
+  const handleViewProof = async () => {
+    try {
+      const blob = await paymentsService.downloadPaymentProof()
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err: any) {
+      console.error("Failed to view payment proof:", err)
+      toast.error("Failed to view payment proof. Please try again.")
     }
   }
 
@@ -433,17 +444,30 @@ export default function PaymentPage() {
             )}
 
             {payment?.proof_file && paymentStatus !== "REJECTED" ? (
-              <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Upload className="w-5 h-5 text-yellow-600" />
+              <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 rounded-lg">
+                      <Upload className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <span className="font-medium text-gray-700">Payment proof uploaded</span>
                   </div>
-                  <span className="font-medium text-gray-700">Payment proof uploaded</span>
+                  <Badge className="bg-yellow-500 text-white">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Under Review
+                  </Badge>
                 </div>
-                <Badge className="bg-yellow-500 text-white">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Under Review
-                </Badge>
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+                    onClick={handleViewProof}
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    View Uploaded Proof
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="border-2 border-dashed rounded-xl p-8 text-center border-[#2f3090]/30 hover:border-[#2f3090]/50 transition-colors bg-gradient-to-br from-white to-gray-50/50">
