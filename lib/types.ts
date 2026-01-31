@@ -359,7 +359,7 @@ export interface PreRegistrationUpdateRequest {
 
 export interface CoordinatorUpsertRequest {
   full_name: string;
-  role: string;
+  role?: string;
   gender: Gender;
   date_of_birth: string;
   email: string;

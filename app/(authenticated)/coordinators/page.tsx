@@ -162,7 +162,6 @@ export default function CoordinatorsPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 font-medium">Person</th>
-                  <th className="text-left py-3 font-medium">Role</th>
                   <th className="text-left py-3 font-medium">E-mail</th>
                   <th className="text-left py-3 font-medium">Phone</th>
                   <th className="text-left py-3 font-medium">Action</th>
@@ -174,7 +173,6 @@ export default function CoordinatorsPage() {
                     <td className="py-4 font-medium">
                       {coordinator.full_name}
                     </td>
-                    <td className="py-4 text-muted-foreground">{coordinator.role}</td>
                     <td className="py-4">
                       <a href={`mailto:${coordinator.email}`} className="text-[#2f3090] hover:underline">
                         {coordinator.email}
@@ -267,7 +265,8 @@ function EditCoordinatorDialog({
 }) {
   const [formData, setFormData] = useState({
     full_name: coordinator.full_name,
-    role: coordinator.role,
+    gender: coordinator.gender,
+    date_of_birth: coordinator.date_of_birth,
     email: coordinator.email,
     phone: coordinator.phone,
   })
@@ -294,7 +293,7 @@ function EditCoordinatorDialog({
           <Edit className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit Contact Person</DialogTitle>
           <DialogDescription>Update contact person information.</DialogDescription>
@@ -315,35 +314,56 @@ function EditCoordinatorDialog({
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role *</Label>
-            <Input
-              id="role"
-              required
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_gender">Gender *</Label>
+              <select
+                id="edit_gender"
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value as "MALE" | "FEMALE" | "OTHER" })}
+              >
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_dob">Date of Birth *</Label>
+              <Input
+                id="edit_dob"
+                type="date"
+                required
+                max={getTodayDateString()}
+                min="1920-01-01"
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
-              title="Please enter a valid email address"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number *</Label>
-            <Input
-              id="phone"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                title="Please enter a valid email address"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -372,7 +392,6 @@ function AddCoordinatorDialog({
 }) {
   const [formData, setFormData] = useState<CoordinatorUpsertRequest>({
     full_name: "",
-    role: "",
     gender: "MALE",
     date_of_birth: "",
     email: "",
@@ -393,7 +412,6 @@ function AddCoordinatorDialog({
   const resetForm = () => {
     setFormData({
       full_name: "",
-      role: "",
       gender: "MALE",
       date_of_birth: "",
       email: "",
@@ -426,26 +444,14 @@ function AddCoordinatorDialog({
           </Alert>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="add_full_name">Full Name *</Label>
-              <Input
-                id="add_full_name"
-                required
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="add_role">Role *</Label>
-              <Input
-                id="add_role"
-                required
-                placeholder="e.g., Head Mentor, Coordinator"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="add_full_name">Full Name *</Label>
+            <Input
+              id="add_full_name"
+              required
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
