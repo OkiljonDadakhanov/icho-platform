@@ -137,8 +137,8 @@ export default function WorkflowPage() {
                 country_iso: country.iso_code,
                 stage: stageName,
                 status: stageData.is_unlocked ? "OPEN" : stageData.status,
-                unlocked_until: stageData.unlocked_until,
-                unlock_reason: stageData.unlock_reason,
+                unlocked_until: stageData.unlocked_until ?? undefined,
+                unlock_reason: stageData.unlock_reason ?? undefined,
               });
             } else {
               // Stage not yet created in DB - show as LOCKED by default

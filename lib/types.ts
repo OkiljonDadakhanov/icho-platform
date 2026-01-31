@@ -85,8 +85,6 @@ export interface Coordinator {
   role: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
-  passport_scan?: string;
   email: string;
   phone: string;
   is_primary: boolean;
@@ -101,6 +99,7 @@ export interface PreRegistration {
   num_contestants: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators: number;
   fee_total: number;
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
@@ -296,6 +295,19 @@ export interface CountryStageStatus {
   unlock_reason?: string;
   unlocked_by?: string;
   created_at: string;
+  is_unlocked?: boolean;
+}
+
+export interface CountryProgressResponse {
+  id: string;
+  name: string;
+  iso_code: string;
+  stages: Record<string, {
+    status: StageStatus;
+    is_unlocked: boolean;
+    unlocked_until?: string | null;
+    unlock_reason?: string | null;
+  }>;
 }
 
 export interface Notification {
@@ -342,6 +354,7 @@ export interface PreRegistrationUpdateRequest {
   num_contestants: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators?: number;
 }
 
 export interface CoordinatorUpsertRequest {
@@ -349,11 +362,9 @@ export interface CoordinatorUpsertRequest {
   role: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
   email: string;
   phone: string;
   is_primary?: boolean;
-  passport_scan?: File;
 }
 
 export interface ParticipantCreateRequest {
@@ -376,6 +387,7 @@ export interface ParticipantCreateRequest {
   commitment_form_signed?: File;
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
+  color_vision_deficiency?: string;
   translation_language?: string;
   exam_language?: string;
 }
