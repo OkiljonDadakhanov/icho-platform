@@ -69,6 +69,7 @@ export default function PaymentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [countryFilter, setCountryFilter] = useState("all");
   const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
@@ -109,8 +110,16 @@ export default function PaymentsPage() {
     fetchData();
   }, []);
 
+  // Get unique countries for filter dropdown
+  const countries = [...new Set(payments.map((p) => p.country_name))].filter(Boolean).sort();
+
   useEffect(() => {
     let filtered = payments;
+
+    // Filter by country
+    if (countryFilter !== "all") {
+      filtered = filtered.filter((p) => p.country_name === countryFilter);
+    }
 
     // Filter by status
     if (statusFilter !== "all") {
@@ -135,7 +144,7 @@ export default function PaymentsPage() {
     }
 
     setFilteredPayments(filtered);
-  }, [statusFilter, searchQuery, payments]);
+  }, [statusFilter, countryFilter, searchQuery, payments]);
 
   // Filter single room invoices
   useEffect(() => {
@@ -477,6 +486,20 @@ export default function PaymentsPage() {
             </TabsList>
 
             <div className="flex-1" />
+
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {countries.map((country) => (
+                  <SelectItem key={country} value={country!}>
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
