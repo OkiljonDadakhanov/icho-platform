@@ -754,7 +754,7 @@ function AddMemberDialog({
   const isDobValid = formData.date_of_birth && !getFieldError('date_of_birth')
   const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && formData.passport_number && isDobValid && isRoleValid && formData.gender &&
     !getFieldError('first_name') && !getFieldError('last_name') && !getFieldError('passport_number')
-  const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements)
+  const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements) && (formData.role !== 'CONTESTANT' || formData.color_vision_deficiency)
   const hasRequiredDocuments = passportScan && profilePhoto && consentForm && (formData.role !== 'CONTESTANT' || commitmentForm)
   const canSubmit = canProceedStep1 && canProceedStep2 && formData.regulations_accepted && hasRequiredDocuments
 
@@ -994,10 +994,10 @@ function AddMemberDialog({
                           Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${participantLimits.OBSERVER} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="GUEST">
+                      <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                          Guest
+                          Guest {isRoleDisabled('GUEST') && participantLimits.GUEST !== null && `(${roleCounts.guests}/${participantLimits.GUEST} max)`}
                         </span>
                       </SelectItem>
                     </SelectContent>
@@ -1164,7 +1164,7 @@ function AddMemberDialog({
                 </h3>
                 <div className="space-y-2">
                   <Label className="text-gray-600">
-                    Do you have Color blindness or color vision deficiency (CVD)? <span className="text-gray-400 text-xs">(optional)</span>
+                    Do you have Color blindness or color vision deficiency (CVD)? <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={formData.color_vision_deficiency}
@@ -1261,8 +1261,7 @@ function AddMemberDialog({
                   />
                 </div>
                 <Label htmlFor="regulations_accepted" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
-                  I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>.
-                  I understand and accept all terms and conditions. <span className="text-red-500">*</span>
+                  I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>. I understand and accept all terms and conditions. <span className="text-red-500">*</span>
                 </Label>
               </div>
             </div>
@@ -1462,6 +1461,7 @@ function EditMemberDialog({
       case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
       case 'CONTESTANT': return roleCounts.contestants >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
+      case 'GUEST': return roleCounts.guests >= limit
       default: return false
     }
   }
@@ -1496,7 +1496,8 @@ function EditMemberDialog({
     (profilePhoto || participant.profile_photo) &&
     (consentForm || participant.consent_form_signed) &&
     (formData.role !== 'CONTESTANT' || commitmentForm || participant.commitment_form_signed)
-  const canSubmitEdit = hasRequiredDocuments && formData.regulations_accepted
+  const hasRequiredColorVision = formData.role !== 'CONTESTANT' || formData.color_vision_deficiency
+  const canSubmitEdit = hasRequiredDocuments && formData.regulations_accepted && hasRequiredColorVision
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -1660,7 +1661,9 @@ function EditMemberDialog({
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                       Observer {isRoleDisabled('OBSERVER') && `(${participantLimits.OBSERVER}/${participantLimits.OBSERVER} max)`}
                     </SelectItem>
-                    <SelectItem value="GUEST">Guest</SelectItem>
+                    <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
+                      Guest {isRoleDisabled('GUEST') && participantLimits.GUEST !== null && `(${roleCounts.guests}/${participantLimits.GUEST} max)`}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1763,7 +1766,7 @@ function EditMemberDialog({
               </h3>
               <div className="space-y-2">
                 <Label className="text-gray-600">
-                  Do you have Color blindness or color vision deficiency (CVD)? <span className="text-gray-400 text-xs">(optional)</span>
+                  Do you have Color blindness or color vision deficiency (CVD)? <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={formData.color_vision_deficiency}
@@ -1898,7 +1901,7 @@ function EditMemberDialog({
                 className="w-5 h-5 mt-0.5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20"
               />
               <Label htmlFor={`regulations_accepted_${participant.id}`} className="text-sm text-gray-700 cursor-pointer">
-                I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>
+                I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>. I understand and accept all terms and conditions. <span className="text-red-500">*</span>
               </Label>
             </div>
           </div>
