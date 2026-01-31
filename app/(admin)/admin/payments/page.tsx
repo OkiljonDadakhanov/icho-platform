@@ -114,7 +114,10 @@ export default function PaymentsPage() {
 
     // Filter by status
     if (statusFilter !== "all") {
-      if (statusFilter === "PENDING") {
+      if (statusFilter === "AWAITING_PROOF") {
+        // Show payments without proof uploaded
+        filtered = filtered.filter((p) => !p.proof_file);
+      } else if (statusFilter === "PENDING") {
         // Only show payments with proof uploaded that are pending review
         filtered = filtered.filter((p) => p.status === "PENDING" && p.proof_file);
       } else {
@@ -445,6 +448,12 @@ export default function PaymentsPage() {
                 All
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5">
                   {payments.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="AWAITING_PROOF" className="gap-1">
+                Awaiting Proof
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-gray-200 text-gray-800">
+                  {awaitingProofCount}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="PENDING" className="gap-1">
