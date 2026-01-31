@@ -62,7 +62,9 @@ export default function TravelPage() {
         participantsService.getAllParticipants(),
         travelService.getAllTravelInfo()
       ])
-      setParticipants(participantsData)
+      // Filter out remote translators - they don't need travel info
+      const filteredParticipants = participantsData.filter(p => p.role !== 'REMOTE_TRANSLATOR')
+      setParticipants(filteredParticipants)
       setTravelInfos(travelData)
       setError(null)
     } catch (err: unknown) {

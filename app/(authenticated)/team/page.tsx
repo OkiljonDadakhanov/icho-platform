@@ -66,6 +66,7 @@ const DEFAULT_LIMITS: Record<string, number | null> = {
   CONTESTANT: 4,
   OBSERVER: 5,
   GUEST: 10,
+  REMOTE_TRANSLATOR: 2,
 }
 
 export default function TeamPage() {
@@ -84,6 +85,7 @@ export default function TeamPage() {
     CONTESTANT: preRegistration.num_contestants,
     OBSERVER: preRegistration.num_observers,
     GUEST: preRegistration.num_guests > 0 ? preRegistration.num_guests : 10,
+    REMOTE_TRANSLATOR: preRegistration.num_remote_translators ?? 2,
   } : DEFAULT_LIMITS
 
   const countryName = user?.country?.name || "Your Country"
@@ -204,6 +206,7 @@ export default function TeamPage() {
   const contestants = participants.filter(p => p.role === 'CONTESTANT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
+  const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
 
   return (
     <div className="space-y-6">
@@ -245,6 +248,10 @@ export default function TeamPage() {
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${PARTICIPANT_LIMITS.GUEST !== null && guests >= PARTICIPANT_LIMITS.GUEST ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
               <span className="text-xl font-semibold">{guests}{PARTICIPANT_LIMITS.GUEST !== null ? `/${PARTICIPANT_LIMITS.GUEST}` : ''}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
+            </div>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
+              <span className="text-xl font-semibold">{remoteTranslators}/{PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? '?'}</span>
+              <span className="text-white/70 ml-2 text-sm">Translators</span>
             </div>
           </div>
         </div>
@@ -403,7 +410,7 @@ export default function TeamPage() {
               onOpenChange={setIsAddDialogOpen}
               onAdd={handleAddMember}
               isSaving={isSaving}
-              roleCounts={{ teamLeaders, contestants, observers, guests }}
+              roleCounts={{ teamLeaders, contestants, observers, guests, remoteTranslators }}
               participantLimits={PARTICIPANT_LIMITS}
             />
           )}
@@ -507,7 +514,7 @@ export default function TeamPage() {
                             onEdit={handleEditMember}
                             onDelete={handleDeleteMember}
                             isSaving={isSaving}
-                            roleCounts={{ teamLeaders, contestants, observers, guests }}
+                            roleCounts={{ teamLeaders, contestants, observers, guests, remoteTranslators }}
                             participantLimits={PARTICIPANT_LIMITS}
                           />
                         )}
@@ -591,7 +598,7 @@ function AddMemberDialog({
   onOpenChange: (open: boolean) => void
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
-  roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number }
+  roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
   participantLimits: Record<string, number | null>
 }) {
   // Check if roles have reached their limits
@@ -603,6 +610,7 @@ function AddMemberDialog({
       case 'CONTESTANT': return roleCounts.contestants >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
       case 'GUEST': return roleCounts.guests >= limit
+      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
       default: return false
     }
   }
@@ -612,7 +620,8 @@ function AddMemberDialog({
     isRoleDisabled('TEAM_LEADER') &&
     isRoleDisabled('CONTESTANT') &&
     isRoleDisabled('OBSERVER') &&
-    isRoleDisabled('GUEST')
+    isRoleDisabled('GUEST') &&
+    isRoleDisabled('REMOTE_TRANSLATOR')
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -630,6 +639,7 @@ function AddMemberDialog({
     email: "",
     regulations_accepted: false,
     prefers_single_room: false,
+    translation_language: "",
   })
   const [passportScan, setPassportScan] = useState<File | null>(null)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
@@ -648,27 +658,29 @@ function AddMemberDialog({
     if (e) e.preventDefault()
 
     // All validation is done via canSubmit - if we get here, form is valid
+    const isRemoteTranslator = formData.role === 'REMOTE_TRANSLATOR'
     onAdd({
       first_name: formData.first_name,
       last_name: formData.last_name,
-      paternal_name: formData.paternal_name || undefined,
-      badge_name: formData.badge_name || undefined,
+      paternal_name: isRemoteTranslator ? undefined : (formData.paternal_name || undefined),
+      badge_name: isRemoteTranslator ? undefined : (formData.badge_name || undefined),
       role: formData.role as ParticipantRole,
       date_of_birth: formData.date_of_birth,
       gender: formData.gender as Gender,
-      tshirt_size: formData.tshirt_size as TshirtSize,
-      dietary_requirements: formData.dietary_requirements as DietaryRequirement,
+      tshirt_size: isRemoteTranslator ? 'M' as TshirtSize : formData.tshirt_size as TshirtSize,
+      dietary_requirements: isRemoteTranslator ? 'NORMAL' as DietaryRequirement : formData.dietary_requirements as DietaryRequirement,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
       passport_number: formData.passport_number,
-      medical_requirements: formData.medical_requirements || undefined,
+      medical_requirements: isRemoteTranslator ? undefined : (formData.medical_requirements || undefined),
       color_vision_deficiency: formData.role === 'CONTESTANT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
       email: formData.email,
-      regulations_accepted: formData.regulations_accepted,
-      prefers_single_room: formData.role !== 'CONTESTANT' ? formData.prefers_single_room : undefined,
+      regulations_accepted: isRemoteTranslator ? true : formData.regulations_accepted,
+      prefers_single_room: formData.role !== 'CONTESTANT' && !isRemoteTranslator ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
-      consent_form_signed: consentForm || undefined,
-      commitment_form_signed: commitmentForm || undefined,
+      consent_form_signed: isRemoteTranslator ? undefined : (consentForm || undefined),
+      commitment_form_signed: isRemoteTranslator ? undefined : (commitmentForm || undefined),
+      translation_language: isRemoteTranslator ? formData.translation_language : undefined,
     })
     // Reset form
     setFormData({
@@ -688,6 +700,7 @@ function AddMemberDialog({
       email: "",
       regulations_accepted: false,
       prefers_single_room: false,
+      translation_language: "",
     })
     setPassportScan(null)
     setProfilePhoto(null)
@@ -752,11 +765,26 @@ function AddMemberDialog({
   const isRoleValid = formData.role && !isRoleDisabled(formData.role as ParticipantRole)
   const isEmailValid = formData.email && isValidEmail(formData.email)
   const isDobValid = formData.date_of_birth && !getFieldError('date_of_birth')
-  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && formData.passport_number && isDobValid && isRoleValid && formData.gender &&
-    !getFieldError('first_name') && !getFieldError('last_name') && !getFieldError('passport_number')
-  const canProceedStep2 = formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements) && (formData.role !== 'CONTESTANT' || formData.color_vision_deficiency)
-  const hasRequiredDocuments = passportScan && profilePhoto && consentForm && (formData.role !== 'CONTESTANT' || commitmentForm)
-  const canSubmit = canProceedStep1 && canProceedStep2 && formData.regulations_accepted && hasRequiredDocuments
+  const isRemoteTranslator = formData.role === 'REMOTE_TRANSLATOR'
+
+  // Remote translators have simpler requirements
+  const canProceedStep1 = isRemoteTranslator
+    ? formData.first_name && formData.last_name && isEmailValid && isDobValid && isRoleValid && formData.gender && formData.translation_language &&
+      !getFieldError('first_name') && !getFieldError('last_name')
+    : formData.first_name && formData.last_name && isEmailValid && formData.passport_number && isDobValid && isRoleValid && formData.gender &&
+      !getFieldError('first_name') && !getFieldError('last_name') && !getFieldError('passport_number')
+
+  const canProceedStep2 = isRemoteTranslator
+    ? true // Remote translators skip step 2
+    : formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements) && (formData.role !== 'CONTESTANT' || formData.color_vision_deficiency)
+
+  const hasRequiredDocuments = isRemoteTranslator
+    ? passportScan && profilePhoto // Remote translators only need passport and photo
+    : passportScan && profilePhoto && consentForm && (formData.role !== 'CONTESTANT' || commitmentForm)
+
+  const canSubmit = isRemoteTranslator
+    ? canProceedStep1 && hasRequiredDocuments
+    : canProceedStep1 && canProceedStep2 && formData.regulations_accepted && hasRequiredDocuments
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
@@ -1000,6 +1028,12 @@ function AddMemberDialog({
                           Guest {isRoleDisabled('GUEST') && participantLimits.GUEST !== null && `(${roleCounts.guests}/${participantLimits.GUEST} max)`}
                         </span>
                       </SelectItem>
+                      <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${participantLimits.REMOTE_TRANSLATOR} max)`}
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1022,11 +1056,30 @@ function AddMemberDialog({
                   </Select>
                 </div>
               </div>
+
+              {/* Translation Language field (for remote translators only) */}
+              {formData.role === 'REMOTE_TRANSLATOR' && (
+                <div className="mt-4 p-4 bg-cyan-50 rounded-xl border border-cyan-200 animate-in slide-in-from-top-2 duration-200">
+                  <div className="space-y-2">
+                    <Label htmlFor="translation_language" className="text-gray-600 flex items-center gap-1">
+                      Translation Language <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="translation_language"
+                      placeholder="e.g., Japanese, Spanish, French"
+                      value={formData.translation_language}
+                      onChange={(e) => setFormData({ ...formData, translation_language: e.target.value })}
+                      className="border-cyan-200 focus:border-cyan-500 focus:ring-cyan-500/20 transition-all"
+                    />
+                    <p className="text-xs text-gray-500">The language you will translate exam materials to</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Step 2: Preferences */}
-          <div className={`space-y-4 transition-all duration-300 ${currentStep === 2 ? "block" : "hidden"}`}>
+          <div className={`space-y-4 transition-all duration-300 ${currentStep === 2 && !isRemoteTranslator ? "block" : "hidden"}`}>
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
               <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                 <Shirt className="w-4 h-4 text-amber-600" />
@@ -1186,8 +1239,8 @@ function AddMemberDialog({
             )}
           </div>
 
-          {/* Step 3: Documents */}
-          <div className={`space-y-4 transition-all duration-300 ${currentStep === 3 ? "block" : "hidden"}`}>
+          {/* Step 3: Documents (Step 2 for Remote Translators) */}
+          <div className={`space-y-4 transition-all duration-300 ${(currentStep === 3 || (currentStep === 2 && isRemoteTranslator)) ? "block" : "hidden"}`}>
             {/* Required Documents Upload */}
             <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-4 rounded-xl border border-violet-200">
               <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
@@ -1220,17 +1273,19 @@ function AddMemberDialog({
                   color="violet"
                 />
 
-                {/* Consent Form */}
-                <FileUploadField
-                  id="consent_form"
-                  label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
-                  required
-                  accept="image/*,.pdf"
-                  file={consentForm}
-                  onChange={setConsentForm}
-                  icon={<FileText className="w-4 h-4" />}
-                  color="violet"
-                />
+                {/* Consent Form - Not required for Remote Translators */}
+                {!isRemoteTranslator && (
+                  <FileUploadField
+                    id="consent_form"
+                    label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
+                    required
+                    accept="image/*,.pdf"
+                    file={consentForm}
+                    onChange={setConsentForm}
+                    icon={<FileText className="w-4 h-4" />}
+                    color="violet"
+                  />
+                )}
 
                 {/* Commitment Form - Only for Students */}
                 {formData.role === 'CONTESTANT' && (
@@ -1248,28 +1303,30 @@ function AddMemberDialog({
               </div>
             </div>
 
-            {/* Regulations Acceptance */}
-            <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-4 rounded-xl border border-sky-200">
-              <div className="flex items-start space-x-3">
-                <div className="mt-0.5">
-                  <input
-                    type="checkbox"
-                    id="regulations_accepted"
-                    checked={formData.regulations_accepted}
-                    onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
-                    className="w-5 h-5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20 transition-all cursor-pointer"
-                  />
+            {/* Regulations Acceptance - Not required for Remote Translators */}
+            {!isRemoteTranslator && (
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-4 rounded-xl border border-sky-200">
+                <div className="flex items-start space-x-3">
+                  <div className="mt-0.5">
+                    <input
+                      type="checkbox"
+                      id="regulations_accepted"
+                      checked={formData.regulations_accepted}
+                      onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
+                      className="w-5 h-5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20 transition-all cursor-pointer"
+                    />
+                  </div>
+                  <Label htmlFor="regulations_accepted" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
+                    I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>. I understand and accept all terms and conditions. <span className="text-red-500">*</span>
+                  </Label>
                 </div>
-                <Label htmlFor="regulations_accepted" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
-                  I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>. I understand and accept all terms and conditions. <span className="text-red-500">*</span>
-                </Label>
               </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter className="flex justify-between items-center mt-6 pt-4 border-t">
             <div className="text-sm text-gray-500">
-              Step {currentStep} of {totalSteps}
+              Step {currentStep} of {isRemoteTranslator ? 2 : totalSteps}
             </div>
             <div className="flex gap-3">
               {currentStep > 1 && (
@@ -1282,13 +1339,13 @@ function AddMemberDialog({
                   Back
                 </Button>
               )}
-              {currentStep < totalSteps ? (
+              {(isRemoteTranslator ? currentStep < 2 : currentStep < totalSteps) ? (
                 <Button
                   type="button"
                   onClick={() => setCurrentStep(currentStep + 1)}
                   disabled={
                     (currentStep === 1 && !canProceedStep1) ||
-                    (currentStep === 2 && !canProceedStep2)
+                    (currentStep === 2 && !isRemoteTranslator && !canProceedStep2)
                   }
                   className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d]"
                 >
@@ -1448,7 +1505,7 @@ function EditMemberDialog({
   onEdit: (id: string, data: Partial<ParticipantCreateRequest>) => void
   onDelete: (id: string) => void
   isSaving: boolean
-  roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number }
+  roleCounts: { teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
   participantLimits: Record<string, number | null>
 }) {
   // Check if roles have reached their limits (excluding current participant's role)
@@ -1462,6 +1519,7 @@ function EditMemberDialog({
       case 'CONTESTANT': return roleCounts.contestants >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
       case 'GUEST': return roleCounts.guests >= limit
+      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
       default: return false
     }
   }
@@ -1483,7 +1541,9 @@ function EditMemberDialog({
     email: participant.email || "",
     regulations_accepted: participant.regulations_accepted,
     prefers_single_room: participant.prefers_single_room || false,
+    translation_language: participant.translation_language || "",
   })
+  const isEditingRemoteTranslator = formData.role === 'REMOTE_TRANSLATOR'
   const [passportScan, setPassportScan] = useState<File | null>(null)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
   const [consentForm, setConsentForm] = useState<File | null>(null)
@@ -1491,13 +1551,17 @@ function EditMemberDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Validation: documents required if participant doesn't already have them
-  const hasRequiredDocuments =
-    (passportScan || participant.passport_scan) &&
-    (profilePhoto || participant.profile_photo) &&
-    (consentForm || participant.consent_form_signed) &&
-    (formData.role !== 'CONTESTANT' || commitmentForm || participant.commitment_form_signed)
+  const hasRequiredDocuments = isEditingRemoteTranslator
+    ? (passportScan || participant.passport_scan) && (profilePhoto || participant.profile_photo)
+    : (passportScan || participant.passport_scan) &&
+      (profilePhoto || participant.profile_photo) &&
+      (consentForm || participant.consent_form_signed) &&
+      (formData.role !== 'CONTESTANT' || commitmentForm || participant.commitment_form_signed)
   const hasRequiredColorVision = formData.role !== 'CONTESTANT' || formData.color_vision_deficiency
-  const canSubmitEdit = hasRequiredDocuments && formData.regulations_accepted && hasRequiredColorVision
+  const hasRequiredTranslationLanguage = !isEditingRemoteTranslator || formData.translation_language
+  const canSubmitEdit = isEditingRemoteTranslator
+    ? hasRequiredDocuments && hasRequiredTranslationLanguage
+    : hasRequiredDocuments && formData.regulations_accepted && hasRequiredColorVision
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -1513,11 +1577,12 @@ function EditMemberDialog({
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
       color_vision_deficiency: formData.role === 'CONTESTANT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
-      prefers_single_room: formData.role !== 'CONTESTANT' ? formData.prefers_single_room : undefined,
+      prefers_single_room: formData.role !== 'CONTESTANT' && !isEditingRemoteTranslator ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
-      consent_form_signed: consentForm || undefined,
-      commitment_form_signed: commitmentForm || undefined,
+      consent_form_signed: isEditingRemoteTranslator ? undefined : (consentForm || undefined),
+      commitment_form_signed: isEditingRemoteTranslator ? undefined : (commitmentForm || undefined),
+      translation_language: isEditingRemoteTranslator ? formData.translation_language : undefined,
     })
     setOpen(false)
   }
@@ -1664,6 +1729,9 @@ function EditMemberDialog({
                     <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
                       Guest {isRoleDisabled('GUEST') && participantLimits.GUEST !== null && `(${roleCounts.guests}/${participantLimits.GUEST} max)`}
                     </SelectItem>
+                    <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
+                      Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${participantLimits.REMOTE_TRANSLATOR} max)`}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1684,9 +1752,29 @@ function EditMemberDialog({
                 </Select>
               </div>
             </div>
+
+            {/* Translation Language field (for remote translators only) */}
+            {isEditingRemoteTranslator && (
+              <div className="mt-4 p-4 bg-cyan-50 rounded-xl border border-cyan-200">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_translation_language" className="text-gray-600 flex items-center gap-1">
+                    Translation Language <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="edit_translation_language"
+                    placeholder="e.g., Japanese, Spanish, French"
+                    value={formData.translation_language}
+                    onChange={(e) => setFormData({ ...formData, translation_language: e.target.value })}
+                    className="border-cyan-200 focus:border-cyan-500 focus:ring-cyan-500/20 transition-all"
+                  />
+                  <p className="text-xs text-gray-500">The language you will translate exam materials to</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Preferences */}
+          {/* Preferences - Hide for Remote Translators */}
+          {!isEditingRemoteTranslator && (
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
             <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <Shirt className="w-4 h-4 text-amber-600" />
@@ -1756,6 +1844,7 @@ function EditMemberDialog({
               <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
             </div>
           </div>
+          )}
 
           {/* Color Vision Information (students only) */}
           {formData.role === 'CONTESTANT' && (
@@ -1787,8 +1876,8 @@ function EditMemberDialog({
             </div>
           )}
 
-          {/* Room Preference (all except students) */}
-          {formData.role && formData.role !== 'CONTESTANT' && (
+          {/* Room Preference (all except students and remote translators) */}
+          {formData.role && formData.role !== 'CONTESTANT' && !isEditingRemoteTranslator && (
             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <UsersRound className="w-4 h-4 text-indigo-600" />
@@ -1848,11 +1937,14 @@ function EditMemberDialog({
           <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-4 rounded-xl border border-violet-200">
             <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <Upload className="w-4 h-4 text-violet-600" />
-              {participant.passport_scan && participant.profile_photo && participant.consent_form_signed ? (
-                <>Update Documents <span className="text-gray-400 text-sm font-normal">(optional)</span></>
-              ) : (
-                <>Upload Required Documents <span className="text-red-500">*</span></>
-              )}
+              {isEditingRemoteTranslator
+                ? (participant.passport_scan && participant.profile_photo
+                    ? <>Update Documents <span className="text-gray-400 text-sm font-normal">(optional)</span></>
+                    : <>Upload Required Documents <span className="text-red-500">*</span></>)
+                : (participant.passport_scan && participant.profile_photo && participant.consent_form_signed
+                    ? <>Update Documents <span className="text-gray-400 text-sm font-normal">(optional)</span></>
+                    : <>Upload Required Documents <span className="text-red-500">*</span></>)
+              }
             </h3>
 
             <div className="grid grid-cols-1 gap-4">
@@ -1870,13 +1962,16 @@ function EditMemberDialog({
                 onChange={setProfilePhoto}
                 accept="image/*"
               />
-              <FileUploadFieldEdit
-                label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
-                hasExisting={!!participant.consent_form_signed}
-                file={consentForm}
-                onChange={setConsentForm}
-                accept="image/*,.pdf"
-              />
+              {/* Consent Form - Not required for Remote Translators */}
+              {!isEditingRemoteTranslator && (
+                <FileUploadFieldEdit
+                  label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
+                  hasExisting={!!participant.consent_form_signed}
+                  file={consentForm}
+                  onChange={setConsentForm}
+                  accept="image/*,.pdf"
+                />
+              )}
               {/* Commitment Form - Only for Students */}
               {formData.role === 'CONTESTANT' && (
                 <FileUploadFieldEdit
@@ -1890,21 +1985,23 @@ function EditMemberDialog({
             </div>
           </div>
 
-          {/* Regulations */}
-          <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-4 rounded-xl border border-sky-200">
-            <div className="flex items-start space-x-3">
-              <input
-                type="checkbox"
-                id={`regulations_accepted_${participant.id}`}
-                checked={formData.regulations_accepted}
-                onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
-                className="w-5 h-5 mt-0.5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20"
-              />
-              <Label htmlFor={`regulations_accepted_${participant.id}`} className="text-sm text-gray-700 cursor-pointer">
-                I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>. I understand and accept all terms and conditions. <span className="text-red-500">*</span>
-              </Label>
+          {/* Regulations - Not required for Remote Translators */}
+          {!isEditingRemoteTranslator && (
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-4 rounded-xl border border-sky-200">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id={`regulations_accepted_${participant.id}`}
+                  checked={formData.regulations_accepted}
+                  onChange={(e) => setFormData({ ...formData, regulations_accepted: e.target.checked })}
+                  className="w-5 h-5 mt-0.5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20"
+                />
+                <Label htmlFor={`regulations_accepted_${participant.id}`} className="text-sm text-gray-700 cursor-pointer">
+                  I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>. I understand and accept all terms and conditions. <span className="text-red-500">*</span>
+                </Label>
+              </div>
             </div>
-          </div>
+          )}
 
           <DialogFooter className="flex justify-between items-center pt-4 border-t">
             {!showDeleteConfirm ? (

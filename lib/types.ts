@@ -9,6 +9,7 @@ export type ParticipantRole =
   | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
+  | 'REMOTE_TRANSLATOR'
   | 'MENTOR'
   | 'HEAD_MENTOR';
 
@@ -101,6 +102,7 @@ export interface PreRegistration {
   num_contestants: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators: number;
   fee_total: number;
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
@@ -137,6 +139,7 @@ export interface Participant {
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
   single_room_invoice_status?: SingleRoomInvoiceStatus | null;
+  translation_language?: string;
   created_at: string;
   updated_at: string;
 }
@@ -356,6 +359,7 @@ export interface PreRegistrationUpdateRequest {
   num_contestants: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators?: number;
 }
 
 export interface CoordinatorUpsertRequest {
@@ -389,6 +393,7 @@ export interface ParticipantCreateRequest {
   commitment_form_signed?: File;
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
+  translation_language?: string;
 }
 
 export interface ParticipantUpdateRequest extends Partial<ParticipantCreateRequest> {}
@@ -436,6 +441,7 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
     'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
+    'Remote Translator': 'REMOTE_TRANSLATOR',
     'IC Member': 'OBSERVER',
     'ISC Member': 'OBSERVER',
     'ITC Member': 'OBSERVER',
@@ -450,6 +456,7 @@ export function mapRoleToFrontend(backendRole: ParticipantRole): string {
     'CONTESTANT': 'Student',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
+    'REMOTE_TRANSLATOR': 'Remote Translator',
     'MENTOR': 'Mentor',
     'HEAD_MENTOR': 'Head Mentor',
   };

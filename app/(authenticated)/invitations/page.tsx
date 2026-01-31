@@ -36,7 +36,9 @@ export default function InvitationsPage() {
         participantsService.getAllParticipants(),
         invitationsService.getAllInvitations()
       ])
-      setParticipants(participantsData)
+      // Filter out remote translators - they don't need invitation letters
+      const filteredParticipants = participantsData.filter(p => p.role !== 'REMOTE_TRANSLATOR')
+      setParticipants(filteredParticipants)
 
       const invitationMap: Record<string, InvitationLetter> = {}
       invitationsData.forEach(inv => {

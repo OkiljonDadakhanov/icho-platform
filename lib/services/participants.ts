@@ -76,6 +76,9 @@ export const participantsService = {
     if (data.color_vision_deficiency) {
       formData.append('color_vision_deficiency', data.color_vision_deficiency);
     }
+    if (data.translation_language) {
+      formData.append('translation_language', data.translation_language);
+    }
     if (data.passport_scan) {
       formData.append('passport_scan', data.passport_scan);
     }
@@ -114,6 +117,7 @@ export const participantsService = {
     if (data.regulations_accepted !== undefined) formData.append('regulations_accepted', String(data.regulations_accepted));
     if (data.prefers_single_room !== undefined) formData.append('prefers_single_room', String(data.prefers_single_room));
     if (data.color_vision_deficiency !== undefined) formData.append('color_vision_deficiency', data.color_vision_deficiency);
+    if (data.translation_language !== undefined) formData.append('translation_language', data.translation_language);
     if (data.passport_scan) formData.append('passport_scan', data.passport_scan);
     if (data.profile_photo) formData.append('profile_photo', data.profile_photo);
     if (data.consent_form_signed) formData.append('consent_form_signed', data.consent_form_signed);

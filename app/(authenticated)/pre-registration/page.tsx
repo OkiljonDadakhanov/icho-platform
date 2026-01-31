@@ -46,6 +46,7 @@ interface FormData {
   contestants: number;
   observers: number;
   guests: number;
+  remoteTranslators: number;
 }
 
 export default function PreRegistrationPage() {
@@ -67,6 +68,7 @@ export default function PreRegistrationPage() {
     contestants: 4,
     observers: 2,
     guests: 3,
+    remoteTranslators: 0,
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -133,6 +135,7 @@ export default function PreRegistrationPage() {
           contestants: Math.min(data.num_contestants, 4),
           observers: Math.min(data.num_observers, 2),
           guests: data.num_guests,
+          remoteTranslators: data.num_remote_translators ?? 0,
         }));
       }
 
@@ -242,6 +245,7 @@ export default function PreRegistrationPage() {
         num_contestants: formData.contestants,
         num_observers: formData.observers,
         num_guests: formData.guests,
+        num_remote_translators: formData.remoteTranslators,
       });
       await upsertCoordinator();
       await preRegistrationService.submitPreRegistration();
@@ -276,6 +280,7 @@ export default function PreRegistrationPage() {
         num_contestants: formData.contestants,
         num_observers: formData.observers,
         num_guests: formData.guests,
+        num_remote_translators: formData.remoteTranslators,
       });
       await upsertCoordinator();
       toast.success("Draft saved successfully!");
@@ -553,7 +558,7 @@ export default function PreRegistrationPage() {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Guests</Label>
               <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">Max 10</span>
@@ -563,6 +568,21 @@ export default function PreRegistrationPage() {
               onChange={(value) => setFormData({ ...formData, guests: value })}
               min={0}
               max={10}
+              disabled={!canEdit}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Remote Translators</Label>
+              <span className="text-xs font-medium text-cyan-600 bg-cyan-100 px-2 py-0.5 rounded">Max 2</span>
+              <span className="text-xs text-gray-500">(No fee)</span>
+            </div>
+            <NumberStepper
+              value={formData.remoteTranslators}
+              onChange={(value) => setFormData({ ...formData, remoteTranslators: value })}
+              min={0}
+              max={2}
               disabled={!canEdit}
             />
           </div>
