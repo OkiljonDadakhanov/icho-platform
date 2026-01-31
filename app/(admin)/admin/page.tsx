@@ -25,26 +25,48 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
 import { adminService, type AdminStats } from "@/lib/services/admin";
 import { Progress } from "@/components/ui/progress";
+import type { AuditLog } from "@/lib/types";
+import { formatDistanceToNow } from "date-fns";
 
-const recentActivity = [
-  { id: 1, action: "Payment approved", country: "Germany", time: "2 min ago", type: "success" },
-  { id: 2, action: "New participant added", country: "Japan", time: "15 min ago", type: "info" },
-  { id: 3, action: "Travel info submitted", country: "Brazil", time: "32 min ago", type: "info" },
-  { id: 4, action: "Payment rejected", country: "France", time: "1 hour ago", type: "error" },
-  { id: 5, action: "Stage unlocked", country: "India", time: "2 hours ago", type: "warning" },
-];
+// Helper to format audit log action for display
+function formatAuditAction(log: AuditLog): { action: string; type: "success" | "error" | "warning" | "info" } {
+  const action = log.action.toUpperCase();
+  const entityType = log.entity_type.toLowerCase();
+
+  if (action === "CREATE") {
+    if (entityType.includes("participant")) return { action: "Participant added", type: "info" };
+    if (entityType.includes("payment")) return { action: "Payment submitted", type: "info" };
+    if (entityType.includes("travel")) return { action: "Travel info added", type: "info" };
+    return { action: `${entityType} created`, type: "info" };
+  }
+  if (action === "UPDATE") {
+    if (entityType.includes("payment") && log.after_json?.status === "APPROVED") return { action: "Payment approved", type: "success" };
+    if (entityType.includes("payment") && log.after_json?.status === "REJECTED") return { action: "Payment rejected", type: "error" };
+    if (entityType.includes("stage") || entityType.includes("workflow")) return { action: "Stage updated", type: "warning" };
+    return { action: `${entityType} updated`, type: "info" };
+  }
+  if (action === "DELETE") {
+    return { action: `${entityType} deleted`, type: "error" };
+  }
+  return { action: log.action, type: "info" };
+}
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [recentActivity, setRecentActivity] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const data = await adminService.getStats();
-        setStats(data);
+        const [statsData, auditData] = await Promise.all([
+          adminService.getStats(),
+          adminService.getAuditLogs({ page_size: 5 }).catch(() => ({ results: [] })),
+        ]);
+        setStats(statsData);
+        setRecentActivity(auditData.results || []);
         setError(null);
       } catch (err: unknown) {
         console.error("Failed to fetch stats:", err);
@@ -54,7 +76,7 @@ export default function AdminDashboardPage() {
       }
     };
 
-    fetchStats();
+    fetchData();
   }, []);
 
   if (isLoading) {
@@ -226,33 +248,43 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className={`mt-0.5 p-1.5 rounded-full ${
-                  activity.type === "success" ? "bg-emerald-100 text-emerald-600" :
-                  activity.type === "error" ? "bg-red-100 text-red-600" :
-                  activity.type === "warning" ? "bg-amber-100 text-amber-600" :
-                  "bg-blue-100 text-blue-600"
-                }`}>
-                  {activity.type === "success" ? <CheckCircle2 className="w-3.5 h-3.5" /> :
-                   activity.type === "error" ? <XCircle className="w-3.5 h-3.5" /> :
-                   activity.type === "warning" ? <AlertCircle className="w-3.5 h-3.5" /> :
-                   <Activity className="w-3.5 h-3.5" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {activity.action}
-                  </p>
-                  <p className="text-xs text-gray-500">{activity.country}</p>
-                </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {activity.time}
-                </span>
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No recent activity</p>
               </div>
-            ))}
+            ) : (
+              recentActivity.map((log) => {
+                const { action, type } = formatAuditAction(log);
+                return (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className={`mt-0.5 p-1.5 rounded-full ${
+                      type === "success" ? "bg-emerald-100 text-emerald-600" :
+                      type === "error" ? "bg-red-100 text-red-600" :
+                      type === "warning" ? "bg-amber-100 text-amber-600" :
+                      "bg-blue-100 text-blue-600"
+                    }`}>
+                      {type === "success" ? <CheckCircle2 className="w-3.5 h-3.5" /> :
+                       type === "error" ? <XCircle className="w-3.5 h-3.5" /> :
+                       type === "warning" ? <AlertCircle className="w-3.5 h-3.5" /> :
+                       <Activity className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {action}
+                      </p>
+                      <p className="text-xs text-gray-500">{log.country || "System"}</p>
+                    </div>
+                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>
