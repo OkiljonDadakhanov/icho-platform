@@ -123,20 +123,32 @@ export default function WorkflowPage() {
         // Transform progress data to CountryStage format
         // Backend returns: { id, name, iso_code, stages: { STAGE_NAME: { status, is_unlocked, ... } } }
         // Frontend needs: flat list of { id, country_id, country_name, country_iso, stage, status, ... }
+        // We show ALL 5 stages for each country, with LOCKED as default for missing stages
+        const allStages: WorkflowStage[] = ['PRE_REGISTRATION', 'PAYMENT', 'PARTICIPANTS', 'TRAVEL', 'INVITATIONS'];
         const stages: CountryStage[] = [];
         for (const country of progressData as CountryProgressResponse[]) {
-          // If country has stages data, create entries for each stage
-          if (country.stages && Object.keys(country.stages).length > 0) {
-            for (const [stageName, stageData] of Object.entries(country.stages)) {
+          for (const stageName of allStages) {
+            const stageData = country.stages?.[stageName];
+            if (stageData) {
               stages.push({
                 id: `${country.id}-${stageName}`,
                 country_id: country.id,
                 country_name: country.name,
                 country_iso: country.iso_code,
-                stage: stageName as WorkflowStage,
+                stage: stageName,
                 status: stageData.is_unlocked ? "OPEN" : stageData.status,
                 unlocked_until: stageData.unlocked_until,
                 unlock_reason: stageData.unlock_reason,
+              });
+            } else {
+              // Stage not yet created in DB - show as LOCKED by default
+              stages.push({
+                id: `${country.id}-${stageName}`,
+                country_id: country.id,
+                country_name: country.name,
+                country_iso: country.iso_code,
+                stage: stageName,
+                status: "LOCKED",
               });
             }
           }
