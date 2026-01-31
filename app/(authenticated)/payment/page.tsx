@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle, Eye } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle, Eye, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { preRegistrationService } from "@/lib/services/pre-registration"
@@ -25,6 +25,8 @@ export default function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadingSingleRoomId, setUploadingSingleRoomId] = useState<string | null>(null)
+  const [isViewingProof, setIsViewingProof] = useState(false)
+  const [viewingSingleRoomProofId, setViewingSingleRoomProofId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const countryName = user?.country?.name || "Your Country"
@@ -166,12 +168,15 @@ export default function PaymentPage() {
 
   const handleViewProof = async () => {
     try {
+      setIsViewingProof(true)
       const blob = await paymentsService.downloadPaymentProof()
       const url = window.URL.createObjectURL(blob)
       window.open(url, '_blank')
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to view payment proof:", err)
       toast.error("Failed to view payment proof. Please try again.")
+    } finally {
+      setIsViewingProof(false)
     }
   }
 
@@ -194,12 +199,15 @@ export default function PaymentPage() {
 
   const handleViewSingleRoomProof = async (inv: SingleRoomInvoice) => {
     try {
+      setViewingSingleRoomProofId(inv.id)
       const blob = await paymentsService.downloadSingleRoomProof(inv.id)
       const url = window.URL.createObjectURL(blob)
       window.open(url, '_blank')
     } catch (err: unknown) {
       console.error("Failed to view single room proof:", err)
       toast.error("Failed to view payment proof. Please try again.")
+    } finally {
+      setViewingSingleRoomProofId(null)
     }
   }
 
@@ -478,9 +486,14 @@ export default function PaymentPage() {
                   size="sm"
                   className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
                   onClick={handleViewProof}
+                  disabled={isViewingProof}
                 >
-                  <Eye className="w-4 h-4 mr-1" />
-                  View Proof
+                  {isViewingProof ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Eye className="w-4 h-4 mr-1" />
+                  )}
+                  {isViewingProof ? "Loading..." : "View Proof"}
                 </Button>
               )}
             </div>
@@ -525,9 +538,14 @@ export default function PaymentPage() {
                     size="sm"
                     className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
                     onClick={handleViewProof}
+                    disabled={isViewingProof}
                   >
-                    <Eye className="w-4 h-4 mr-1" />
-                    View Uploaded Proof
+                    {isViewingProof ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Eye className="w-4 h-4 mr-1" />
+                    )}
+                    {isViewingProof ? "Loading..." : "View Uploaded Proof"}
                   </Button>
                 </div>
               </div>
@@ -665,9 +683,14 @@ export default function PaymentPage() {
                       size="sm"
                       className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
                       onClick={() => handleViewSingleRoomProof(inv)}
+                      disabled={viewingSingleRoomProofId === inv.id}
                     >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View Proof
+                      {viewingSingleRoomProofId === inv.id ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4 mr-1" />
+                      )}
+                      {viewingSingleRoomProofId === inv.id ? "Loading..." : "View Proof"}
                     </Button>
                   )}
 
