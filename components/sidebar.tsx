@@ -22,9 +22,9 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
 const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Pre-Registration", href: "/pre-registration", icon: ClipboardList },
   { name: "Payment", href: "/payment", icon: CreditCard },
-  { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Contact Persons", href: "/coordinators", icon: Users },
   { name: "Team", href: "/team", icon: UsersRound },
   { name: "Travel", href: "/travel", icon: Plane },
