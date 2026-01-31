@@ -232,11 +232,11 @@ export default function TeamPage() {
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${teamLeaders >= (PARTICIPANT_LIMITS.TEAM_LEADER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
               <span className="text-xl font-semibold">{teamLeaders}/{PARTICIPANT_LIMITS.TEAM_LEADER ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Leaders</span>
+              <span className="text-white/70 ml-2 text-sm">Mentors</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${contestants >= (PARTICIPANT_LIMITS.CONTESTANT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
               <span className="text-xl font-semibold">{contestants}/{PARTICIPANT_LIMITS.CONTESTANT ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Contestants</span>
+              <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
               <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
@@ -296,9 +296,9 @@ export default function TeamPage() {
               Download, fill out, sign, and upload these forms for each participant during registration.
             </p>
 
-            {/* Contestant Forms */}
+            {/* Student Forms */}
             <div className="mb-4">
-              <p className="text-sm font-medium text-blue-900 mb-2">For Contestants (2 forms required):</p>
+              <p className="text-sm font-medium text-blue-900 mb-2">For Students (2 forms required):</p>
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
@@ -347,9 +347,9 @@ export default function TeamPage() {
               </div>
             </div>
 
-            {/* Team Leader Forms */}
+            {/* Mentor Forms */}
             <div>
-              <p className="text-sm font-medium text-blue-900 mb-2">For Team Leaders, Observers & Guests (1 form required):</p>
+              <p className="text-sm font-medium text-blue-900 mb-2">For Mentors, Observers & Guests (1 form required):</p>
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
@@ -371,7 +371,7 @@ export default function TeamPage() {
                   }}
                 >
                   <Download className="w-4 h-4" />
-                  Consent Form (Team Leaders/Observers/Guests)
+                  Consent Form (Mentors/Observers/Guests)
                 </Button>
               </div>
             </div>
@@ -461,9 +461,9 @@ export default function TeamPage() {
                       <td className="py-4 px-4">
                         <Badge
                           className={`font-medium transition-all duration-200 group-hover:scale-105 ${
-                            role === "Team Leader"
+                            role === "Mentor"
                               ? "bg-[#2f3090] text-white hover:bg-[#2f3090]/90"
-                              : role === "Contestant"
+                              : role === "Student"
                                 ? "bg-[#00795d] text-white hover:bg-[#00795d]/90"
                                 : role === "Observer"
                                   ? "bg-purple-600 text-white hover:bg-purple-500"
@@ -979,13 +979,13 @@ function AddMemberDialog({
                       <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#2f3090]"></span>
-                          Team Leader {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${participantLimits.TEAM_LEADER} max)`}
+                          Mentor {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${participantLimits.TEAM_LEADER} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Contestant {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${participantLimits.CONTESTANT} max)`}
+                          Student {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${participantLimits.CONTESTANT} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
@@ -1112,7 +1112,7 @@ function AddMemberDialog({
               </div>
             </div>
 
-            {/* Room Preference (all except contestants) */}
+            {/* Room Preference (all except students) */}
             {formData.role && formData.role !== 'CONTESTANT' && (
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-200">
                 <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -1155,7 +1155,7 @@ function AddMemberDialog({
               </div>
             )}
 
-            {/* Color Vision Information (contestants only) */}
+            {/* Color Vision Information (students only) */}
             {formData.role === 'CONTESTANT' && (
               <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100 animate-in slide-in-from-top-2 duration-200">
                 <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
@@ -1223,7 +1223,7 @@ function AddMemberDialog({
                 {/* Consent Form */}
                 <FileUploadField
                   id="consent_form"
-                  label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Team Leader)' : ''}`}
+                  label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
                   required
                   accept="image/*,.pdf"
                   file={consentForm}
@@ -1232,7 +1232,7 @@ function AddMemberDialog({
                   color="violet"
                 />
 
-                {/* Commitment Form - Only for Contestants */}
+                {/* Commitment Form - Only for Students */}
                 {formData.role === 'CONTESTANT' && (
                   <FileUploadField
                     id="commitment_form"
@@ -1653,10 +1653,10 @@ function EditMemberDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
-                      Team Leader {isRoleDisabled('TEAM_LEADER') && `(${participantLimits.TEAM_LEADER}/${participantLimits.TEAM_LEADER} max)`}
+                      Mentor {isRoleDisabled('TEAM_LEADER') && `(${participantLimits.TEAM_LEADER}/${participantLimits.TEAM_LEADER} max)`}
                     </SelectItem>
                     <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
-                      Contestant {isRoleDisabled('CONTESTANT') && `(${participantLimits.CONTESTANT}/${participantLimits.CONTESTANT} max)`}
+                      Student {isRoleDisabled('CONTESTANT') && `(${participantLimits.CONTESTANT}/${participantLimits.CONTESTANT} max)`}
                     </SelectItem>
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                       Observer {isRoleDisabled('OBSERVER') && `(${participantLimits.OBSERVER}/${participantLimits.OBSERVER} max)`}
@@ -1757,7 +1757,7 @@ function EditMemberDialog({
             </div>
           </div>
 
-          {/* Color Vision Information (contestants only) */}
+          {/* Color Vision Information (students only) */}
           {formData.role === 'CONTESTANT' && (
             <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100">
               <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
@@ -1787,7 +1787,7 @@ function EditMemberDialog({
             </div>
           )}
 
-          {/* Room Preference (all except contestants) */}
+          {/* Room Preference (all except students) */}
           {formData.role && formData.role !== 'CONTESTANT' && (
             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -1871,13 +1871,13 @@ function EditMemberDialog({
                 accept="image/*"
               />
               <FileUploadFieldEdit
-                label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Team Leader)' : ''}`}
+                label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
                 hasExisting={!!participant.consent_form_signed}
                 file={consentForm}
                 onChange={setConsentForm}
                 accept="image/*,.pdf"
               />
-              {/* Commitment Form - Only for Contestants */}
+              {/* Commitment Form - Only for Students */}
               {formData.role === 'CONTESTANT' && (
                 <FileUploadFieldEdit
                   label="Commitment Form (Students only)"

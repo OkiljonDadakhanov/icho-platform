@@ -435,9 +435,9 @@ export interface DelegationProgress {
 // Helper function to map frontend role to backend role
 export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
-    'Team Leader': 'TEAM_LEADER',
-    'Deputy Leader': 'TEAM_LEADER',
-    'Contestant': 'CONTESTANT',
+    'Mentor': 'TEAM_LEADER',
+    'Deputy Mentor': 'TEAM_LEADER',
+    'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
     'IC Member': 'OBSERVER',
@@ -450,8 +450,8 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
 // Helper function to map backend role to frontend role
 export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
-    'TEAM_LEADER': 'Team Leader',
-    'CONTESTANT': 'Contestant',
+    'TEAM_LEADER': 'Mentor',
+    'CONTESTANT': 'Student',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
     'MENTOR': 'Mentor',

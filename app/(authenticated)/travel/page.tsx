@@ -274,9 +274,9 @@ export default function TravelPage() {
                           <p className="font-medium text-gray-800">{participant.full_name}</p>
                           <Badge
                             className={`font-medium text-xs mt-1 ${
-                              role === "Team Leader"
+                              role === "Mentor"
                                 ? "bg-[#2f3090] text-white"
-                                : role === "Contestant"
+                                : role === "Student"
                                   ? "bg-[#00795d] text-white"
                                   : role === "Observer"
                                     ? "bg-purple-600 text-white"
@@ -488,9 +488,9 @@ function AddTravelDialog({
                       <span className="flex-1 text-gray-700">{p.full_name}</span>
                       <Badge
                         className={`text-xs ${
-                          role === "Team Leader"
+                          role === "Mentor"
                             ? "bg-[#2f3090] text-white"
-                            : role === "Contestant"
+                            : role === "Student"
                               ? "bg-[#00795d] text-white"
                               : role === "Observer"
                                 ? "bg-purple-600 text-white"
@@ -511,7 +511,7 @@ function AddTravelDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -551,7 +551,7 @@ function AddTravelDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -700,7 +700,7 @@ function EditTravelDialog({
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -740,7 +740,7 @@ function EditTravelDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input

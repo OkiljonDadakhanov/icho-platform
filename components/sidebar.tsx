@@ -25,7 +25,7 @@ const navigation = [
   { name: "Pre-Registration", href: "/pre-registration", icon: ClipboardList },
   { name: "Payment", href: "/payment", icon: CreditCard },
   { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Coordinators", href: "/coordinators", icon: Users },
+  { name: "Contact Persons", href: "/coordinators", icon: Users },
   { name: "Team", href: "/team", icon: UsersRound },
   { name: "Travel", href: "/travel", icon: Plane },
   { name: "Invitations", href: "/invitations", icon: FileText },

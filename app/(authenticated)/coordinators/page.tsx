@@ -71,7 +71,7 @@ export default function CoordinatorsPage() {
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to fetch coordinators:", err)
-      setError(getErrorMessage(err, "Failed to load coordinator information"))
+      setError(getErrorMessage(err, "Failed to load contact person information"))
     } finally {
       setIsLoading(false)
     }
@@ -86,8 +86,8 @@ export default function CoordinatorsPage() {
       setError(null)
       return null
     } catch (err: unknown) {
-      console.error("Failed to update coordinator:", err)
-      const msg = getErrorMessage(err, "Failed to update coordinator")
+      console.error("Failed to update contact person:", err)
+      const msg = getErrorMessage(err, "Failed to update contact person")
       setError(msg)
       return msg
     } finally {
@@ -104,8 +104,8 @@ export default function CoordinatorsPage() {
       setError(null)
       return null
     } catch (err: unknown) {
-      console.error("Failed to add coordinator:", err)
-      const msg = getErrorMessage(err, "Failed to add coordinator")
+      console.error("Failed to add contact person:", err)
+      const msg = getErrorMessage(err, "Failed to add contact person")
       return msg
     } finally {
       setIsSaving(false)
@@ -113,22 +113,22 @@ export default function CoordinatorsPage() {
   }
 
   const handleDeleteCoordinator = async (coordinatorId: string) => {
-    if (!confirm("Are you sure you want to delete this coordinator?")) return
+    if (!confirm("Are you sure you want to delete this contact person?")) return
     try {
       setIsDeleting(coordinatorId)
       await preRegistrationService.deleteCoordinator(coordinatorId)
       await fetchCoordinators()
       setError(null)
     } catch (err: unknown) {
-      console.error("Failed to delete coordinator:", err)
-      setError(getErrorMessage(err, "Failed to delete coordinator"))
+      console.error("Failed to delete contact person:", err)
+      setError(getErrorMessage(err, "Failed to delete contact person"))
     } finally {
       setIsDeleting(null)
     }
   }
 
   if (isLoading) {
-    return <Loading message="Loading coordinator information..." />
+    return <Loading message="Loading contact person information..." />
   }
 
   if (error && coordinators.length === 0) {
@@ -140,9 +140,9 @@ export default function CoordinatorsPage() {
       <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-8 rounded-lg">
         <div className="flex items-center gap-3 mb-2">
           <Users className="w-8 h-8" />
-          <h1 className="text-3xl font-bold">Coordinators for {countryName}</h1>
+          <h1 className="text-3xl font-bold">Country Contact Persons for {countryName}</h1>
         </div>
-        <p className="text-white/80">The coordinators below can view and edit team information.</p>
+        <p className="text-white/80">The contact persons below can view and edit team information.</p>
       </div>
 
       {error && (
@@ -154,7 +154,7 @@ export default function CoordinatorsPage() {
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Coordinators</h2>
+          <h2 className="text-xl font-semibold">Contact Persons</h2>
           {coordinators.length < MAX_COORDINATORS && (
             <AddCoordinatorDialog
               onAdd={handleAddCoordinator}
@@ -168,8 +168,8 @@ export default function CoordinatorsPage() {
         {coordinators.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No coordinator information registered yet.</p>
-            <p className="text-sm mt-2">Please complete the pre-registration to add coordinator details.</p>
+            <p>No contact person information registered yet.</p>
+            <p className="text-sm mt-2">Please complete the pre-registration to add contact person details.</p>
             <Button className="mt-4 bg-[#2f3090] hover:bg-[#4547a9]" asChild>
               <a href="/pre-registration">Go to Pre-Registration</a>
             </Button>
@@ -214,7 +214,7 @@ export default function CoordinatorsPage() {
                           className="text-red-500 hover:bg-red-50 hover:text-red-600"
                           onClick={() => handleDeleteCoordinator(coordinator.id)}
                           disabled={isDeleting === coordinator.id || coordinator.is_primary}
-                          title={coordinator.is_primary ? "Cannot delete primary coordinator" : "Delete coordinator"}
+                          title={coordinator.is_primary ? "Cannot delete primary contact person" : "Delete contact person"}
                         >
                           {isDeleting === coordinator.id ? (
                             <span className="animate-spin">⏳</span>
@@ -275,9 +275,9 @@ export default function CoordinatorsPage() {
       <Card className="p-6 bg-[#2f3090]/5 border-[#2f3090]/20">
         <h3 className="font-semibold mb-4">About Coordinators</h3>
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>The coordinator has full access to manage delegation information</li>
+          <li>The contact person has full access to manage delegation information</li>
           <li>They can add/edit participants, upload documents, and submit travel details</li>
-          <li>The coordinator receives login credentials for the registration portal</li>
+          <li>The contact person receives login credentials for the registration portal</li>
           <li>Coordinator information is submitted during pre-registration</li>
         </ul>
       </Card>
@@ -348,8 +348,8 @@ function EditCoordinatorDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Coordinator</DialogTitle>
-          <DialogDescription>Update coordinator contact information.</DialogDescription>
+          <DialogTitle>Edit Contact Person</DialogTitle>
+          <DialogDescription>Update contact person information.</DialogDescription>
         </DialogHeader>
         {dialogError && (
           <Alert variant="destructive">
@@ -520,13 +520,13 @@ function AddCoordinatorDialog({
       <DialogTrigger asChild>
         <Button className="bg-[#2f3090] hover:bg-[#4547a9]">
           <Plus className="w-4 h-4 mr-2" />
-          Add Coordinator
+          Add Contact Person
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Coordinator</DialogTitle>
-          <DialogDescription>Add a new coordinator for your delegation (max 3 per country).</DialogDescription>
+          <DialogTitle>Add New Contact Person</DialogTitle>
+          <DialogDescription>Add a new contact person for your delegation (max 3 per country).</DialogDescription>
         </DialogHeader>
         {dialogError && (
           <Alert variant="destructive">
@@ -658,7 +658,7 @@ function AddCoordinatorDialog({
               Cancel
             </Button>
             <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving || !passportScan || !!fileError}>
-              {isSaving ? "Adding..." : "Add Coordinator"}
+              {isSaving ? "Adding..." : "Add Contact Person"}
             </Button>
           </DialogFooter>
         </form>

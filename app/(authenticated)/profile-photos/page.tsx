@@ -137,9 +137,9 @@ export default function ProfilePhotosPage() {
                     <Badge
                       variant="secondary"
                       className={
-                        role === "Team Leader"
+                        role === "Mentor"
                           ? "bg-[#2f3090]/10 text-[#2f3090] mb-3"
-                          : role === "Contestant"
+                          : role === "Student"
                             ? "bg-[#00795d]/10 text-[#00795d] mb-3"
                             : role === "Observer"
                               ? "bg-purple-100 text-purple-700 mb-3"

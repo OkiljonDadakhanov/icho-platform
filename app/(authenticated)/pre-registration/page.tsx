@@ -82,7 +82,7 @@ export default function PreRegistrationPage() {
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
-    role: "National Coordinator",
+    role: "National Contact Person",
     gender: "MALE",
     dateOfBirth: "",
     passportNumber: "",
@@ -390,7 +390,7 @@ export default function PreRegistrationPage() {
 
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-6">Coordinator Information</h2>
+        <h2 className="text-xl font-semibold mb-6">Country Contact Person Information</h2>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -435,7 +435,7 @@ export default function PreRegistrationPage() {
             <Label htmlFor="role">Role *</Label>
             <Input
               id="role"
-              placeholder="e.g., National Coordinator"
+              placeholder="e.g., National Contact Person"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               onBlur={() => handleBlur("role")}
@@ -552,7 +552,7 @@ export default function PreRegistrationPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="coordinator@example.com"
+                placeholder="contact@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 onBlur={() => handleBlur("email")}
@@ -628,7 +628,7 @@ export default function PreRegistrationPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Team Leaders *</Label>
+              <Label className="text-base">Mentors *</Label>
               <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
             </div>
             <NumberStepper
@@ -642,7 +642,7 @@ export default function PreRegistrationPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Contestants *</Label>
+              <Label className="text-base">Students *</Label>
               <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
             </div>
             <NumberStepper
@@ -688,7 +688,7 @@ export default function PreRegistrationPage() {
             ${calculateTotal().toLocaleString()} USD
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
-            <p>Team Registration (up to 2 leaders + 4 contestants) = ${(getFee("TEAM") || 3000).toLocaleString()}</p>
+            <p>Team Registration (up to 2 mentors + 4 students) = ${(getFee("TEAM") || 3000).toLocaleString()}</p>
             {formData.observers > 0 && (
               <p>Observers: {formData.observers} × ${getFee("OBSERVER").toLocaleString()} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
             )}

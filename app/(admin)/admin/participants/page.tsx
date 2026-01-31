@@ -211,7 +211,7 @@ export default function ParticipantsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{teamLeaders}</p>
-              <p className="text-sm text-gray-500">Team Leaders</p>
+              <p className="text-sm text-gray-500">Mentors</p>
             </div>
           </div>
         </Card>
@@ -222,7 +222,7 @@ export default function ParticipantsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{contestants}</p>
-              <p className="text-sm text-gray-500">Contestants</p>
+              <p className="text-sm text-gray-500">Students</p>
             </div>
           </div>
         </Card>
@@ -268,8 +268,8 @@ export default function ParticipantsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="TEAM_LEADER">Team Leader</SelectItem>
-              <SelectItem value="CONTESTANT">Contestant</SelectItem>
+              <SelectItem value="TEAM_LEADER">Mentor</SelectItem>
+              <SelectItem value="CONTESTANT">Student</SelectItem>
               <SelectItem value="OBSERVER">Observer</SelectItem>
               <SelectItem value="GUEST">Guest</SelectItem>
             </SelectContent>

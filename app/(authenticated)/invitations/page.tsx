@@ -228,9 +228,9 @@ export default function InvitationsPage() {
                       <td className="py-4 px-4">
                         <Badge
                           className={`font-medium text-xs transition-all duration-200 group-hover:scale-105 ${
-                            role === "Team Leader"
+                            role === "Mentor"
                               ? "bg-[#2f3090] text-white"
-                              : role === "Contestant"
+                              : role === "Student"
                                 ? "bg-[#00795d] text-white"
                                 : role === "Observer"
                                   ? "bg-purple-600 text-white"

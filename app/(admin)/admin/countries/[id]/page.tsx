@@ -278,11 +278,11 @@ export default function CountryDetailsPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Team Leaders</p>
+                  <p className="text-gray-500">Mentors</p>
                   <p className="font-medium">{preReg.num_team_leaders}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Contestants</p>
+                  <p className="text-gray-500">Students</p>
                   <p className="font-medium">{preReg.num_contestants}</p>
                 </div>
                 <div>

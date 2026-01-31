@@ -388,9 +388,9 @@ export default function PaymentPage() {
                   </span>
                   {(teamLeaders > 0 || contestants > 0) && (
                     <span className="text-xs text-gray-500 mt-1 ml-1">
-                      Includes: {teamLeaders > 0 && `${teamLeaders} team leader${teamLeaders !== 1 ? 's' : ''}`}
+                      Includes: {teamLeaders > 0 && `${teamLeaders} mentor${teamLeaders !== 1 ? 's' : ''}`}
                       {teamLeaders > 0 && contestants > 0 && ', '}
-                      {contestants > 0 && `${contestants} contestant${contestants !== 1 ? 's' : ''}`}
+                      {contestants > 0 && `${contestants} student${contestants !== 1 ? 's' : ''}`}
                     </span>
                   )}
                 </div>
@@ -527,7 +527,7 @@ export default function PaymentPage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Single Room Surcharge</h2>
-              <p className="text-sm text-gray-500">Additional payment for team leaders who requested single rooms</p>
+              <p className="text-sm text-gray-500">Additional payment for mentors who requested single rooms</p>
             </div>
           </div>
 

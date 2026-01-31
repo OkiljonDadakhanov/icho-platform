@@ -84,11 +84,11 @@ export default function DashboardPage() {
             </div>
             <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
               <span className="text-xl font-semibold">{teamLeaders}</span>
-              <span className="text-white/70 ml-2 text-sm">Leaders</span>
+              <span className="text-white/70 ml-2 text-sm">Mentors</span>
             </div>
             <div className="px-4 py-2 bg-[#00795d]/30 rounded-lg backdrop-blur-sm border border-[#00795d]/30 transition-all hover:bg-[#00795d]/50 hover:scale-105">
               <span className="text-xl font-semibold">{contestants}</span>
-              <span className="text-white/70 ml-2 text-sm">Contestants</span>
+              <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
             <div className="px-4 py-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/20 transition-all hover:bg-purple-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{observers}</span>
@@ -238,9 +238,9 @@ export default function DashboardPage() {
                             <p className="font-medium text-gray-800">{participant.full_name}</p>
                             <Badge
                               className={`font-medium text-xs transition-all duration-200 group-hover:scale-105 ${
-                                role === "Team Leader"
+                                role === "Mentor"
                                   ? "bg-[#2f3090] text-white hover:bg-[#2f3090]/90"
-                                  : role === "Contestant"
+                                  : role === "Student"
                                     ? "bg-[#00795d] text-white hover:bg-[#00795d]/90"
                                     : role === "Observer"
                                       ? "bg-purple-600 text-white hover:bg-purple-500"
