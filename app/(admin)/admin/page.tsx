@@ -1,7 +1,5 @@
 "use client";
 
-import { getErrorMessage } from "@/lib/error-utils";
-
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,65 +17,42 @@ import {
   Download,
   RefreshCw,
   Activity,
-  FileText,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import Link from "next/link";
 import { adminService, type AdminStats } from "@/lib/services/admin";
 import { Progress } from "@/components/ui/progress";
-import type { AuditLog } from "@/lib/types";
-import { formatDistanceToNow } from "date-fns";
 
-// Helper to format audit log action for display
-function formatAuditAction(log: AuditLog): { action: string; type: "success" | "error" | "warning" | "info" } {
-  const action = log.action.toUpperCase();
-  const entityType = log.entity_type.toLowerCase();
-
-  if (action === "CREATE") {
-    if (entityType.includes("participant")) return { action: "Participant added", type: "info" };
-    if (entityType.includes("payment")) return { action: "Payment submitted", type: "info" };
-    if (entityType.includes("travel")) return { action: "Travel info added", type: "info" };
-    return { action: `${entityType} created`, type: "info" };
-  }
-  if (action === "UPDATE") {
-    if (entityType.includes("payment") && log.after_json?.status === "APPROVED") return { action: "Payment approved", type: "success" };
-    if (entityType.includes("payment") && log.after_json?.status === "REJECTED") return { action: "Payment rejected", type: "error" };
-    if (entityType.includes("stage") || entityType.includes("workflow")) return { action: "Stage updated", type: "warning" };
-    return { action: `${entityType} updated`, type: "info" };
-  }
-  if (action === "DELETE") {
-    return { action: `${entityType} deleted`, type: "error" };
-  }
-  return { action: log.action, type: "info" };
-}
+const recentActivity = [
+  { id: 1, action: "Payment approved", country: "Germany", time: "2 min ago", type: "success" },
+  { id: 2, action: "New participant added", country: "Japan", time: "15 min ago", type: "info" },
+  { id: 3, action: "Travel info submitted", country: "Brazil", time: "32 min ago", type: "info" },
+  { id: 4, action: "Payment rejected", country: "France", time: "1 hour ago", type: "error" },
+  { id: 5, action: "Stage unlocked", country: "India", time: "2 hours ago", type: "warning" },
+];
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [recentActivity, setRecentActivity] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStats = async () => {
       try {
         setIsLoading(true);
-        const [statsData, auditData] = await Promise.all([
-          adminService.getStats(),
-          adminService.getAuditLogs({ page_size: 5 }).catch(() => ({ results: [] })),
-        ]);
-        setStats(statsData);
-        setRecentActivity(auditData.results || []);
+        const data = await adminService.getStats();
+        setStats(data);
         setError(null);
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error("Failed to fetch stats:", err);
-        setError(getErrorMessage(err, "Failed to load dashboard statistics"));
+        setError(err?.message || "Failed to load dashboard statistics");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchStats();
   }, []);
 
   if (isLoading) {
@@ -110,7 +85,7 @@ export default function AdminDashboardPage() {
             size="sm"
             className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
             onClick={async () => {
-              const blob = await adminService.exportCountries();
+              const blob = await adminService.exportAnalytics();
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
@@ -249,43 +224,33 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {recentActivity.length === 0 ? (
-              <div className="text-center py-6 text-gray-500">
-                <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No recent activity</p>
+            {recentActivity.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className={`mt-0.5 p-1.5 rounded-full ${
+                  activity.type === "success" ? "bg-emerald-100 text-emerald-600" :
+                  activity.type === "error" ? "bg-red-100 text-red-600" :
+                  activity.type === "warning" ? "bg-amber-100 text-amber-600" :
+                  "bg-blue-100 text-blue-600"
+                }`}>
+                  {activity.type === "success" ? <CheckCircle2 className="w-3.5 h-3.5" /> :
+                   activity.type === "error" ? <XCircle className="w-3.5 h-3.5" /> :
+                   activity.type === "warning" ? <AlertCircle className="w-3.5 h-3.5" /> :
+                   <Activity className="w-3.5 h-3.5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {activity.action}
+                  </p>
+                  <p className="text-xs text-gray-500">{activity.country}</p>
+                </div>
+                <span className="text-xs text-gray-400 whitespace-nowrap">
+                  {activity.time}
+                </span>
               </div>
-            ) : (
-              recentActivity.map((log) => {
-                const { action, type } = formatAuditAction(log);
-                return (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className={`mt-0.5 p-1.5 rounded-full ${
-                      type === "success" ? "bg-emerald-100 text-emerald-600" :
-                      type === "error" ? "bg-red-100 text-red-600" :
-                      type === "warning" ? "bg-amber-100 text-amber-600" :
-                      "bg-blue-100 text-blue-600"
-                    }`}>
-                      {type === "success" ? <CheckCircle2 className="w-3.5 h-3.5" /> :
-                       type === "error" ? <XCircle className="w-3.5 h-3.5" /> :
-                       type === "warning" ? <AlertCircle className="w-3.5 h-3.5" /> :
-                       <Activity className="w-3.5 h-3.5" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {action}
-                      </p>
-                      <p className="text-xs text-gray-500">{log.country || "System"}</p>
-                    </div>
-                    <span className="text-xs text-gray-400 whitespace-nowrap">
-                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                    </span>
-                  </div>
-                );
-              })
-            )}
+            ))}
           </div>
         </Card>
       </div>
@@ -297,7 +262,7 @@ export default function AdminDashboardPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Participants by Role</h2>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { role: "Mentors", count: stats.participants_by_role.team_leaders, color: "bg-[#2f3090]", icon: "M" },
+              { role: "Mentors", count: stats.participants_by_role.mentors, color: "bg-[#2f3090]", icon: "M" },
               { role: "Students", count: stats.participants_by_role.students, color: "bg-[#00795d]", icon: "S" },
               { role: "Observers", count: stats.participants_by_role.observers, color: "bg-purple-500", icon: "O" },
               { role: "Guests", count: stats.participants_by_role.guests, color: "bg-orange-500", icon: "G" },
@@ -328,49 +293,38 @@ export default function AdminDashboardPage() {
         {/* Payment Status */}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Status</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-100">
               <div className="flex items-center gap-3">
-                <FileText className="w-7 h-7 text-gray-500" />
-                <div>
-                  <p className="font-semibold text-gray-900">Awaiting Proof</p>
-                  <p className="text-sm text-gray-600">No proof uploaded</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-gray-700">{stats.payments.awaiting_proof}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
-              <div className="flex items-center gap-3">
-                <Clock className="w-7 h-7 text-amber-500" />
-                <div>
-                  <p className="font-semibold text-amber-900">Pending Review</p>
-                  <p className="text-sm text-amber-600">Awaiting approval</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-amber-700">{stats.payments.pending}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                 <div>
                   <p className="font-semibold text-emerald-900">Approved</p>
                   <p className="text-sm text-emerald-600">{paymentProgress}% of countries</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-emerald-700">{stats.payments.approved}</span>
+              <span className="text-3xl font-bold text-emerald-700">{stats.payments.approved}</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl border border-red-100">
+            <div className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-100">
               <div className="flex items-center gap-3">
-                <XCircle className="w-7 h-7 text-red-500" />
+                <Clock className="w-8 h-8 text-amber-500" />
+                <div>
+                  <p className="font-semibold text-amber-900">Pending Review</p>
+                  <p className="text-sm text-amber-600">Awaiting approval</p>
+                </div>
+              </div>
+              <span className="text-3xl font-bold text-amber-700">{stats.payments.pending}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100">
+              <div className="flex items-center gap-3">
+                <XCircle className="w-8 h-8 text-red-500" />
                 <div>
                   <p className="font-semibold text-red-900">Rejected</p>
                   <p className="text-sm text-red-600">Needs resubmission</p>
                 </div>
               </div>
-              <span className="text-2xl font-bold text-red-700">{stats.payments.rejected}</span>
+              <span className="text-3xl font-bold text-red-700">{stats.payments.rejected}</span>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t">

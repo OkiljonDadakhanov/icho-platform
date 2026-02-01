@@ -1,7 +1,5 @@
 "use client"
 
-import { getErrorMessage } from "@/lib/error-utils"
-
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +21,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   const countryName = user?.country?.name || "Your Country"
-  const countryCode = user?.country?.iso_code?.toLowerCase().slice(0, 2) || "un"
+  const countryCode = user?.country?.iso_code?.toLowerCase() || "un"
 
   useEffect(() => {
     const fetchParticipants = async () => {
@@ -32,9 +30,9 @@ export default function DashboardPage() {
         const data = await participantsService.getAllParticipants()
         setParticipants(data)
         setError(null)
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error("Failed to fetch participants:", err)
-        setError(getErrorMessage(err, "Failed to load participants"))
+        setError(err?.message || "Failed to load participants")
       } finally {
         setIsLoading(false)
       }
@@ -52,12 +50,10 @@ export default function DashboardPage() {
   }
 
   // Calculate stats
-  const headMentors = participants.filter(p => p.role === 'HEAD_MENTOR').length
-  const mentors = participants.filter(p => p.role === 'MENTOR').length
-  const students = participants.filter(p => p.role === 'STUDENT').length
+  const teamLeaders = participants.filter(p => p.role === 'TEAM_LEADER').length
+  const contestants = participants.filter(p => p.role === 'CONTESTANT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
-  const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
 
   return (
     <div className="space-y-6">
@@ -73,7 +69,7 @@ export default function DashboardPage() {
               <Home className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{countryName} Team</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{countryName}</h1>
               <p className="text-white/70 mt-1">Please use this site to fill out the details for your delegation.</p>
             </div>
           </div>
@@ -84,16 +80,12 @@ export default function DashboardPage() {
               <span className="text-2xl font-bold">{participants.length}</span>
               <span className="text-white/70 ml-2 text-sm">Total Members</span>
             </div>
-            <div className="px-4 py-2 bg-yellow-500/30 rounded-lg backdrop-blur-sm border border-yellow-500/30 transition-all hover:bg-yellow-500/50 hover:scale-105">
-              <span className="text-xl font-semibold">{headMentors}</span>
-              <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
-            </div>
             <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{mentors}</span>
-              <span className="text-white/70 ml-2 text-sm">Mentors</span>
+              <span className="text-xl font-semibold">{teamLeaders}</span>
+              <span className="text-white/70 ml-2 text-sm">Leaders</span>
             </div>
             <div className="px-4 py-2 bg-[#00795d]/30 rounded-lg backdrop-blur-sm border border-[#00795d]/30 transition-all hover:bg-[#00795d]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{students}</span>
+              <span className="text-xl font-semibold">{contestants}</span>
               <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
             <div className="px-4 py-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/20 transition-all hover:bg-purple-500/40 hover:scale-105">
@@ -103,10 +95,6 @@ export default function DashboardPage() {
             <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{guests}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
-            </div>
-            <div className="px-4 py-2 bg-cyan-500/20 rounded-lg backdrop-blur-sm border border-cyan-500/20 transition-all hover:bg-cyan-500/40 hover:scale-105">
-              <span className="text-xl font-semibold">{remoteTranslators}</span>
-              <span className="text-white/70 ml-2 text-sm">Remote Translators</span>
             </div>
           </div>
         </div>

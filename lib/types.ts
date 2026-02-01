@@ -6,8 +6,8 @@
 // Enums matching backend
 export type ParticipantRole =
   | 'HEAD_MENTOR'
-  | 'MENTOR'
-  | 'STUDENT'
+  | 'TEAM_LEADER'
+  | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
   | 'REMOTE_TRANSLATOR';
@@ -15,8 +15,8 @@ export type ParticipantRole =
 // Fee role types (includes TEAM for flat team fee)
 export type FeeRoleType =
   | 'TEAM'
-  | 'MENTOR'
-  | 'STUDENT'
+  | 'TEAM_LEADER'
+  | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
   | 'SINGLE_ROOM_SURCHARGE';
@@ -85,6 +85,8 @@ export interface Coordinator {
   role: string;
   gender: Gender;
   date_of_birth: string;
+  passport_number: string;
+  passport_scan?: string;
   email: string;
   phone: string;
   is_primary: boolean;
@@ -95,12 +97,10 @@ export interface Coordinator {
 export interface PreRegistration {
   id: string;
   country: string;
-  num_head_mentors: number;
-  num_mentors: number;
-  num_students: number;
+  num_team_leaders: number;
+  num_contestants: number;
   num_observers: number;
   num_guests: number;
-  num_remote_translators: number;
   fee_total: number;
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
@@ -296,19 +296,6 @@ export interface CountryStageStatus {
   unlock_reason?: string;
   unlocked_by?: string;
   created_at: string;
-  is_unlocked?: boolean;
-}
-
-export interface CountryProgressResponse {
-  id: string;
-  name: string;
-  iso_code: string;
-  stages: Record<string, {
-    status: StageStatus;
-    is_unlocked: boolean;
-    unlocked_until?: string | null;
-    unlock_reason?: string | null;
-  }>;
 }
 
 export interface Notification {
@@ -351,22 +338,22 @@ export interface LoginResponse {
 }
 
 export interface PreRegistrationUpdateRequest {
-  num_head_mentors: number;
-  num_mentors: number;
-  num_students: number;
+  num_team_leaders: number;
+  num_contestants: number;
   num_observers: number;
   num_guests: number;
-  num_remote_translators?: number;
 }
 
 export interface CoordinatorUpsertRequest {
   full_name: string;
-  role?: string;
+  role: string;
   gender: Gender;
   date_of_birth: string;
+  passport_number: string;
   email: string;
   phone: string;
   is_primary?: boolean;
+  passport_scan?: File;
 }
 
 export interface ParticipantCreateRequest {
@@ -389,7 +376,6 @@ export interface ParticipantCreateRequest {
   commitment_form_signed?: File;
   regulations_accepted: boolean;
   prefers_single_room?: boolean;
-  color_vision_deficiency?: string;
   translation_language?: string;
   exam_language?: string;
 }
@@ -425,7 +411,7 @@ export interface DelegationProgress {
   participant_count: {
     total: number;
     team_leaders: number;
-    students: number;
+    contestants: number;
     observers: number;
     guests: number;
   };
@@ -435,12 +421,17 @@ export interface DelegationProgress {
 export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
     'Head Mentor': 'HEAD_MENTOR',
-    'Mentor': 'MENTOR',
-    'Deputy Leader': 'MENTOR',
-    'Student': 'STUDENT',
+    'Team Leader': 'TEAM_LEADER',
+    'Mentor': 'TEAM_LEADER',
+    'Deputy Leader': 'TEAM_LEADER',
+    'Contestant': 'CONTESTANT',
+    'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
     'Remote Translator': 'REMOTE_TRANSLATOR',
+    'IC Member': 'OBSERVER',
+    'ISC Member': 'OBSERVER',
+    'ITC Member': 'OBSERVER',
   };
   return mapping[frontendRole] || 'GUEST';
 }
@@ -449,8 +440,8 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
 export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
     'HEAD_MENTOR': 'Head Mentor',
-    'MENTOR': 'Mentor',
-    'STUDENT': 'Student',
+    'TEAM_LEADER': 'Mentor',
+    'CONTESTANT': 'Student',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
     'REMOTE_TRANSLATOR': 'Remote Translator',

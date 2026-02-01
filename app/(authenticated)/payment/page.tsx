@@ -1,13 +1,11 @@
 "use client"
 
-import { getErrorMessage } from "@/lib/error-utils"
-
 import { useState, useEffect, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle, Eye, Loader2 } from "lucide-react"
+import { Download, Upload, CheckCircle2, XCircle, CreditCard, Clock, AlertCircle, Receipt, DollarSign, User, BedDouble, AlertTriangle, Eye } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { paymentsService } from "@/lib/services/payments"
 import { preRegistrationService } from "@/lib/services/pre-registration"
@@ -25,8 +23,6 @@ export default function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadingSingleRoomId, setUploadingSingleRoomId] = useState<string | null>(null)
-  const [isViewingProof, setIsViewingProof] = useState(false)
-  const [viewingSingleRoomProofId, setViewingSingleRoomProofId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const countryName = user?.country?.name || "Your Country"
@@ -50,17 +46,17 @@ export default function PaymentPage() {
       setSingleRoomInvoices(singleRoomData)
       setInvoice(paymentData?.invoice || null)
       setError(null)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to fetch data:", err)
-      setError(getErrorMessage(err, "Failed to load payment information. Please try again later."))
+      setError(err?.message || "Failed to load payment information. Please try again later.")
     } finally {
       setIsLoading(false)
     }
   }
 
   // Use pre-registration numbers for fee breakdown (matches invoice)
-  const mentors = preRegistration?.num_mentors || 0
-  const students = preRegistration?.num_students || 0
+  const mentors = preRegistration?.num_team_leaders || 0
+  const students = preRegistration?.num_contestants || 0
   const observers = preRegistration?.num_observers || 0
   const guests = preRegistration?.num_guests || 0
 
@@ -69,64 +65,32 @@ export default function PaymentPage() {
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role)
-    if (rule) return Number(rule.unit_fee)
-    // Defaults if no rule found
-    if (role === "TEAM") return 3000
-    if (role === "OBSERVER") return 1500
-    if (role === "GUEST") return 3000
-    return 0
+    return rule ? Number(rule.unit_fee) : 500
   }
 
-  // Use stored fee breakdown from pre-registration (matches invoice) or calculate as fallback
   const breakdown = useMemo(() => {
-    const storedBreakdown = preRegistration?.fee_breakdown
-    const storedTotal = preRegistration?.fee_total
-
-    // If we have stored breakdown from submission, use it (matches invoice exactly)
-    if (storedBreakdown && storedTotal) {
-      // Handle both old format (MENTOR + STUDENT) and new format (TEAM)
-      const teamFee = storedBreakdown.TEAM
-        ? Number(storedBreakdown.TEAM)
-        : Number(storedBreakdown.MENTOR || 0) + Number(storedBreakdown.STUDENT || 0)
-      const observerTotal = Number(storedBreakdown.OBSERVER || 0)
-      const guestTotal = Number(storedBreakdown.GUEST || 0)
-
-      // Calculate per-unit fees from totals
-      const observerFee = observers > 0 ? observerTotal / observers : getFee("OBSERVER")
-      const guestFee = guests > 0 ? guestTotal / guests : getFee("GUEST")
-
-      return {
-        teamFee,
-        mentorsCount: mentors,
-        studentsCount: students,
-        observers: observerTotal,
-        observerFee,
-        observersCount: observers,
-        guests: guestTotal,
-        guestFee,
-        guestsCount: guests,
-        total: storedTotal,
-      }
-    }
-
-    // Fallback: calculate from fee rules (for preview before submission)
+    // Flat team fee for students + mentors
     const teamFee = getFee("TEAM")
+    // Per-person fees for observers and guests
     const observerFee = getFee("OBSERVER")
     const guestFee = getFee("GUEST")
 
     return {
+      // Flat team registration fee
       teamFee,
       mentorsCount: mentors,
       studentsCount: students,
+      // Per-person fees
       observers: observers * observerFee,
       observerFee,
       observersCount: observers,
       guests: guests * guestFee,
       guestFee,
       guestsCount: guests,
+      // Total = flat team fee + per-person observers + per-person guests
       total: teamFee + observers * observerFee + guests * guestFee,
     }
-  }, [preRegistration, mentors, students, observers, guests, feeRules])
+  }, [mentors, students, observers, guests, feeRules])
 
   const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -137,9 +101,10 @@ export default function PaymentPage() {
       await paymentsService.uploadPaymentProof(file)
       await fetchData()
       setError(null)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to upload payment proof:", err)
-      setError(getErrorMessage(err, "Failed to upload payment proof. Please try again."))
+      const errorMessage = (err as { message?: string })?.message || "Failed to upload payment proof. Please try again."
+      setError(errorMessage)
     } finally {
       setIsUploading(false)
     }
@@ -160,23 +125,21 @@ export default function PaymentPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to download invoice:", err)
-      setError(getErrorMessage(err, "Failed to download invoice. Please try again."))
+      const errorMessage = (err as { message?: string })?.message || "Failed to download invoice. Please try again."
+      setError(errorMessage)
     }
   }
 
   const handleViewProof = async () => {
     try {
-      setIsViewingProof(true)
       const blob = await paymentsService.downloadPaymentProof()
       const url = window.URL.createObjectURL(blob)
       window.open(url, '_blank')
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to view payment proof:", err)
       toast.error("Failed to view payment proof. Please try again.")
-    } finally {
-      setIsViewingProof(false)
     }
   }
 
@@ -191,23 +154,9 @@ export default function PaymentPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to download single room invoice:", err)
       toast.error("Failed to download invoice. Please try again.")
-    }
-  }
-
-  const handleViewSingleRoomProof = async (inv: SingleRoomInvoice) => {
-    try {
-      setViewingSingleRoomProofId(inv.id)
-      const blob = await paymentsService.downloadSingleRoomProof(inv.id)
-      const url = window.URL.createObjectURL(blob)
-      window.open(url, '_blank')
-    } catch (err: unknown) {
-      console.error("Failed to view single room proof:", err)
-      toast.error("Failed to view payment proof. Please try again.")
-    } finally {
-      setViewingSingleRoomProofId(null)
     }
   }
 
@@ -220,9 +169,10 @@ export default function PaymentPage() {
       await paymentsService.uploadSingleRoomProof(invoiceId, file)
       await fetchData()
       toast.success("Payment proof uploaded successfully")
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Failed to upload single room proof:", err)
-      toast.error(getErrorMessage(err, "Failed to upload payment proof. Please try again."))
+      const errorMessage = (err as { message?: string })?.message || "Failed to upload payment proof. Please try again."
+      toast.error(errorMessage)
     } finally {
       setUploadingSingleRoomId(null)
     }
@@ -315,13 +265,8 @@ export default function PaymentPage() {
         <Alert className="bg-gradient-to-r from-red-50 to-red-50/50 border-red-200">
           <XCircle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
-            <p className="font-medium">Your payment proof was rejected.</p>
-            {payment?.admin_comment && (
-              <p className="mt-2 p-2 bg-red-100 rounded border border-red-200">
-                <span className="font-semibold">Reason:</span> {payment.admin_comment}
-              </p>
-            )}
-            <p className="mt-2">Please upload a valid bank receipt or transfer confirmation.</p>
+            Your payment proof was rejected. {payment?.admin_comment && `Reason: ${payment.admin_comment}`}
+            Please upload a valid bank receipt or transfer confirmation.
           </AlertDescription>
         </Alert>
       )}
@@ -445,7 +390,7 @@ export default function PaymentPage() {
                 </div>
               )}
               <div className="flex justify-between items-center font-semibold pt-3 mt-2 border-t border-amber-200">
-                <span className="text-gray-800">Total</span>
+                <span className="text-gray-800">Estimated Total</span>
                 <span className="text-lg text-[#2f3090]">${breakdown.total.toLocaleString()}</span>
               </div>
             </div>
@@ -466,37 +411,17 @@ export default function PaymentPage() {
 
         {paymentStatus === "APPROVED" ? (
           <div className="p-6 bg-gradient-to-r from-[#00795d]/10 to-[#00795d]/5 border border-[#00795d]/30 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-[#00795d] rounded-full">
-                    <CheckCircle2 className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="font-semibold text-[#00795d] text-lg">Payment Verified</p>
-                </div>
-                {payment?.reviewed_at && (
-                  <p className="text-sm text-[#00795d]/80 ml-11">
-                    Verified on: {new Date(payment.reviewed_at).toLocaleDateString()}
-                  </p>
-                )}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-[#00795d] rounded-full">
+                <CheckCircle2 className="w-5 h-5 text-white" />
               </div>
-              {payment?.proof_file && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
-                  onClick={handleViewProof}
-                  disabled={isViewingProof}
-                >
-                  {isViewingProof ? (
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  ) : (
-                    <Eye className="w-4 h-4 mr-1" />
-                  )}
-                  {isViewingProof ? "Loading..." : "View Proof"}
-                </Button>
-              )}
+              <p className="font-semibold text-[#00795d] text-lg">Payment Verified</p>
             </div>
+            {payment?.reviewed_at && (
+              <p className="text-sm text-[#00795d]/80 ml-11">
+                Verified on: {new Date(payment.reviewed_at).toLocaleDateString()}
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -538,14 +463,9 @@ export default function PaymentPage() {
                     size="sm"
                     className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
                     onClick={handleViewProof}
-                    disabled={isViewingProof}
                   >
-                    {isViewingProof ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    ) : (
-                      <Eye className="w-4 h-4 mr-1" />
-                    )}
-                    {isViewingProof ? "Loading..." : "View Uploaded Proof"}
+                    <Eye className="w-4 h-4 mr-1" />
+                    View Uploaded Proof
                   </Button>
                 </div>
               </div>
@@ -674,23 +594,6 @@ export default function PaymentPage() {
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Download Invoice
-                    </Button>
-                  )}
-
-                  {inv.proof_file && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
-                      onClick={() => handleViewSingleRoomProof(inv)}
-                      disabled={viewingSingleRoomProofId === inv.id}
-                    >
-                      {viewingSingleRoomProofId === inv.id ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Eye className="w-4 h-4 mr-1" />
-                      )}
-                      {viewingSingleRoomProofId === inv.id ? "Loading..." : "View Proof"}
                     </Button>
                   )}
 

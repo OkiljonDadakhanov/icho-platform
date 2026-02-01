@@ -50,35 +50,34 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
-import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment, PreRegistration } from "@/lib/types"
+import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
 import { getErrorMessage } from "@/lib/error-utils"
 import Link from "next/link"
 
-// Hard limits per delegation (from backend settings)
-const HARD_LIMITS: Record<string, number> = {
+// Participant limits per delegation
+const PARTICIPANT_LIMITS: Record<string, number | null> = {
   HEAD_MENTOR: 1,
-  MENTOR: 1,
-  STUDENT: 4,
+  TEAM_LEADER: 2,
+  CONTESTANT: 4,
   OBSERVER: 2,
-  GUEST: 10,
+  GUEST: null, // Unlimited
   REMOTE_TRANSLATOR: 2,
 }
 
 // Role priority for ordering (lower number = higher priority)
 const ROLE_PRIORITY: Record<string, number> = {
   HEAD_MENTOR: 1,
-  MENTOR: 2,
-  STUDENT: 3,
+  TEAM_LEADER: 2,
+  CONTESTANT: 3,
   OBSERVER: 4,
   GUEST: 5,
   REMOTE_TRANSLATOR: 6,
 }
 
-// Exam languages for students
+// Exam languages for contestants
 const EXAM_LANGUAGES = [
   'Arabic',
   'Armenian',
@@ -139,7 +138,6 @@ export default function TeamPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
   const [payment, setPayment] = useState<Payment | null>(null)
-  const [preReg, setPreReg] = useState<PreRegistration | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -152,17 +150,6 @@ export default function TeamPage() {
   const isPaymentPending = payment?.status === "PENDING"
   const hasNoPayment = !payment || !payment.proof_file
 
-  // Calculate effective limits: use pre-registration limits if payment proof uploaded, otherwise hard limits
-  const hasPaymentProof = payment?.proof_file
-  const effectiveLimits: Record<string, number> = {
-    HEAD_MENTOR: hasPaymentProof && preReg ? Math.min(preReg.num_head_mentors ?? 1, HARD_LIMITS.HEAD_MENTOR) : HARD_LIMITS.HEAD_MENTOR,
-    MENTOR: hasPaymentProof && preReg ? Math.min(preReg.num_mentors ?? 1, HARD_LIMITS.MENTOR) : HARD_LIMITS.MENTOR,
-    STUDENT: hasPaymentProof && preReg ? Math.min(preReg.num_students, HARD_LIMITS.STUDENT) : HARD_LIMITS.STUDENT,
-    OBSERVER: hasPaymentProof && preReg ? Math.min(preReg.num_observers, HARD_LIMITS.OBSERVER) : HARD_LIMITS.OBSERVER,
-    GUEST: hasPaymentProof && preReg ? Math.min(preReg.num_guests, HARD_LIMITS.GUEST) : HARD_LIMITS.GUEST,
-    REMOTE_TRANSLATOR: HARD_LIMITS.REMOTE_TRANSLATOR,
-  }
-
   useEffect(() => {
     fetchData()
   }, [])
@@ -170,14 +157,12 @@ export default function TeamPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, paymentData, preRegData] = await Promise.all([
+      const [participantsData, paymentData] = await Promise.all([
         participantsService.getAllParticipants().catch(() => []),
         paymentsService.getPayment().catch(() => null),
-        preRegistrationService.getPreRegistration().catch(() => null),
       ])
       setParticipants(participantsData)
       setPayment(paymentData)
-      setPreReg(preRegData)
       setError(null)
     } catch (err: any) {
       console.error("Failed to fetch data:", err)
@@ -278,8 +263,8 @@ export default function TeamPage() {
 
   // Calculate stats
   const headMentors = participants.filter(p => p.role === 'HEAD_MENTOR').length
-  const mentors = participants.filter(p => p.role === 'MENTOR').length
-  const students = participants.filter(p => p.role === 'STUDENT').length
+  const teamLeaders = participants.filter(p => p.role === 'TEAM_LEADER').length
+  const contestants = participants.filter(p => p.role === 'CONTESTANT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
   const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
@@ -309,29 +294,29 @@ export default function TeamPage() {
               <span className="text-2xl font-bold">{participants.length}</span>
               <span className="text-white/70 ml-2 text-sm">Total</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= (effectiveLimits.HEAD_MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
-              <span className="text-xl font-semibold">{headMentors}/{effectiveLimits.HEAD_MENTOR ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= (PARTICIPANT_LIMITS.HEAD_MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
+              <span className="text-xl font-semibold">{headMentors}/{PARTICIPANT_LIMITS.HEAD_MENTOR ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${mentors >= (effectiveLimits.MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
-              <span className="text-xl font-semibold">{mentors}/{effectiveLimits.MENTOR ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${teamLeaders >= (PARTICIPANT_LIMITS.TEAM_LEADER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
+              <span className="text-xl font-semibold">{teamLeaders}/{PARTICIPANT_LIMITS.TEAM_LEADER ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Mentors</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${students >= (effectiveLimits.STUDENT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
-              <span className="text-xl font-semibold">{students}/{effectiveLimits.STUDENT ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${contestants >= (PARTICIPANT_LIMITS.CONTESTANT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
+              <span className="text-xl font-semibold">{contestants}/{PARTICIPANT_LIMITS.CONTESTANT ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (effectiveLimits.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
-              <span className="text-xl font-semibold">{observers}/{effectiveLimits.OBSERVER ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
+              <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Observers</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${guests >= effectiveLimits.GUEST ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
-              <span className="text-xl font-semibold">{guests}/{effectiveLimits.GUEST}</span>
+            <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
+              <span className="text-xl font-semibold">{guests}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (effectiveLimits.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
-              <span className="text-xl font-semibold">{remoteTranslators}/{effectiveLimits.REMOTE_TRANSLATOR ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Remote Translators</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
+              <span className="text-xl font-semibold">{remoteTranslators}/{PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? '?'}</span>
+              <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
             </div>
           </div>
         </div>
@@ -443,7 +428,7 @@ export default function TeamPage() {
                   className="gap-2 border-indigo-300 text-indigo-700 hover:bg-indigo-100"
                   onClick={async () => {
                     try {
-                      const blob = await participantsService.downloadTeamLeaderConsentFormTemplate()
+                      const blob = await participantsService.downloadMentorConsentFormTemplate()
                       const url = URL.createObjectURL(blob)
                       const a = document.createElement('a')
                       a.href = url
@@ -490,8 +475,7 @@ export default function TeamPage() {
               onOpenChange={setIsAddDialogOpen}
               onAdd={handleAddMember}
               isSaving={isSaving}
-              roleCounts={{ headMentors, mentors, students, observers, guests, remoteTranslators }}
-              effectiveLimits={effectiveLimits}
+              roleCounts={{ headMentors, teamLeaders, contestants, observers, guests, remoteTranslators }}
             />
           )}
         </div>
@@ -504,7 +488,7 @@ export default function TeamPage() {
             <h3 className="text-lg font-medium text-gray-700 mb-2">No participants registered yet</h3>
             <p className="text-gray-500 max-w-md mx-auto">
               Start building your delegation by clicking the "Add Member" button above.
-              You can add team leaders, students, observers, and guests.
+              You can add mentors, students, observers, and guests.
             </p>
           </div>
         ) : (
@@ -606,8 +590,7 @@ export default function TeamPage() {
                             onEdit={handleEditMember}
                             onDelete={handleDeleteMember}
                             isSaving={isSaving}
-                            roleCounts={{ headMentors, mentors, students, observers, guests, remoteTranslators }}
-                            effectiveLimits={effectiveLimits}
+                            roleCounts={{ headMentors, teamLeaders, contestants, observers, guests, remoteTranslators }}
                           />
                         )}
                       </td>
@@ -682,25 +665,22 @@ function AddMemberDialog({
   onAdd,
   isSaving,
   roleCounts,
-  effectiveLimits,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
-  roleCounts: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
-  effectiveLimits: Record<string, number>
+  roleCounts: { headMentors: number; teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
 }) {
   // Check if roles have reached their limits
   const isRoleDisabled = (role: ParticipantRole) => {
-    const limit = effectiveLimits[role]
+    const limit = PARTICIPANT_LIMITS[role]
     if (limit === null || limit === undefined) return false // Unlimited or unknown role
     switch (role) {
       case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
-      case 'MENTOR': return roleCounts.mentors >= limit
-      case 'STUDENT': return roleCounts.students >= limit
+      case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
+      case 'CONTESTANT': return roleCounts.contestants >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
-      case 'GUEST': return roleCounts.guests >= limit
       case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
       default: return false
     }
@@ -760,13 +740,13 @@ function AddMemberDialog({
       medical_requirements: formData.medical_requirements || undefined,
       email: formData.email,
       regulations_accepted: isRemoteTranslator(formData.role) ? true : formData.regulations_accepted,
-      prefers_single_room: (formData.role === 'MENTOR' || formData.role === 'HEAD_MENTOR') ? formData.prefers_single_room : undefined,
+      prefers_single_room: (formData.role === 'TEAM_LEADER' || formData.role === 'HEAD_MENTOR') ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: isRemoteTranslator(formData.role) ? undefined : consentForm || undefined,
       commitment_form_signed: commitmentForm || undefined,
       translation_language: isRemoteTranslator(formData.role) ? formData.translation_language : undefined,
-      exam_language: formData.role === 'STUDENT' ? formData.exam_language : undefined,
+      exam_language: formData.role === 'CONTESTANT' ? formData.exam_language : undefined,
     })
     // Reset form
     setFormData({
@@ -798,7 +778,7 @@ function AddMemberDialog({
   const isRoleValid = formData.role && !isRoleDisabled(formData.role as ParticipantRole)
   const isEmailValid = formData.email && isValidEmail(formData.email)
   // Remote translators don't need passport number
-  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && (isRemoteTranslator(formData.role) || formData.passport_number) && formData.date_of_birth && isRoleValid && formData.gender && (formData.role !== 'REMOTE_TRANSLATOR' || formData.translation_language) && (formData.role !== 'STUDENT' || formData.exam_language)
+  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && (isRemoteTranslator(formData.role) || formData.passport_number) && formData.date_of_birth && isRoleValid && formData.gender && (formData.role !== 'REMOTE_TRANSLATOR' || formData.translation_language) && (formData.role !== 'CONTESTANT' || formData.exam_language)
   // Remote translators skip step 2 validation
   const canProceedStep2 = isRemoteTranslator(formData.role) || (formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements))
   // Remote translators have simplified requirements
@@ -1009,37 +989,37 @@ function AddMemberDialog({
                       <SelectItem value="HEAD_MENTOR" disabled={isRoleDisabled('HEAD_MENTOR')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-yellow-600"></span>
-                          Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${effectiveLimits.HEAD_MENTOR} max)`}
+                          Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="MENTOR" disabled={isRoleDisabled('MENTOR')}>
+                      <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#2f3090]"></span>
-                          Mentor {isRoleDisabled('MENTOR') && `(${roleCounts.mentors}/${effectiveLimits.MENTOR} max)`}
+                          Mentor {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="STUDENT" disabled={isRoleDisabled('STUDENT')}>
+                      <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Student {isRoleDisabled('STUDENT') && `(${roleCounts.students}/${effectiveLimits.STUDENT} max)`}
+                          Student {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${effectiveLimits.OBSERVER} max)`}
+                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
+                      <SelectItem value="GUEST">
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                          Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${effectiveLimits.GUEST} max)`}
+                          Guest
                         </span>
                       </SelectItem>
                       <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-cyan-600"></span>
-                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${effectiveLimits.REMOTE_TRANSLATOR} max)`}
+                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
                         </span>
                       </SelectItem>
                     </SelectContent>
@@ -1066,7 +1046,7 @@ function AddMemberDialog({
               </div>
 
               {/* Exam Language (for Students) */}
-              {formData.role === 'STUDENT' && (
+              {formData.role === 'CONTESTANT' && (
                 <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 animate-in slide-in-from-top-2 duration-200">
                   <Label className="text-gray-700 flex items-center gap-2 mb-2">
                     <FileText className="w-4 h-4 text-green-600" />
@@ -1203,7 +1183,7 @@ function AddMemberDialog({
             </div>
 
             {/* Room Preference (Head Mentors and Mentors only) */}
-            {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') && (
+            {(formData.role === 'HEAD_MENTOR' || formData.role === 'TEAM_LEADER') && (
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-200">
                 <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <UsersRound className="w-4 h-4 text-indigo-600" />
@@ -1224,7 +1204,7 @@ function AddMemberDialog({
                     />
                     <div>
                       <p className="font-medium text-gray-800">Share twin room (included)</p>
-                      <p className="text-sm text-gray-500">Share with another team leader from a different country</p>
+                      <p className="text-sm text-gray-500">Share with another mentor from a different country</p>
                     </div>
                   </label>
                   <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
@@ -1283,7 +1263,7 @@ function AddMemberDialog({
                 {/* Consent Form */}
                 <FileUploadField
                   id="consent_form"
-                  label={`Signed Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
+                  label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
                   required
                   accept="image/*,.pdf"
                   file={consentForm}
@@ -1293,7 +1273,7 @@ function AddMemberDialog({
                 />
 
                 {/* Commitment Form - Only for Students */}
-                {formData.role === 'STUDENT' && (
+                {formData.role === 'CONTESTANT' && (
                   <FileUploadField
                     id="commitment_form"
                     label="Signed Commitment Form (Students only)"
@@ -1503,27 +1483,24 @@ function EditMemberDialog({
   onDelete,
   isSaving,
   roleCounts,
-  effectiveLimits,
 }: {
   participant: Participant
   onEdit: (id: string, data: Partial<ParticipantCreateRequest>) => void
   onDelete: (id: string) => void
   isSaving: boolean
-  roleCounts: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
-  effectiveLimits: Record<string, number>
+  roleCounts: { headMentors: number; teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
 }) {
   // Check if roles have reached their limits (excluding current participant's role)
   const isRoleDisabled = (role: ParticipantRole) => {
     // If the participant already has this role, it's not disabled
     if (participant.role === role) return false
-    const limit = effectiveLimits[role]
+    const limit = PARTICIPANT_LIMITS[role]
     if (limit === null || limit === undefined) return false // Unlimited or unknown role
     switch (role) {
       case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
-      case 'MENTOR': return roleCounts.mentors >= limit
-      case 'STUDENT': return roleCounts.students >= limit
+      case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
+      case 'CONTESTANT': return roleCounts.contestants >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
-      case 'GUEST': return roleCounts.guests >= limit
       case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
       default: return false
     }
@@ -1559,7 +1536,7 @@ function EditMemberDialog({
 
     // Validate role limits if role is being changed
     if (formData.role !== participant.role && isRoleDisabled(formData.role)) {
-      const limit = effectiveLimits[formData.role]
+      const limit = PARTICIPANT_LIMITS[formData.role]
       toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
       return
     }
@@ -1567,13 +1544,13 @@ function EditMemberDialog({
     onEdit(participant.id, {
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
-      prefers_single_room: (formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') ? formData.prefers_single_room : undefined,
+      prefers_single_room: (formData.role === 'HEAD_MENTOR' || formData.role === 'TEAM_LEADER') ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
       commitment_form_signed: commitmentForm || undefined,
       translation_language: formData.role === 'REMOTE_TRANSLATOR' ? formData.translation_language : undefined,
-      exam_language: formData.role === 'STUDENT' ? formData.exam_language : undefined,
+      exam_language: formData.role === 'CONTESTANT' ? formData.exam_language : undefined,
     })
     setOpen(false)
   }
@@ -1708,22 +1685,20 @@ function EditMemberDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HEAD_MENTOR" disabled={isRoleDisabled('HEAD_MENTOR')}>
-                      Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${effectiveLimits.HEAD_MENTOR}/${effectiveLimits.HEAD_MENTOR} max)`}
+                      Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${PARTICIPANT_LIMITS.HEAD_MENTOR}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
                     </SelectItem>
-                    <SelectItem value="MENTOR" disabled={isRoleDisabled('MENTOR')}>
-                      Mentor {isRoleDisabled('MENTOR') && `(${effectiveLimits.MENTOR}/${effectiveLimits.MENTOR} max)`}
+                    <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
+                      Mentor {isRoleDisabled('TEAM_LEADER') && `(${PARTICIPANT_LIMITS.TEAM_LEADER}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
                     </SelectItem>
-                    <SelectItem value="STUDENT" disabled={isRoleDisabled('STUDENT')}>
-                      Student {isRoleDisabled('STUDENT') && `(${effectiveLimits.STUDENT}/${effectiveLimits.STUDENT} max)`}
+                    <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
+                      Student {isRoleDisabled('CONTESTANT') && `(${PARTICIPANT_LIMITS.CONTESTANT}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
                     </SelectItem>
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
-                      Observer {isRoleDisabled('OBSERVER') && `(${effectiveLimits.OBSERVER}/${effectiveLimits.OBSERVER} max)`}
+                      Observer {isRoleDisabled('OBSERVER') && `(${PARTICIPANT_LIMITS.OBSERVER}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
                     </SelectItem>
-                    <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
-                      Guest {isRoleDisabled('GUEST') && `(${effectiveLimits.GUEST}/${effectiveLimits.GUEST} max)`}
-                    </SelectItem>
+                    <SelectItem value="GUEST">Guest</SelectItem>
                     <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
-                      Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${effectiveLimits.REMOTE_TRANSLATOR}/${effectiveLimits.REMOTE_TRANSLATOR} max)`}
+                      Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -1747,7 +1722,7 @@ function EditMemberDialog({
             </div>
 
             {/* Exam Language (for Students) */}
-            {formData.role === 'STUDENT' && (
+            {formData.role === 'CONTESTANT' && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <Label className="text-gray-700 flex items-center gap-2 mb-2">
                   <FileText className="w-4 h-4 text-green-600" />
@@ -1864,7 +1839,7 @@ function EditMemberDialog({
           </div>
 
           {/* Room Preference (Head Mentors and Mentors only) */}
-          {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') && (
+          {(formData.role === 'HEAD_MENTOR' || formData.role === 'TEAM_LEADER') && (
             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <UsersRound className="w-4 h-4 text-indigo-600" />
@@ -1899,7 +1874,7 @@ function EditMemberDialog({
                   />
                   <div>
                     <p className="font-medium text-gray-800">Share twin room (included)</p>
-                    <p className="text-sm text-gray-500">Share with another team leader from a different country</p>
+                    <p className="text-sm text-gray-500">Share with another mentor from a different country</p>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-white transition-colors">
@@ -1943,14 +1918,14 @@ function EditMemberDialog({
                 accept="image/*"
               />
               <FileUploadFieldEdit
-                label={`Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
+                label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
                 hasExisting={!!participant.consent_form_signed}
                 file={consentForm}
                 onChange={setConsentForm}
                 accept="image/*,.pdf"
               />
               {/* Commitment Form - Only for Students */}
-              {formData.role === 'STUDENT' && (
+              {formData.role === 'CONTESTANT' && (
                 <FileUploadFieldEdit
                   label="Commitment Form (Students only)"
                   hasExisting={!!participant.commitment_form_signed}

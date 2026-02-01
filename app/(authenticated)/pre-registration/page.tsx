@@ -1,10 +1,9 @@
 "use client";
 
-import { getErrorMessage } from "@/lib/error-utils";
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FileInput } from "@/components/ui/file-input";
 import { NumberStepper } from "@/components/ui/number-stepper";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -34,20 +33,38 @@ const isValidPhone = (phone: string): boolean => {
   return phoneRegex.test(phone);
 };
 
+// File validation helper
+const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
+const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+function validatePassportFile(file: File): string | null {
+  const dotIndex = file.name.lastIndexOf(".");
+  if (dotIndex === -1) {
+    return "Invalid file type. Only PDF, JPG, and PNG files are allowed.";
+  }
+  const ext = file.name.toLowerCase().slice(dotIndex);
+  if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
+    return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`;
+  }
+  if (file.size > MAX_PASSPORT_FILE_SIZE) {
+    return "File size exceeds 10MB limit.";
+  }
+  return null;
+}
+
 interface FormData {
   firstName: string;
   lastName: string;
   role: string;
   gender: Gender;
   dateOfBirth: string;
+  passportNumber: string;
   email: string;
   phone: string;
-  headMentors: number;
-  mentors: number;
-  students: number;
+  teamLeaders: number;
+  contestants: number;
   observers: number;
   guests: number;
-  remoteTranslators: number;
 }
 
 export default function PreRegistrationPage() {
@@ -57,20 +74,22 @@ export default function PreRegistrationPage() {
   const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null);
   const [feeRules, setFeeRules] = useState<FeeRule[]>([]);
   const [coordinatorId, setCoordinatorId] = useState<string | null>(null);
+  const [coordinatorPassportScan, setCoordinatorPassportScan] = useState<string | null>(null);
+  const [passportScanFile, setPassportScanFile] = useState<File | null>(null);
+  const [passportFileError, setPassportFileError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
-    role: "National Contact Person",
+    role: "National Coordinator",
     gender: "MALE",
     dateOfBirth: "",
+    passportNumber: "",
     email: "",
     phone: "",
-    headMentors: 1,
-    mentors: 1,
-    students: 4,
+    teamLeaders: 1,
+    contestants: 4,
     observers: 2,
     guests: 3,
-    remoteTranslators: 0,
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -97,6 +116,10 @@ export default function PreRegistrationPage() {
       case "phone":
         if (!value.trim()) return "Phone number is required";
         if (!isValidPhone(value)) return "Please enter a valid phone number";
+        break;
+      case "passportNumber":
+        if (!value.trim()) return "Passport number is required";
+        if (value.length < 5) return "Passport number seems too short";
         break;
       case "dateOfBirth":
         if (!value) return "Date of birth is required";
@@ -133,12 +156,10 @@ export default function PreRegistrationPage() {
       if (data) {
         setFormData((prev) => ({
           ...prev,
-          headMentors: Math.min(data.num_head_mentors ?? 0, 1),
-          mentors: Math.min(data.num_mentors ?? 0, 1),
-          students: Math.min(data.num_students, 4),
+          teamLeaders: Math.min(data.num_team_leaders, 2),
+          contestants: Math.min(data.num_contestants, 4),
           observers: Math.min(data.num_observers, 2),
           guests: data.num_guests,
-          remoteTranslators: data.num_remote_translators ?? 0,
         }));
       }
 
@@ -147,6 +168,7 @@ export default function PreRegistrationPage() {
       const coordinator = coordinators.find((item) => item.is_primary) ?? coordinators[0];
       if (coordinator) {
         setCoordinatorId(coordinator.id);
+        setCoordinatorPassportScan(coordinator.passport_scan ?? null);
         const [firstName, ...lastNameParts] = coordinator.full_name.split(" ");
         setFormData((prev) => ({
           ...prev,
@@ -155,15 +177,17 @@ export default function PreRegistrationPage() {
           role: coordinator.role,
           gender: coordinator.gender,
           dateOfBirth: coordinator.date_of_birth,
+          passportNumber: coordinator.passport_number,
           email: coordinator.email,
           phone: coordinator.phone,
         }));
       } else {
         setCoordinatorId(null);
+        setCoordinatorPassportScan(null);
       }
-    } catch (err: unknown) {
-      
-      setError(getErrorMessage(err, "Failed to load pre-registration data"));
+    } catch (err: any) {
+      const error = err as { message?: string };
+      setError(error.message || "Failed to load pre-registration data");
     } finally {
       setIsLoading(false);
     }
@@ -171,15 +195,16 @@ export default function PreRegistrationPage() {
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role);
-    return rule ? Number(rule.unit_fee) : 0;
+    return rule ? Number(rule.unit_fee) : 500; // Default to 500 if no rule found
   };
 
   const calculateTotal = () => {
-    // Flat team fee ($3000) + per-person fees for observers and guests
-    const teamFee = getFee("TEAM") || 3000;
-    const observerFee = formData.observers * getFee("OBSERVER");
-    const guestFee = formData.guests * getFee("GUEST");
-    return teamFee + observerFee + guestFee;
+    return (
+      formData.teamLeaders * getFee("TEAM_LEADER") +
+      formData.contestants * getFee("CONTESTANT") +
+      formData.observers * getFee("OBSERVER") +
+      formData.guests * getFee("GUEST")
+    );
   };
 
   const buildCoordinatorPayload = (): CoordinatorUpsertRequest => ({
@@ -187,6 +212,7 @@ export default function PreRegistrationPage() {
     role: formData.role,
     gender: formData.gender,
     date_of_birth: formData.dateOfBirth,
+    passport_number: formData.passportNumber,
     email: formData.email,
     phone: formData.phone,
     is_primary: true,
@@ -197,16 +223,28 @@ export default function PreRegistrationPage() {
     if (coordinatorId) {
       const updated = await preRegistrationService.updateCoordinator(coordinatorId, payload);
       setCoordinatorId(updated.id);
+      setCoordinatorPassportScan(updated.passport_scan ?? null);
       return updated;
     }
-    const created = await preRegistrationService.createCoordinator(payload);
+    const created = await preRegistrationService.createCoordinator(payload, passportScanFile || undefined);
     setCoordinatorId(created.id);
+    setCoordinatorPassportScan(created.passport_scan ?? null);
+    if (passportScanFile) {
+      setPassportScanFile(null);
+    }
     return created;
+  };
+
+  const uploadPassportScanIfNeeded = async (currentCoordinatorId: string) => {
+    if (!passportScanFile) return;
+    const updated = await preRegistrationService.uploadCoordinatorPassport(currentCoordinatorId, passportScanFile);
+    setCoordinatorPassportScan(updated.passport_scan ?? null);
+    setPassportScanFile(null);
   };
 
   const validateForm = (): boolean => {
     // Mark all fields as touched to show validation
-    const allFields = ["firstName", "lastName", "email", "phone", "dateOfBirth", "role"];
+    const allFields = ["firstName", "lastName", "email", "phone", "passportNumber", "dateOfBirth", "role"];
     setTouched(allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {}));
 
     // Check each field and collect specific errors
@@ -224,12 +262,23 @@ export default function PreRegistrationPage() {
     } else if (!isValidPhone(formData.phone)) {
       fieldErrors.push({ field: "Phone", error: "invalid format" });
     }
+    if (!formData.passportNumber.trim()) fieldErrors.push({ field: "Passport number", error: "required" });
     if (!formData.dateOfBirth) fieldErrors.push({ field: "Date of birth", error: "required" });
     if (!formData.role.trim()) fieldErrors.push({ field: "Role", error: "required" });
 
     if (fieldErrors.length > 0) {
       const missingFields = fieldErrors.map(e => e.field).join(", ");
       toast.error(`Missing or invalid: ${missingFields}`);
+      return false;
+    }
+
+    if (passportFileError) {
+      toast.error("Please select a valid passport scan file");
+      return false;
+    }
+
+    if (!passportScanFile && !coordinatorPassportScan) {
+      toast.error("Passport scan is required");
       return false;
     }
 
@@ -244,21 +293,20 @@ export default function PreRegistrationPage() {
       setError(null);
 
       await preRegistrationService.updatePreRegistration({
-        num_head_mentors: formData.headMentors,
-        num_mentors: formData.mentors,
-        num_students: formData.students,
+        num_team_leaders: formData.teamLeaders,
+        num_contestants: formData.contestants,
         num_observers: formData.observers,
         num_guests: formData.guests,
-        num_remote_translators: formData.remoteTranslators,
       });
-      await upsertCoordinator();
+      const coordinator = await upsertCoordinator();
+      await uploadPassportScanIfNeeded(coordinator.id);
       await preRegistrationService.submitPreRegistration();
 
       toast.success("Pre-registration submitted successfully!");
       await loadPreRegistration();
-    } catch (err: unknown) {
-
-      toast.error(getErrorMessage(err, "Failed to submit pre-registration"));
+    } catch (err: any) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Failed to submit pre-registration");
     } finally {
       setIsSubmitting(false);
     }
@@ -280,18 +328,17 @@ export default function PreRegistrationPage() {
     try {
       setIsSubmitting(true);
       await preRegistrationService.updatePreRegistration({
-        num_head_mentors: formData.headMentors,
-        num_mentors: formData.mentors,
-        num_students: formData.students,
+        num_team_leaders: formData.teamLeaders,
+        num_contestants: formData.contestants,
         num_observers: formData.observers,
         num_guests: formData.guests,
-        num_remote_translators: formData.remoteTranslators,
       });
-      await upsertCoordinator();
+      const coordinator = await upsertCoordinator();
+      await uploadPassportScanIfNeeded(coordinator.id);
       toast.success("Draft saved successfully!");
-    } catch (err: unknown) {
-
-      toast.error(getErrorMessage(err, "Failed to save draft"));
+    } catch (err: any) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Failed to save draft");
     } finally {
       setIsSubmitting(false);
     }
@@ -342,7 +389,7 @@ export default function PreRegistrationPage() {
 
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-6">Country Contact Person Information</h2>
+        <h2 className="text-xl font-semibold mb-6">Coordinator Information</h2>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -387,7 +434,7 @@ export default function PreRegistrationPage() {
             <Label htmlFor="role">Role *</Label>
             <Input
               id="role"
-              placeholder="e.g., National Contact Person"
+              placeholder="e.g., National Coordinator"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               onBlur={() => handleBlur("role")}
@@ -442,12 +489,69 @@ export default function PreRegistrationPage() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="passport">Passport Number *</Label>
+            <Input
+              id="passport"
+              placeholder="Enter passport number"
+              value={formData.passportNumber}
+              onChange={(e) =>
+                setFormData({ ...formData, passportNumber: e.target.value.toUpperCase() })
+              }
+              onBlur={() => handleBlur("passportNumber")}
+              disabled={!canEdit}
+              className={touched.passportNumber && getFieldError("passportNumber", formData.passportNumber) ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
+            />
+            {touched.passportNumber && getFieldError("passportNumber", formData.passportNumber) && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {getFieldError("passportNumber", formData.passportNumber)}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="passport_scan">Passport Scan (PDF/JPG/PNG) *</Label>
+            <FileInput
+              id="passport_scan"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileChange={(file) => {
+                setPassportFileError(null);
+                if (file) {
+                  const error = validatePassportFile(file);
+                  if (error) {
+                    setPassportFileError(error);
+                    setPassportScanFile(null);
+                    return;
+                  }
+                }
+                setPassportScanFile(file);
+              }}
+              disabled={!canEdit}
+            />
+            {passportFileError && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                {passportFileError}
+              </p>
+            )}
+            {!passportFileError && passportScanFile && (
+              <p className="text-sm text-muted-foreground">Selected: {passportScanFile.name}</p>
+            )}
+            {!passportFileError && !passportScanFile && coordinatorPassportScan && (
+              <p className="text-sm text-muted-foreground">Existing passport scan uploaded.</p>
+            )}
+            {!passportFileError && !passportScanFile && !coordinatorPassportScan && (
+              <p className="text-sm text-muted-foreground">Required before submitting pre-registration.</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="email">Email Address *</Label>
             <div className="relative">
               <Input
                 id="email"
                 type="email"
-                placeholder="contact@example.com"
+                placeholder="coordinator@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 onBlur={() => handleBlur("email")}
@@ -523,28 +627,14 @@ export default function PreRegistrationPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Head Mentor *</Label>
-              <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded">Max 1</span>
+              <Label className="text-base">Mentors *</Label>
+              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
             </div>
             <NumberStepper
-              value={formData.headMentors}
-              onChange={(value) => setFormData({ ...formData, headMentors: value })}
+              value={formData.teamLeaders}
+              onChange={(value) => setFormData({ ...formData, teamLeaders: value })}
               min={0}
-              max={1}
-              disabled={!canEdit}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-base">Mentor</Label>
-              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 1</span>
-            </div>
-            <NumberStepper
-              value={formData.mentors}
-              onChange={(value) => setFormData({ ...formData, mentors: value })}
-              min={0}
-              max={1}
+              max={2}
               disabled={!canEdit}
             />
           </div>
@@ -555,8 +645,8 @@ export default function PreRegistrationPage() {
               <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
             </div>
             <NumberStepper
-              value={formData.students}
-              onChange={(value) => setFormData({ ...formData, students: value })}
+              value={formData.contestants}
+              onChange={(value) => setFormData({ ...formData, contestants: value })}
               min={0}
               max={4}
               disabled={!canEdit}
@@ -577,31 +667,15 @@ export default function PreRegistrationPage() {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Guests</Label>
-              <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">Max 10</span>
+              <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">No limit</span>
             </div>
             <NumberStepper
               value={formData.guests}
               onChange={(value) => setFormData({ ...formData, guests: value })}
               min={0}
-              max={10}
-              disabled={!canEdit}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-base">Remote Translators</Label>
-              <span className="text-xs font-medium text-cyan-600 bg-cyan-100 px-2 py-0.5 rounded">Max 2</span>
-              <span className="text-xs text-gray-500">(No fee)</span>
-            </div>
-            <NumberStepper
-              value={formData.remoteTranslators}
-              onChange={(value) => setFormData({ ...formData, remoteTranslators: value })}
-              min={0}
-              max={2}
               disabled={!canEdit}
             />
           </div>
@@ -613,12 +687,17 @@ export default function PreRegistrationPage() {
             ${calculateTotal().toLocaleString()} USD
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
-            <p>Team Registration (1 head mentor + 1 mentor + 4 students) = ${(getFee("TEAM") || 3000).toLocaleString()}</p>
+            {formData.teamLeaders > 0 && (
+              <p>Mentors: {formData.teamLeaders} × ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
+            )}
+            {formData.contestants > 0 && (
+              <p>Students: {formData.contestants} × ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
+            )}
             {formData.observers > 0 && (
-              <p>Observers: {formData.observers} × ${getFee("OBSERVER").toLocaleString()} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
+              <p>Observers: {formData.observers} × ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
             )}
             {formData.guests > 0 && (
-              <p>Guests: {formData.guests} × ${getFee("GUEST").toLocaleString()} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
+              <p>Guests: {formData.guests} × ${getFee("GUEST")} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
             )}
           </div>
         </div>

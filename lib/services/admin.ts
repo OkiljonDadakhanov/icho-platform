@@ -11,7 +11,6 @@ import type {
   AuditLog,
   StageDeadline,
   CountryStageStatus,
-  CountryProgressResponse,
   PaginatedResponse,
   PreRegistration,
   User,
@@ -77,7 +76,6 @@ export interface AdminAccommodation {
   additional_nights_before: number;
   additional_nights_after: number;
   notes: string;
-  single_room_invoice_status: string | null;
   created_at: string;
 }
 
@@ -86,13 +84,12 @@ export interface AdminStats {
   active_countries: number;
   total_participants: number;
   participants_by_role: {
-    team_leaders: number;
+    mentors: number;
     students: number;
     observers: number;
     guests: number;
   };
   payments: {
-    awaiting_proof: number;
     pending: number;
     approved: number;
     rejected: number;
@@ -140,9 +137,9 @@ export const adminService = {
   },
 
   /**
-   * Export countries/analytics to Excel
+   * Export analytics to Excel
    */
-  async exportCountries(): Promise<Blob> {
+  async exportAnalytics(): Promise<Blob> {
     return apiDownload('/v1/admin/analytics/export.xlsx');
   },
 
@@ -182,14 +179,6 @@ export const adminService = {
    */
   async downloadPaymentProof(paymentId: string): Promise<Blob> {
     return apiDownload(`/v1/admin/payments/${paymentId}/proof/download/`);
-  },
-
-  /**
-   * Export payments to Excel
-   */
-  async exportPayments(status?: string): Promise<Blob> {
-    const params = status && status !== 'all' ? `?status=${status}` : '';
-    return apiDownload(`/v1/admin/payments/export.xlsx${params}`);
   },
 
   // ============= Participants Management =============
@@ -239,10 +228,9 @@ export const adminService = {
 
   /**
    * Get all countries progress
-   * Returns countries with their stage statuses in nested format
    */
-  async getCountriesProgress(): Promise<CountryProgressResponse[]> {
-    return api.get<CountryProgressResponse[]>('/v1/admin/countries/progress/');
+  async getCountriesProgress(): Promise<CountryStageStatus[]> {
+    return api.get<CountryStageStatus[]>('/v1/admin/countries/progress/');
   },
 
   /**
