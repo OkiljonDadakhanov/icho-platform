@@ -61,8 +61,8 @@ interface FormData {
   passportNumber: string;
   email: string;
   phone: string;
-  teamLeaders: number;
-  contestants: number;
+  mentors: number;
+  students: number;
   observers: number;
   guests: number;
 }
@@ -86,8 +86,8 @@ export default function PreRegistrationPage() {
     passportNumber: "",
     email: "",
     phone: "",
-    teamLeaders: 1,
-    contestants: 4,
+    mentors: 1,
+    students: 4,
     observers: 2,
     guests: 3,
   });
@@ -156,8 +156,8 @@ export default function PreRegistrationPage() {
       if (data) {
         setFormData((prev) => ({
           ...prev,
-          teamLeaders: Math.min(data.num_team_leaders, 2),
-          contestants: Math.min(data.num_contestants, 4),
+          mentors: Math.min(data.num_mentors ?? 0, 1),
+          students: Math.min(data.num_students ?? 0, 4),
           observers: Math.min(data.num_observers, 2),
           guests: data.num_guests,
         }));
@@ -200,8 +200,8 @@ export default function PreRegistrationPage() {
 
   const calculateTotal = () => {
     return (
-      formData.teamLeaders * getFee("TEAM_LEADER") +
-      formData.contestants * getFee("CONTESTANT") +
+      formData.mentors * getFee("MENTOR") +
+      formData.students * getFee("STUDENT") +
       formData.observers * getFee("OBSERVER") +
       formData.guests * getFee("GUEST")
     );
@@ -293,8 +293,8 @@ export default function PreRegistrationPage() {
       setError(null);
 
       await preRegistrationService.updatePreRegistration({
-        num_team_leaders: formData.teamLeaders,
-        num_contestants: formData.contestants,
+        num_mentors: formData.mentors,
+        num_students: formData.students,
         num_observers: formData.observers,
         num_guests: formData.guests,
       });
@@ -328,8 +328,8 @@ export default function PreRegistrationPage() {
     try {
       setIsSubmitting(true);
       await preRegistrationService.updatePreRegistration({
-        num_team_leaders: formData.teamLeaders,
-        num_contestants: formData.contestants,
+        num_mentors: formData.mentors,
+        num_students: formData.students,
         num_observers: formData.observers,
         num_guests: formData.guests,
       });
@@ -628,13 +628,13 @@ export default function PreRegistrationPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Mentors *</Label>
-              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
+              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 1</span>
             </div>
             <NumberStepper
-              value={formData.teamLeaders}
-              onChange={(value) => setFormData({ ...formData, teamLeaders: value })}
+              value={formData.mentors}
+              onChange={(value) => setFormData({ ...formData, mentors: value })}
               min={0}
-              max={2}
+              max={1}
               disabled={!canEdit}
             />
           </div>
@@ -645,8 +645,8 @@ export default function PreRegistrationPage() {
               <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
             </div>
             <NumberStepper
-              value={formData.contestants}
-              onChange={(value) => setFormData({ ...formData, contestants: value })}
+              value={formData.students}
+              onChange={(value) => setFormData({ ...formData, students: value })}
               min={0}
               max={4}
               disabled={!canEdit}
@@ -687,11 +687,11 @@ export default function PreRegistrationPage() {
             ${calculateTotal().toLocaleString()} USD
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
-            {formData.teamLeaders > 0 && (
-              <p>Mentors: {formData.teamLeaders} × ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
+            {formData.mentors > 0 && (
+              <p>Mentors: {formData.mentors} × ${getFee("MENTOR")} = ${(formData.mentors * getFee("MENTOR")).toLocaleString()}</p>
             )}
-            {formData.contestants > 0 && (
-              <p>Students: {formData.contestants} × ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
+            {formData.students > 0 && (
+              <p>Students: {formData.students} × ${getFee("STUDENT")} = ${(formData.students * getFee("STUDENT")).toLocaleString()}</p>
             )}
             {formData.observers > 0 && (
               <p>Observers: {formData.observers} × ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>

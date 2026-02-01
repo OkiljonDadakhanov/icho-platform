@@ -50,8 +50,8 @@ export default function DashboardPage() {
   }
 
   // Calculate stats
-  const teamLeaders = participants.filter(p => p.role === 'TEAM_LEADER').length
-  const contestants = participants.filter(p => p.role === 'CONTESTANT').length
+  const mentors = participants.filter(p => p.role === 'MENTOR').length
+  const students = participants.filter(p => p.role === 'STUDENT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
 
@@ -81,11 +81,11 @@ export default function DashboardPage() {
               <span className="text-white/70 ml-2 text-sm">Total Members</span>
             </div>
             <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{teamLeaders}</span>
-              <span className="text-white/70 ml-2 text-sm">Leaders</span>
+              <span className="text-xl font-semibold">{mentors}</span>
+              <span className="text-white/70 ml-2 text-sm">Mentors</span>
             </div>
             <div className="px-4 py-2 bg-[#00795d]/30 rounded-lg backdrop-blur-sm border border-[#00795d]/30 transition-all hover:bg-[#00795d]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{contestants}</span>
+              <span className="text-xl font-semibold">{students}</span>
               <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
             <div className="px-4 py-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/20 transition-all hover:bg-purple-500/40 hover:scale-105">
