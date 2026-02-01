@@ -52,10 +52,12 @@ export default function DashboardPage() {
   }
 
   // Calculate stats
+  const headMentors = participants.filter(p => p.role === 'HEAD_MENTOR').length
   const mentors = participants.filter(p => p.role === 'MENTOR').length
   const contestants = participants.filter(p => p.role === 'CONTESTANT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
+  const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
 
   return (
     <div className="space-y-6">
@@ -82,6 +84,10 @@ export default function DashboardPage() {
               <span className="text-2xl font-bold">{participants.length}</span>
               <span className="text-white/70 ml-2 text-sm">Total Members</span>
             </div>
+            <div className="px-4 py-2 bg-yellow-500/30 rounded-lg backdrop-blur-sm border border-yellow-500/30 transition-all hover:bg-yellow-500/50 hover:scale-105">
+              <span className="text-xl font-semibold">{headMentors}</span>
+              <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
+            </div>
             <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
               <span className="text-xl font-semibold">{mentors}</span>
               <span className="text-white/70 ml-2 text-sm">Mentors</span>
@@ -97,6 +103,10 @@ export default function DashboardPage() {
             <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{guests}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
+            </div>
+            <div className="px-4 py-2 bg-cyan-500/20 rounded-lg backdrop-blur-sm border border-cyan-500/20 transition-all hover:bg-cyan-500/40 hover:scale-105">
+              <span className="text-xl font-semibold">{remoteTranslators}</span>
+              <span className="text-white/70 ml-2 text-sm">Remote Translators</span>
             </div>
           </div>
         </div>
