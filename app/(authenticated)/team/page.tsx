@@ -929,32 +929,35 @@ function AddMemberDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paternal_name" className="text-gray-600">
-                    Paternal Name <span className="text-gray-400 text-xs">(optional)</span>
-                  </Label>
-                  <Input
-                    id="paternal_name"
-                    placeholder="Optional"
-                    value={formData.paternal_name}
-                    onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
-                    className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
-                  />
+              {/* Paternal Name and Badge Name - not for Remote Translators */}
+              {!isRemoteTranslator(formData.role) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="paternal_name" className="text-gray-600">
+                      Paternal Name <span className="text-gray-400 text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      id="paternal_name"
+                      placeholder="Optional"
+                      value={formData.paternal_name}
+                      onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
+                      className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="badge_name" className="text-gray-600">
+                      Name for Badge <span className="text-gray-400 text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      id="badge_name"
+                      placeholder="Display name on badge"
+                      value={formData.badge_name}
+                      onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
+                      className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="badge_name" className="text-gray-600">
-                    Name for Badge <span className="text-gray-400 text-xs">(optional)</span>
-                  </Label>
-                  <Input
-                    id="badge_name"
-                    placeholder="Display name on badge"
-                    value={formData.badge_name}
-                    onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
-                    className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
@@ -1143,90 +1146,101 @@ function AddMemberDialog({
 
           {/* Step 2: Preferences */}
           <div className={`space-y-4 transition-all duration-300 ${currentStep === 2 ? "block" : "hidden"}`}>
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
-              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <Shirt className="w-4 h-4 text-amber-600" />
-                Apparel & Dietary
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tshirt_size" className="text-gray-600 flex items-center gap-1">
-                    <Shirt className="w-3 h-3" /> T-shirt Size <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.tshirt_size}
-                    onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
-                  >
-                    <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
-                        <SelectItem key={size} value={size}>{size}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dietary_requirements" className="text-gray-600 flex items-center gap-1">
-                    <UtensilsCrossed className="w-3 h-3" /> Dietary Requirements <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.dietary_requirements}
-                    onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
-                  >
-                    <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select dietary" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NORMAL">Normal</SelectItem>
-                      <SelectItem value="HALAL">Halal</SelectItem>
-                      <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
-                      <SelectItem value="VEGAN">Vegan</SelectItem>
-                      <SelectItem value="KOSHER">Kosher</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Remote Translators skip preferences - show message */}
+            {isRemoteTranslator(formData.role) ? (
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100 text-center">
+                <h3 className="font-semibold text-gray-700 mb-2">No Preferences Required</h3>
+                <p className="text-gray-500 text-sm">Remote translators work remotely and don't need apparel or dietary preferences.</p>
+                <p className="text-gray-500 text-sm mt-2">Click "Continue" to proceed to document upload.</p>
               </div>
+            ) : (
+              <>
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+                  <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Shirt className="w-4 h-4 text-amber-600" />
+                    Apparel & Dietary
+                  </h3>
 
-              {formData.dietary_requirements === 'OTHER' && (
-                <div className="space-y-2 mt-4 animate-in slide-in-from-top-2 duration-200">
-                  <Label htmlFor="other_dietary_requirements" className="text-gray-600 flex items-center gap-1">
-                    Please specify <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="other_dietary_requirements"
-                    placeholder="Describe your dietary requirements"
-                    value={formData.other_dietary_requirements}
-                    onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
-                    className="border-amber-200 focus:border-amber-500 focus:ring-amber-500/20 transition-all"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tshirt_size" className="text-gray-600 flex items-center gap-1">
+                        <Shirt className="w-3 h-3" /> T-shirt Size <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.tshirt_size}
+                        onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
+                      >
+                        <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
+                            <SelectItem key={size} value={size}>{size}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dietary_requirements" className="text-gray-600 flex items-center gap-1">
+                        <UtensilsCrossed className="w-3 h-3" /> Dietary Requirements <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.dietary_requirements}
+                        onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
+                      >
+                        <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
+                          <SelectValue placeholder="Select dietary" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NORMAL">Normal</SelectItem>
+                          <SelectItem value="HALAL">Halal</SelectItem>
+                          <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
+                          <SelectItem value="VEGAN">Vegan</SelectItem>
+                          <SelectItem value="KOSHER">Kosher</SelectItem>
+                          <SelectItem value="OTHER">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {formData.dietary_requirements === 'OTHER' && (
+                    <div className="space-y-2 mt-4 animate-in slide-in-from-top-2 duration-200">
+                      <Label htmlFor="other_dietary_requirements" className="text-gray-600 flex items-center gap-1">
+                        Please specify <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="other_dietary_requirements"
+                        placeholder="Describe your dietary requirements"
+                        value={formData.other_dietary_requirements}
+                        onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
+                        className="border-amber-200 focus:border-amber-500 focus:ring-amber-500/20 transition-all"
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-xl border border-rose-100">
-              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-rose-600" />
-                Medical Information
-              </h3>
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-xl border border-rose-100">
+                  <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-rose-600" />
+                    Medical Information
+                  </h3>
 
-              <div className="space-y-2">
-                <Label htmlFor="medical_requirements" className="text-gray-600">
-                  Medical Requirements <span className="text-gray-400 text-xs">(optional)</span>
-                </Label>
-                <Input
-                  id="medical_requirements"
-                  placeholder="Any allergies, medical conditions, or special requirements"
-                  value={formData.medical_requirements}
-                  onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
-                  className="border-gray-200 focus:border-rose-500 focus:ring-rose-500/20 transition-all"
-                />
-                <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="medical_requirements" className="text-gray-600">
+                      Medical Requirements <span className="text-gray-400 text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      id="medical_requirements"
+                      placeholder="Any allergies, medical conditions, or special requirements"
+                      value={formData.medical_requirements}
+                      onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+                      className="border-gray-200 focus:border-rose-500 focus:ring-rose-500/20 transition-all"
+                    />
+                    <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Room Preference (Head Mentors and Mentors only) */}
             {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') && (
@@ -1306,17 +1320,19 @@ function AddMemberDialog({
                   color="violet"
                 />
 
-                {/* Consent Form */}
-                <FileUploadField
-                  id="consent_form"
-                  label={`Signed Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
-                  required
-                  accept="image/*,.pdf"
-                  file={consentForm}
-                  onChange={setConsentForm}
-                  icon={<FileText className="w-4 h-4" />}
-                  color="violet"
-                />
+                {/* Consent Form - Not for Remote Translators */}
+                {!isRemoteTranslator(formData.role) && (
+                  <FileUploadField
+                    id="consent_form"
+                    label={`Signed Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
+                    required
+                    accept="image/*,.pdf"
+                    file={consentForm}
+                    onChange={setConsentForm}
+                    icon={<FileText className="w-4 h-4" />}
+                    color="violet"
+                  />
+                )}
 
                 {/* Commitment Form - Only for Students */}
                 {formData.role === 'STUDENT' && (
