@@ -331,7 +331,7 @@ export default function TeamPage() {
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (effectiveLimits.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
               <span className="text-xl font-semibold">{remoteTranslators}/{effectiveLimits.REMOTE_TRANSLATOR ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
+              <span className="text-white/70 ml-2 text-sm">Remote Translators</span>
             </div>
           </div>
         </div>
