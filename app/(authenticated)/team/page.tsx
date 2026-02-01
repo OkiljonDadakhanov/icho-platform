@@ -795,30 +795,32 @@ function AddMemberDialog({
   // Remote translators have simplified requirements
   const canSubmit = canProceedStep1 && canProceedStep2 && (isRemoteTranslator(formData.role) || formData.regulations_accepted)
 
+  // If team is full, render a disabled button without dialog trigger
+  if (allRolesFull) {
+    return (
+      <Button
+        className="bg-gray-400 cursor-not-allowed opacity-60"
+        disabled
+        title="All roles are filled"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Team Full
+      </Button>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
-      if (allRolesFull && newOpen) return // Prevent opening when team is full
       onOpenChange(newOpen)
       if (!newOpen) setCurrentStep(1)
     }}>
       <DialogTrigger asChild>
         <Button
-          className={allRolesFull
-            ? "bg-gray-400 cursor-not-allowed opacity-60"
-            : "bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-          }
-          disabled={allRolesFull}
-          title={allRolesFull ? "All roles are filled" : undefined}
-          onClick={(e) => {
-            if (allRolesFull) {
-              e.preventDefault()
-              e.stopPropagation()
-            }
-          }}
+          className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
         >
           <Plus className="w-4 h-4 mr-2" />
-          {allRolesFull ? "Team Full" : "Add Member"}
-          {!allRolesFull && <Sparkles className="w-4 h-4 ml-2 opacity-70" />}
+          Add Member
+          <Sparkles className="w-4 h-4 ml-2 opacity-70" />
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[98vw] sm:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto p-0">
