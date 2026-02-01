@@ -797,17 +797,24 @@ function AddMemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
+      if (allRolesFull && newOpen) return // Prevent opening when team is full
       onOpenChange(newOpen)
       if (!newOpen) setCurrentStep(1)
     }}>
       <DialogTrigger asChild>
         <Button
           className={allRolesFull
-            ? "bg-gray-400 cursor-not-allowed"
+            ? "bg-gray-400 cursor-not-allowed opacity-60"
             : "bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
           }
           disabled={allRolesFull}
           title={allRolesFull ? "All roles are filled" : undefined}
+          onClick={(e) => {
+            if (allRolesFull) {
+              e.preventDefault()
+              e.stopPropagation()
+            }
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           {allRolesFull ? "Team Full" : "Add Member"}
