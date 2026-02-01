@@ -1673,25 +1673,28 @@ function EditMemberDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <div className="space-y-2">
-                <Label className="text-gray-600">Paternal Name</Label>
-                <Input
-                  value={formData.paternal_name}
-                  onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
-                  className="border-gray-200 focus:border-[#2f3090]"
-                />
+            {/* Paternal Name and Badge - not for Remote Translators */}
+            {formData.role !== 'REMOTE_TRANSLATOR' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Paternal Name</Label>
+                  <Input
+                    value={formData.paternal_name}
+                    onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
+                    className="border-gray-200 focus:border-[#2f3090]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Name for Badge</Label>
+                  <Input
+                    placeholder="Display name on badge"
+                    value={formData.badge_name}
+                    onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
+                    className="border-gray-200 focus:border-[#2f3090]"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-gray-600">Name for Badge</Label>
-                <Input
-                  placeholder="Display name on badge"
-                  value={formData.badge_name}
-                  onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
-                  className="border-gray-200 focus:border-[#2f3090]"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Contact & Identity */}
@@ -1832,73 +1835,75 @@ function EditMemberDialog({
             )}
           </div>
 
-          {/* Preferences */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
-            <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <Shirt className="w-4 h-4 text-amber-600" />
-              Preferences
-            </h3>
+          {/* Preferences - not for Remote Translators */}
+          {formData.role !== 'REMOTE_TRANSLATOR' && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <Shirt className="w-4 h-4 text-amber-600" />
+                Preferences
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-600">T-shirt Size *</Label>
-                <Select
-                  value={formData.tshirt_size}
-                  onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
-                      <SelectItem key={size} value={size}>{size}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-600">T-shirt Size *</Label>
+                  <Select
+                    value={formData.tshirt_size}
+                    onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
+                        <SelectItem key={size} value={size}>{size}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Dietary Requirements *</Label>
+                  <Select
+                    value={formData.dietary_requirements}
+                    onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NORMAL">Normal</SelectItem>
+                      <SelectItem value="HALAL">Halal</SelectItem>
+                      <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
+                      <SelectItem value="VEGAN">Vegan</SelectItem>
+                      <SelectItem value="KOSHER">Kosher</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-gray-600">Dietary Requirements *</Label>
-                <Select
-                  value={formData.dietary_requirements}
-                  onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NORMAL">Normal</SelectItem>
-                    <SelectItem value="HALAL">Halal</SelectItem>
-                    <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
-                    <SelectItem value="VEGAN">Vegan</SelectItem>
-                    <SelectItem value="KOSHER">Kosher</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {formData.dietary_requirements === 'OTHER' && (
+              {formData.dietary_requirements === 'OTHER' && (
+                <div className="space-y-2 mt-4">
+                  <Label className="text-gray-600">Please specify *</Label>
+                  <Input
+                    required
+                    value={formData.other_dietary_requirements}
+                    onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
+                    className="border-amber-200"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2 mt-4">
-                <Label className="text-gray-600">Please specify *</Label>
+                <Label className="text-gray-600">Medical Requirements</Label>
                 <Input
-                  required
-                  value={formData.other_dietary_requirements}
-                  onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
-                  className="border-amber-200"
+                  placeholder="Any allergies, medical conditions, or special requirements"
+                  value={formData.medical_requirements}
+                  onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+                  className="border-gray-200"
                 />
               </div>
-            )}
-
-            <div className="space-y-2 mt-4">
-              <Label className="text-gray-600">Medical Requirements</Label>
-              <Input
-                placeholder="Any allergies, medical conditions, or special requirements"
-                value={formData.medical_requirements}
-                onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
-                className="border-gray-200"
-              />
             </div>
-          </div>
+          )}
 
           {/* Room Preference (Head Mentors and Mentors only) */}
           {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') && (
@@ -1979,13 +1984,16 @@ function EditMemberDialog({
                 onChange={setProfilePhoto}
                 accept="image/*"
               />
-              <FileUploadFieldEdit
-                label={`Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
-                hasExisting={!!participant.consent_form_signed}
-                file={consentForm}
-                onChange={setConsentForm}
-                accept="image/*,.pdf"
-              />
+              {/* Consent Form - not for Remote Translators */}
+              {formData.role !== 'REMOTE_TRANSLATOR' && (
+                <FileUploadFieldEdit
+                  label={`Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
+                  hasExisting={!!participant.consent_form_signed}
+                  file={consentForm}
+                  onChange={setConsentForm}
+                  accept="image/*,.pdf"
+                />
+              )}
               {/* Commitment Form - Only for Students */}
               {formData.role === 'STUDENT' && (
                 <FileUploadFieldEdit
