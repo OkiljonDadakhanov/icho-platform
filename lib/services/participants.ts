@@ -14,7 +14,7 @@ import type {
 export interface ParticipantSummary {
   total: number;
   team_leaders: number;
-  contestants: number;
+  students: number;
   observers: number;
   guests: number;
 }
@@ -174,7 +174,7 @@ export const participantsService = {
   },
 
   /**
-   * Download commitment form template (for students/contestants only)
+   * Download commitment form template (for students only)
    */
   async downloadCommitmentFormTemplate(): Promise<Blob> {
     return apiDownload('/v1/participants/templates/commitment/download/');

@@ -423,7 +423,7 @@ export interface DelegationProgress {
   participant_count: {
     total: number;
     team_leaders: number;
-    contestants: number;
+    students: number;
     observers: number;
     guests: number;
   };

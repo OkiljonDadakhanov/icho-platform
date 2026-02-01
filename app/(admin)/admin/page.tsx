@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
               <p className="text-sm font-medium text-emerald-600">Total Participants</p>
               <p className="text-3xl font-bold text-emerald-900 mt-1">{stats.total_participants}</p>
               <p className="text-sm text-emerald-600/80 mt-1">
-                {stats.participants_by_role.contestants} students
+                {stats.participants_by_role.students} students
               </p>
             </div>
             <div className="p-3 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/30">
@@ -298,7 +298,7 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-2 gap-4">
             {[
               { role: "Mentors", count: stats.participants_by_role.team_leaders, color: "bg-[#2f3090]", icon: "M" },
-              { role: "Students", count: stats.participants_by_role.contestants, color: "bg-[#00795d]", icon: "S" },
+              { role: "Students", count: stats.participants_by_role.students, color: "bg-[#00795d]", icon: "S" },
               { role: "Observers", count: stats.participants_by_role.observers, color: "bg-purple-500", icon: "O" },
               { role: "Guests", count: stats.participants_by_role.guests, color: "bg-orange-500", icon: "G" },
             ].map((item) => (
