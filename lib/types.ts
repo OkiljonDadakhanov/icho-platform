@@ -7,7 +7,7 @@
 export type ParticipantRole =
   | 'HEAD_MENTOR'
   | 'MENTOR'
-  | 'CONTESTANT'
+  | 'STUDENT'
   | 'OBSERVER'
   | 'GUEST'
   | 'REMOTE_TRANSLATOR';
@@ -16,7 +16,7 @@ export type ParticipantRole =
 export type FeeRoleType =
   | 'TEAM'
   | 'MENTOR'
-  | 'CONTESTANT'
+  | 'STUDENT'
   | 'OBSERVER'
   | 'GUEST'
   | 'SINGLE_ROOM_SURCHARGE';
@@ -96,7 +96,7 @@ export interface PreRegistration {
   id: string;
   country: string;
   num_mentors: number;
-  num_contestants: number;
+  num_students: number;
   num_observers: number;
   num_guests: number;
   num_remote_translators: number;
@@ -351,7 +351,7 @@ export interface LoginResponse {
 
 export interface PreRegistrationUpdateRequest {
   num_mentors: number;
-  num_contestants: number;
+  num_students: number;
   num_observers: number;
   num_guests: number;
   num_remote_translators?: number;
@@ -435,7 +435,7 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
     'Head Mentor': 'HEAD_MENTOR',
     'Mentor': 'MENTOR',
     'Deputy Leader': 'MENTOR',
-    'Student': 'CONTESTANT',
+    'Student': 'STUDENT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
     'Remote Translator': 'REMOTE_TRANSLATOR',
@@ -448,7 +448,7 @@ export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
     'HEAD_MENTOR': 'Head Mentor',
     'MENTOR': 'Mentor',
-    'CONTESTANT': 'Student',
+    'STUDENT': 'Student',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
     'REMOTE_TRANSLATOR': 'Remote Translator',

@@ -61,7 +61,7 @@ import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
 const roleColors: Record<string, string> = {
   HEAD_MENTOR: "bg-yellow-600 text-white",
   MENTOR: "bg-[#2f3090] text-white",
-  CONTESTANT: "bg-[#00795d] text-white",
+  STUDENT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
   REMOTE_TRANSLATOR: "bg-cyan-600 text-white",
@@ -157,7 +157,7 @@ export default function ParticipantsPage() {
 
   // Stats
   const mentors = participants.filter((p) => p.role === "MENTOR").length;
-  const contestants = participants.filter((p) => p.role === "CONTESTANT").length;
+  const students = participants.filter((p) => p.role === "STUDENT").length;
   const observers = participants.filter((p) => p.role === "OBSERVER").length;
   const guests = participants.filter((p) => p.role === "GUEST").length;
 
@@ -221,7 +221,7 @@ export default function ParticipantsPage() {
               <GraduationCap className="w-5 h-5 text-[#00795d]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{contestants}</p>
+              <p className="text-2xl font-bold text-gray-900">{students}</p>
               <p className="text-sm text-gray-500">Students</p>
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function ParticipantsPage() {
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="MENTOR">Mentor</SelectItem>
-              <SelectItem value="CONTESTANT">Student</SelectItem>
+              <SelectItem value="STUDENT">Student</SelectItem>
               <SelectItem value="OBSERVER">Observer</SelectItem>
               <SelectItem value="GUEST">Guest</SelectItem>
             </SelectContent>
@@ -483,8 +483,8 @@ export default function ParticipantsPage() {
                 )}
               </div>
 
-              {/* Accommodation Preference (non-contestants only) */}
-              {selectedParticipant.role !== "CONTESTANT" && (
+              {/* Accommodation Preference (non-students only) */}
+              {selectedParticipant.role !== "STUDENT" && (
                 <div className="pt-4 border-t">
                   <div className="flex items-center gap-2 mb-2">
                     <Bed className="w-4 h-4 text-indigo-600" />

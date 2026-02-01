@@ -43,7 +43,7 @@ interface FormData {
   email: string;
   phone: string;
   mentors: number;
-  contestants: number;
+  students: number;
   observers: number;
   guests: number;
   remoteTranslators: number;
@@ -65,7 +65,7 @@ export default function PreRegistrationPage() {
     email: "",
     phone: "",
     mentors: 1,
-    contestants: 4,
+    students: 4,
     observers: 2,
     guests: 3,
     remoteTranslators: 0,
@@ -132,7 +132,7 @@ export default function PreRegistrationPage() {
         setFormData((prev) => ({
           ...prev,
           mentors: Math.min(data.num_mentors, 2),
-          contestants: Math.min(data.num_contestants, 4),
+          students: Math.min(data.num_students, 4),
           observers: Math.min(data.num_observers, 2),
           guests: data.num_guests,
           remoteTranslators: data.num_remote_translators ?? 0,
@@ -242,7 +242,7 @@ export default function PreRegistrationPage() {
 
       await preRegistrationService.updatePreRegistration({
         num_mentors: formData.mentors,
-        num_contestants: formData.contestants,
+        num_students: formData.students,
         num_observers: formData.observers,
         num_guests: formData.guests,
         num_remote_translators: formData.remoteTranslators,
@@ -277,7 +277,7 @@ export default function PreRegistrationPage() {
       setIsSubmitting(true);
       await preRegistrationService.updatePreRegistration({
         num_mentors: formData.mentors,
-        num_contestants: formData.contestants,
+        num_students: formData.students,
         num_observers: formData.observers,
         num_guests: formData.guests,
         num_remote_translators: formData.remoteTranslators,
@@ -536,8 +536,8 @@ export default function PreRegistrationPage() {
               <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
             </div>
             <NumberStepper
-              value={formData.contestants}
-              onChange={(value) => setFormData({ ...formData, contestants: value })}
+              value={formData.students}
+              onChange={(value) => setFormData({ ...formData, students: value })}
               min={0}
               max={4}
               disabled={!canEdit}

@@ -52,7 +52,7 @@ import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
 const roleColors: Record<string, string> = {
   HEAD_MENTOR: "bg-yellow-600 text-white",
   MENTOR: "bg-[#2f3090] text-white",
-  CONTESTANT: "bg-[#00795d] text-white",
+  STUDENT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
   REMOTE_TRANSLATOR: "bg-cyan-600 text-white",
@@ -283,7 +283,7 @@ export default function CountryDetailsPage() {
                 </div>
                 <div>
                   <p className="text-gray-500">Students</p>
-                  <p className="font-medium">{preReg.num_contestants}</p>
+                  <p className="font-medium">{preReg.num_students}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Observers</p>

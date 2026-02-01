@@ -54,7 +54,7 @@ import { mapRoleToFrontend, type ParticipantRole } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
   MENTOR: "bg-[#2f3090] text-white",
-  CONTESTANT: "bg-[#00795d] text-white",
+  STUDENT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
 };
