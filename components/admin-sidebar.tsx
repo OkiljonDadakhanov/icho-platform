@@ -48,10 +48,10 @@ const adminNavigation = [
     description: "All registrations",
   },
   {
-    name: "Travel",
+    name: "Travel & Accommodation",
     href: "/admin/travel",
     icon: Plane,
-    description: "Travel & accommodation",
+    description: "Manage travel info",
   },
   {
     name: "Workflow",
