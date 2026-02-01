@@ -95,6 +95,7 @@ export interface Coordinator {
 export interface PreRegistration {
   id: string;
   country: string;
+  num_head_mentors: number;
   num_mentors: number;
   num_students: number;
   num_observers: number;
@@ -350,6 +351,7 @@ export interface LoginResponse {
 }
 
 export interface PreRegistrationUpdateRequest {
+  num_head_mentors: number;
   num_mentors: number;
   num_students: number;
   num_observers: number;

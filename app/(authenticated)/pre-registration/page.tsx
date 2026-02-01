@@ -42,6 +42,7 @@ interface FormData {
   dateOfBirth: string;
   email: string;
   phone: string;
+  headMentors: number;
   mentors: number;
   students: number;
   observers: number;
@@ -64,6 +65,7 @@ export default function PreRegistrationPage() {
     dateOfBirth: "",
     email: "",
     phone: "",
+    headMentors: 1,
     mentors: 1,
     students: 4,
     observers: 2,
@@ -131,7 +133,8 @@ export default function PreRegistrationPage() {
       if (data) {
         setFormData((prev) => ({
           ...prev,
-          mentors: Math.min(data.num_mentors, 2),
+          headMentors: Math.min(data.num_head_mentors ?? 0, 1),
+          mentors: Math.min(data.num_mentors ?? 0, 1),
           students: Math.min(data.num_students, 4),
           observers: Math.min(data.num_observers, 2),
           guests: data.num_guests,
@@ -241,6 +244,7 @@ export default function PreRegistrationPage() {
       setError(null);
 
       await preRegistrationService.updatePreRegistration({
+        num_head_mentors: formData.headMentors,
         num_mentors: formData.mentors,
         num_students: formData.students,
         num_observers: formData.observers,
@@ -276,6 +280,7 @@ export default function PreRegistrationPage() {
     try {
       setIsSubmitting(true);
       await preRegistrationService.updatePreRegistration({
+        num_head_mentors: formData.headMentors,
         num_mentors: formData.mentors,
         num_students: formData.students,
         num_observers: formData.observers,
@@ -518,14 +523,28 @@ export default function PreRegistrationPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Mentors *</Label>
-              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
+              <Label className="text-base">Head Mentor *</Label>
+              <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded">Max 1</span>
+            </div>
+            <NumberStepper
+              value={formData.headMentors}
+              onChange={(value) => setFormData({ ...formData, headMentors: value })}
+              min={0}
+              max={1}
+              disabled={!canEdit}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Mentor</Label>
+              <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 1</span>
             </div>
             <NumberStepper
               value={formData.mentors}
               onChange={(value) => setFormData({ ...formData, mentors: value })}
               min={0}
-              max={2}
+              max={1}
               disabled={!canEdit}
             />
           </div>
@@ -594,7 +613,7 @@ export default function PreRegistrationPage() {
             ${calculateTotal().toLocaleString()} USD
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
-            <p>Team Registration (up to 2 mentors + 4 students) = ${(getFee("TEAM") || 3000).toLocaleString()}</p>
+            <p>Team Registration (1 head mentor + 1 mentor + 4 students) = ${(getFee("TEAM") || 3000).toLocaleString()}</p>
             {formData.observers > 0 && (
               <p>Observers: {formData.observers} × ${getFee("OBSERVER").toLocaleString()} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
             )}
