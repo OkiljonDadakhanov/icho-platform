@@ -61,7 +61,7 @@ import Link from "next/link"
 // Hard limits per delegation (from backend settings)
 const HARD_LIMITS: Record<string, number> = {
   HEAD_MENTOR: 1,
-  MENTOR: 2,
+  MENTOR: 1,
   STUDENT: 4,
   OBSERVER: 2,
   GUEST: 10,
