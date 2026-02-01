@@ -275,20 +275,26 @@ export default function TeamPage() {
 
   // Get pre-registration limits (what the country registered for)
   const preRegLimits = {
-    headMentors: preRegistration?.num_head_mentors ?? 0,
-    mentors: preRegistration?.num_mentors ?? 0,
-    students: preRegistration?.num_students ?? 0,
-    observers: preRegistration?.num_observers ?? 0,
-    guests: preRegistration?.num_guests ?? 0,
+    headMentors: preRegistration?.num_head_mentors ?? PARTICIPANT_LIMITS.HEAD_MENTOR ?? 1,
+    mentors: preRegistration?.num_mentors ?? PARTICIPANT_LIMITS.MENTOR ?? 1,
+    students: preRegistration?.num_students ?? PARTICIPANT_LIMITS.STUDENT ?? 4,
+    observers: preRegistration?.num_observers ?? PARTICIPANT_LIMITS.OBSERVER ?? 2,
+    guests: preRegistration?.num_guests ?? Infinity, // Guests have no hard limit
   }
 
   // Calculate total registered vs total added
-  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests
+  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + (preRegLimits.guests === Infinity ? 0 : preRegLimits.guests)
   const totalAdded = headMentors + mentors + students + observers + guests
 
-  // Team is full when all pre-registered participants are added
-  // (Remote translators are separate and not counted in pre-registration)
-  const allRolesFull = totalPreRegistered > 0 && totalAdded >= totalPreRegistered
+  // Team is full when each role has reached its limit (preReg or hard limit)
+  // Check each role individually - all limited roles must be at their max
+  const allRolesFull =
+    headMentors >= preRegLimits.headMentors &&
+    mentors >= preRegLimits.mentors &&
+    students >= preRegLimits.students &&
+    observers >= preRegLimits.observers &&
+    (preRegLimits.guests === Infinity || guests >= preRegLimits.guests) &&
+    remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? 2)
 
   return (
     <div className="space-y-6">
