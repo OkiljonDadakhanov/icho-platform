@@ -55,8 +55,8 @@ export default function PaymentPage() {
   }
 
   // Use pre-registration numbers for fee breakdown (matches invoice)
-  const mentors = preRegistration?.num_team_leaders || 0
-  const students = preRegistration?.num_contestants || 0
+  const mentors = preRegistration?.num_mentors || 0
+  const students = preRegistration?.num_students || 0
   const observers = preRegistration?.num_observers || 0
   const guests = preRegistration?.num_guests || 0
 

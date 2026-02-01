@@ -299,6 +299,18 @@ export interface CountryStageStatus {
   created_at: string;
 }
 
+export interface CountryProgressResponse {
+  id: string;
+  name: string;
+  iso_code: string;
+  stages?: Record<WorkflowStage, {
+    status: StageStatus;
+    is_unlocked: boolean;
+    unlocked_until?: string | null;
+    unlock_reason?: string | null;
+  }>;
+}
+
 export interface Notification {
   id: string;
   user: string;
@@ -347,10 +359,10 @@ export interface PreRegistrationUpdateRequest {
 
 export interface CoordinatorUpsertRequest {
   full_name: string;
-  role: string;
+  role?: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
+  passport_number?: string;
   email: string;
   phone: string;
   is_primary?: boolean;
