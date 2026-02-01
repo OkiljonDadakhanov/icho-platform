@@ -312,8 +312,8 @@ export default function TeamPage() {
           {/* Stats row */}
           <div className="flex flex-wrap gap-4 mt-6">
             <div className="px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10 transition-all hover:bg-white/20 hover:scale-105">
-              <span className="text-2xl font-bold">{participants.length}</span>
-              <span className="text-white/70 ml-2 text-sm">Total</span>
+              <span className="text-2xl font-bold">{totalAdded}/{totalPreRegistered}</span>
+              <span className="text-white/70 ml-2 text-sm">Registered</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= (PARTICIPANT_LIMITS.HEAD_MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
               <span className="text-xl font-semibold">{headMentors}/{PARTICIPANT_LIMITS.HEAD_MENTOR ?? '?'}</span>
