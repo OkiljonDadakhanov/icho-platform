@@ -319,7 +319,7 @@ export default function TeamPage() {
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${contestants >= (effectiveLimits.CONTESTANT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
               <span className="text-xl font-semibold">{contestants}/{effectiveLimits.CONTESTANT ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Contestants</span>
+              <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (effectiveLimits.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
               <span className="text-xl font-semibold">{observers}/{effectiveLimits.OBSERVER ?? '?'}</span>
@@ -383,9 +383,9 @@ export default function TeamPage() {
               Download, fill out, sign, and upload these forms for each participant during registration.
             </p>
 
-            {/* Contestant Forms */}
+            {/* Student Forms */}
             <div className="mb-4">
-              <p className="text-sm font-medium text-blue-900 mb-2">For Contestants (2 forms required):</p>
+              <p className="text-sm font-medium text-blue-900 mb-2">For Students (2 forms required):</p>
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
@@ -552,7 +552,7 @@ export default function TeamPage() {
                               ? "bg-yellow-600 text-white hover:bg-yellow-500"
                               : role === "Mentor"
                                 ? "bg-[#2f3090] text-white hover:bg-[#2f3090]/90"
-                                : role === "Contestant"
+                                : role === "Student"
                                   ? "bg-[#00795d] text-white hover:bg-[#00795d]/90"
                                   : role === "Observer"
                                     ? "bg-purple-600 text-white hover:bg-purple-500"
@@ -1021,7 +1021,7 @@ function AddMemberDialog({
                       <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Contestant {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${effectiveLimits.CONTESTANT} max)`}
+                          Student {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${effectiveLimits.CONTESTANT} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
@@ -1065,7 +1065,7 @@ function AddMemberDialog({
                 </div>
               </div>
 
-              {/* Exam Language (for Contestants) */}
+              {/* Exam Language (for Students) */}
               {formData.role === 'CONTESTANT' && (
                 <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 animate-in slide-in-from-top-2 duration-200">
                   <Label className="text-gray-700 flex items-center gap-2 mb-2">
@@ -1292,7 +1292,7 @@ function AddMemberDialog({
                   color="violet"
                 />
 
-                {/* Commitment Form - Only for Contestants */}
+                {/* Commitment Form - Only for Students */}
                 {formData.role === 'CONTESTANT' && (
                   <FileUploadField
                     id="commitment_form"
@@ -1714,7 +1714,7 @@ function EditMemberDialog({
                       Mentor {isRoleDisabled('MENTOR') && `(${effectiveLimits.MENTOR}/${effectiveLimits.MENTOR} max)`}
                     </SelectItem>
                     <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
-                      Contestant {isRoleDisabled('CONTESTANT') && `(${effectiveLimits.CONTESTANT}/${effectiveLimits.CONTESTANT} max)`}
+                      Student {isRoleDisabled('CONTESTANT') && `(${effectiveLimits.CONTESTANT}/${effectiveLimits.CONTESTANT} max)`}
                     </SelectItem>
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                       Observer {isRoleDisabled('OBSERVER') && `(${effectiveLimits.OBSERVER}/${effectiveLimits.OBSERVER} max)`}
@@ -1746,7 +1746,7 @@ function EditMemberDialog({
               </div>
             </div>
 
-            {/* Exam Language (for Contestants) */}
+            {/* Exam Language (for Students) */}
             {formData.role === 'CONTESTANT' && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <Label className="text-gray-700 flex items-center gap-2 mb-2">
@@ -1949,7 +1949,7 @@ function EditMemberDialog({
                 onChange={setConsentForm}
                 accept="image/*,.pdf"
               />
-              {/* Commitment Form - Only for Contestants */}
+              {/* Commitment Form - Only for Students */}
               {formData.role === 'CONTESTANT' && (
                 <FileUploadFieldEdit
                   label="Commitment Form (Students only)"

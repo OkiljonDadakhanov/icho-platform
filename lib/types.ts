@@ -434,16 +434,11 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
     'Head Mentor': 'HEAD_MENTOR',
     'Mentor': 'MENTOR',
-    'Mentor': 'MENTOR',
     'Deputy Leader': 'MENTOR',
-    'Contestant': 'CONTESTANT',
     'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
     'Remote Translator': 'REMOTE_TRANSLATOR',
-    'IC Member': 'OBSERVER',
-    'ISC Member': 'OBSERVER',
-    'ITC Member': 'OBSERVER',
   };
   return mapping[frontendRole] || 'GUEST';
 }
@@ -453,7 +448,7 @@ export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
     'HEAD_MENTOR': 'Head Mentor',
     'MENTOR': 'Mentor',
-    'CONTESTANT': 'Contestant',
+    'CONTESTANT': 'Student',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
     'REMOTE_TRANSLATOR': 'Remote Translator',

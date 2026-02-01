@@ -50,12 +50,12 @@ import { format, parseISO } from "date-fns";
 import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
+  HEAD_MENTOR: "bg-yellow-600 text-white",
   MENTOR: "bg-[#2f3090] text-white",
   CONTESTANT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
-  MENTOR: "bg-blue-500 text-white",
-  HEAD_MENTOR: "bg-indigo-500 text-white",
+  REMOTE_TRANSLATOR: "bg-cyan-600 text-white",
 };
 
 export default function CountryDetailsPage() {
