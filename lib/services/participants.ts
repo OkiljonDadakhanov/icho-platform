@@ -13,8 +13,8 @@ import type {
 
 export interface ParticipantSummary {
   total: number;
-  team_leaders: number;
-  contestants: number;
+  mentors: number;
+  students: number;
   observers: number;
   guests: number;
 }
@@ -166,17 +166,17 @@ export const participantsService = {
   },
 
   /**
-   * Download commitment form template (for students/contestants only)
+   * Download commitment form template (for students only)
    */
   async downloadCommitmentFormTemplate(): Promise<Blob> {
     return apiDownload('/v1/participants/templates/commitment/download/');
   },
 
   /**
-   * Download team leader consent form template
+   * Download mentor consent form template
    */
-  async downloadTeamLeaderConsentFormTemplate(): Promise<Blob> {
-    return apiDownload('/v1/participants/templates/consent-team-leader/download/');
+  async downloadMentorConsentFormTemplate(): Promise<Blob> {
+    return apiDownload('/v1/participants/templates/consent-mentor/download/');
   },
 };
 

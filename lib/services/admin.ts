@@ -84,8 +84,8 @@ export interface AdminStats {
   active_countries: number;
   total_participants: number;
   participants_by_role: {
-    team_leaders: number;
-    contestants: number;
+    mentors: number;
+    students: number;
     observers: number;
     guests: number;
   };

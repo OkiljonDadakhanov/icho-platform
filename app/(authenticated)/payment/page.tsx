@@ -55,13 +55,13 @@ export default function PaymentPage() {
   }
 
   // Use pre-registration numbers for fee breakdown (matches invoice)
-  const teamLeaders = preRegistration?.num_team_leaders || 0
-  const contestants = preRegistration?.num_contestants || 0
+  const mentors = preRegistration?.num_team_leaders || 0
+  const students = preRegistration?.num_contestants || 0
   const observers = preRegistration?.num_observers || 0
   const guests = preRegistration?.num_guests || 0
 
   // Check if values exceed limits (need to update pre-registration)
-  const hasExceededLimits = teamLeaders > 2 || contestants > 4 || observers > 2
+  const hasExceededLimits = mentors > 2 || students > 4 || observers > 2
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role)
@@ -69,7 +69,7 @@ export default function PaymentPage() {
   }
 
   const breakdown = useMemo(() => {
-    // Flat team fee for contestants + team leaders
+    // Flat team fee for students + mentors
     const teamFee = getFee("TEAM")
     // Per-person fees for observers and guests
     const observerFee = getFee("OBSERVER")
@@ -78,8 +78,8 @@ export default function PaymentPage() {
     return {
       // Flat team registration fee
       teamFee,
-      teamLeadersCount: teamLeaders,
-      contestantsCount: contestants,
+      mentorsCount: mentors,
+      studentsCount: students,
       // Per-person fees
       observers: observers * observerFee,
       observerFee,
@@ -90,7 +90,7 @@ export default function PaymentPage() {
       // Total = flat team fee + per-person observers + per-person guests
       total: teamFee + observers * observerFee + guests * guestFee,
     }
-  }, [teamLeaders, contestants, observers, guests, feeRules])
+  }, [mentors, students, observers, guests, feeRules])
 
   const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -361,11 +361,11 @@ export default function PaymentPage() {
                     <Badge className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white mr-2 text-xs">Team</Badge>
                     Team Registration (flat fee)
                   </span>
-                  {(teamLeaders > 0 || contestants > 0) && (
+                  {(mentors > 0 || students > 0) && (
                     <span className="text-xs text-gray-500 mt-1 ml-1">
-                      Includes: {teamLeaders > 0 && `${teamLeaders} team leader${teamLeaders !== 1 ? 's' : ''}`}
-                      {teamLeaders > 0 && contestants > 0 && ', '}
-                      {contestants > 0 && `${contestants} contestant${contestants !== 1 ? 's' : ''}`}
+                      Includes: {mentors > 0 && `${mentors} mentor${mentors !== 1 ? 's' : ''}`}
+                      {mentors > 0 && students > 0 && ', '}
+                      {students > 0 && `${students} student${students !== 1 ? 's' : ''}`}
                     </span>
                   )}
                 </div>
@@ -515,7 +515,7 @@ export default function PaymentPage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Single Room Surcharge</h2>
-              <p className="text-sm text-gray-500">Additional payment for team leaders who requested single rooms</p>
+              <p className="text-sm text-gray-500">Additional payment for mentors who requested single rooms</p>
             </div>
           </div>
 

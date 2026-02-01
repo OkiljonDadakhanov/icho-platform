@@ -627,7 +627,7 @@ export default function PreRegistrationPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Team Leaders *</Label>
+              <Label className="text-base">Mentors *</Label>
               <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 2</span>
             </div>
             <NumberStepper
@@ -641,7 +641,7 @@ export default function PreRegistrationPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Contestants *</Label>
+              <Label className="text-base">Students *</Label>
               <span className="text-xs font-medium text-[#00795d] bg-[#00795d]/10 px-2 py-0.5 rounded">Max 4</span>
             </div>
             <NumberStepper
@@ -688,10 +688,10 @@ export default function PreRegistrationPage() {
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
             {formData.teamLeaders > 0 && (
-              <p>Team Leaders: {formData.teamLeaders} × ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
+              <p>Mentors: {formData.teamLeaders} × ${getFee("TEAM_LEADER")} = ${(formData.teamLeaders * getFee("TEAM_LEADER")).toLocaleString()}</p>
             )}
             {formData.contestants > 0 && (
-              <p>Contestants: {formData.contestants} × ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
+              <p>Students: {formData.contestants} × ${getFee("CONTESTANT")} = ${(formData.contestants * getFee("CONTESTANT")).toLocaleString()}</p>
             )}
             {formData.observers > 0 && (
               <p>Observers: {formData.observers} × ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>

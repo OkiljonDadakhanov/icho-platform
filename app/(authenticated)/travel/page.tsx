@@ -272,9 +272,9 @@ export default function TravelPage() {
                           <p className="font-medium text-gray-800">{participant.full_name}</p>
                           <Badge
                             className={`font-medium text-xs mt-1 ${
-                              role === "Team Leader"
+                              role === "Mentor"
                                 ? "bg-[#2f3090] text-white"
-                                : role === "Contestant"
+                                : role === "Student"
                                   ? "bg-[#00795d] text-white"
                                   : role === "Observer"
                                     ? "bg-purple-600 text-white"
@@ -474,9 +474,9 @@ function AddTravelDialog({
                       <span className="flex-1 text-gray-700">{p.full_name}</span>
                       <Badge
                         className={`text-xs ${
-                          role === "Team Leader"
+                          role === "Mentor"
                             ? "bg-[#2f3090] text-white"
-                            : role === "Contestant"
+                            : role === "Student"
                               ? "bg-[#00795d] text-white"
                               : role === "Observer"
                                 ? "bg-purple-600 text-white"
