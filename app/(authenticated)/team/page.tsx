@@ -50,9 +50,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
+import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment } from "@/lib/types"
+import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment, PreRegistration } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
 import { getErrorMessage } from "@/lib/error-utils"
 import Link from "next/link"
@@ -138,6 +139,7 @@ export default function TeamPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
   const [payment, setPayment] = useState<Payment | null>(null)
+  const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -157,12 +159,14 @@ export default function TeamPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, paymentData] = await Promise.all([
+      const [participantsData, paymentData, preRegData] = await Promise.all([
         participantsService.getAllParticipants().catch(() => []),
         paymentsService.getPayment().catch(() => null),
+        preRegistrationService.getPreRegistration().catch(() => null),
       ])
       setParticipants(participantsData)
       setPayment(paymentData)
+      setPreRegistration(preRegData)
       setError(null)
     } catch (err: any) {
       console.error("Failed to fetch data:", err)
@@ -269,13 +273,22 @@ export default function TeamPage() {
   const guests = participants.filter(p => p.role === 'GUEST').length
   const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
 
-  // Check if all roles with limits are full (GUEST has no limit so excluded)
-  const allRolesFull =
-    headMentors >= (PARTICIPANT_LIMITS.HEAD_MENTOR ?? Infinity) &&
-    mentors >= (PARTICIPANT_LIMITS.MENTOR ?? Infinity) &&
-    students >= (PARTICIPANT_LIMITS.STUDENT ?? Infinity) &&
-    observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) &&
-    remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity)
+  // Get pre-registration limits (what the country registered for)
+  const preRegLimits = {
+    headMentors: preRegistration?.num_head_mentors ?? 0,
+    mentors: preRegistration?.num_mentors ?? 0,
+    students: preRegistration?.num_students ?? 0,
+    observers: preRegistration?.num_observers ?? 0,
+    guests: preRegistration?.num_guests ?? 0,
+  }
+
+  // Calculate total registered vs total added
+  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests
+  const totalAdded = headMentors + mentors + students + observers + guests
+
+  // Team is full when all pre-registered participants are added
+  // (Remote translators are separate and not counted in pre-registration)
+  const allRolesFull = totalPreRegistered > 0 && totalAdded >= totalPreRegistered
 
   return (
     <div className="space-y-6">
