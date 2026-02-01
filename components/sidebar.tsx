@@ -27,7 +27,7 @@ const navigation = [
   { name: "Payment", href: "/payment", icon: CreditCard },
   { name: "Contact Persons", href: "/coordinators", icon: Users },
   { name: "Team", href: "/team", icon: UsersRound },
-  { name: "Travel", href: "/travel", icon: Plane },
+  { name: "Travel & Accommodation", href: "/travel", icon: Plane },
   { name: "Invitations", href: "/invitations", icon: FileText },
 ];
 
