@@ -155,8 +155,8 @@ export default function TeamPage() {
   // Calculate effective limits: use pre-registration limits if payment proof uploaded, otherwise hard limits
   const hasPaymentProof = payment?.proof_file
   const effectiveLimits: Record<string, number> = {
-    HEAD_MENTOR: HARD_LIMITS.HEAD_MENTOR,
-    MENTOR: hasPaymentProof && preReg ? Math.min(preReg.num_mentors, HARD_LIMITS.MENTOR) : HARD_LIMITS.MENTOR,
+    HEAD_MENTOR: hasPaymentProof && preReg ? Math.min(preReg.num_head_mentors ?? 1, HARD_LIMITS.HEAD_MENTOR) : HARD_LIMITS.HEAD_MENTOR,
+    MENTOR: hasPaymentProof && preReg ? Math.min(preReg.num_mentors ?? 1, HARD_LIMITS.MENTOR) : HARD_LIMITS.MENTOR,
     STUDENT: hasPaymentProof && preReg ? Math.min(preReg.num_students, HARD_LIMITS.STUDENT) : HARD_LIMITS.STUDENT,
     OBSERVER: hasPaymentProof && preReg ? Math.min(preReg.num_observers, HARD_LIMITS.OBSERVER) : HARD_LIMITS.OBSERVER,
     GUEST: hasPaymentProof && preReg ? Math.min(preReg.num_guests, HARD_LIMITS.GUEST) : HARD_LIMITS.GUEST,
