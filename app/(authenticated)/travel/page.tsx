@@ -75,6 +75,29 @@ export default function TravelPage() {
     }
   }
 
+  // Role order for sorting
+  const ROLE_ORDER: Record<string, number> = {
+    'HEAD_MENTOR': 1,
+    'MENTOR': 2,
+    'STUDENT': 3,
+    'OBSERVER': 4,
+    'GUEST': 5,
+    'REMOTE_TRANSLATOR': 6,
+  }
+
+  // Sort travel infos by participant role
+  const sortedTravelInfos = [...travelInfos].sort((a, b) => {
+    const participantA = participants.find(p => p.id === a.participant)
+    const participantB = participants.find(p => p.id === b.participant)
+    const roleOrderA = participantA ? (ROLE_ORDER[participantA.role] ?? 99) : 99
+    const roleOrderB = participantB ? (ROLE_ORDER[participantB.role] ?? 99) : 99
+    if (roleOrderA !== roleOrderB) return roleOrderA - roleOrderB
+    // Same role - sort by name
+    const nameA = participantA?.full_name ?? ''
+    const nameB = participantB?.full_name ?? ''
+    return nameA.localeCompare(nameB)
+  })
+
   const participantsWithTravel = new Set(travelInfos.map(t => t.participant))
   const missingTravel = participants.filter(p => !participantsWithTravel.has(p.id))
 
@@ -259,7 +282,7 @@ export default function TravelPage() {
                 </tr>
               </thead>
               <tbody>
-                {travelInfos.map((travel, index) => {
+                {sortedTravelInfos.map((travel, index) => {
                   const participant = participants.find(p => p.id === travel.participant)
                   if (!participant) return null
 

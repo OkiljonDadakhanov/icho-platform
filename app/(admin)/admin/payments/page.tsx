@@ -1036,26 +1036,73 @@ export default function PaymentsPage() {
                 <span>{selectedSingleRoom?.country_name}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-gray-500">Invoice Number</span>
+                <code className="px-2 py-0.5 bg-gray-200 rounded text-sm">{selectedSingleRoom?.number}</code>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-500">Amount</span>
                 <span className="font-semibold">
                   ${selectedSingleRoom?.amount?.toLocaleString()} {selectedSingleRoom?.currency}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Submitted</span>
-                <span>
-                  {selectedSingleRoom?.proof_submitted_at &&
-                    format(new Date(selectedSingleRoom.proof_submitted_at), "MMM d, yyyy h:mm a")}
-                </span>
+                <span className="text-gray-500">Status</span>
+                {selectedSingleRoom && getStatusBadge(selectedSingleRoom.status)}
               </div>
-              {selectedSingleRoom?.reviewed_at && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Reviewed</span>
-                  <span>
-                    {format(new Date(selectedSingleRoom.reviewed_at), "MMM d, yyyy h:mm a")}
-                  </span>
+            </div>
+
+            {/* History Timeline */}
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Invoice History
+              </p>
+              <div className="space-y-3">
+                {/* Created */}
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-400"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">Invoice Created</p>
+                    <p className="text-xs text-gray-500">
+                      {selectedSingleRoom?.created_at &&
+                        format(new Date(selectedSingleRoom.created_at), "MMM d, yyyy h:mm a")}
+                    </p>
+                  </div>
                 </div>
-              )}
+                {/* Proof Submitted */}
+                {selectedSingleRoom?.proof_submitted_at ? (
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-1.5 rounded-full bg-amber-500"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700">Payment Proof Submitted</p>
+                      <p className="text-xs text-gray-500">
+                        {format(new Date(selectedSingleRoom.proof_submitted_at), "MMM d, yyyy h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-300"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-400">Payment Proof Not Submitted</p>
+                    </div>
+                  </div>
+                )}
+                {/* Reviewed */}
+                {selectedSingleRoom?.reviewed_at && (
+                  <div className="flex items-start gap-3">
+                    <div className={`w-2 h-2 mt-1.5 rounded-full ${selectedSingleRoom.status === 'APPROVED' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700">
+                        {selectedSingleRoom.status === 'APPROVED' ? 'Payment Approved' : 'Payment Rejected'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {format(new Date(selectedSingleRoom.reviewed_at), "MMM d, yyyy h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Existing comment (if viewing) */}
