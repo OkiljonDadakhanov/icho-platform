@@ -60,10 +60,10 @@ import Link from "next/link"
 // Participant limits per delegation
 const PARTICIPANT_LIMITS: Record<string, number | null> = {
   HEAD_MENTOR: 1,
-  TEAM_LEADER: 2,
-  CONTESTANT: 4,
+  TEAM_LEADER: 1,  // Mentor
+  CONTESTANT: 4,   // Students
   OBSERVER: 2,
-  GUEST: null, // Unlimited
+  GUEST: null,     // Unlimited
   REMOTE_TRANSLATOR: 2,
 }
 
@@ -268,6 +268,14 @@ export default function TeamPage() {
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
   const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
+
+  // Check if all roles with limits are full (GUEST has no limit so excluded)
+  const allRolesFull =
+    headMentors >= (PARTICIPANT_LIMITS.HEAD_MENTOR ?? Infinity) &&
+    teamLeaders >= (PARTICIPANT_LIMITS.TEAM_LEADER ?? Infinity) &&
+    contestants >= (PARTICIPANT_LIMITS.CONTESTANT ?? Infinity) &&
+    observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) &&
+    remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity)
 
   return (
     <div className="space-y-6">
@@ -476,6 +484,7 @@ export default function TeamPage() {
               onAdd={handleAddMember}
               isSaving={isSaving}
               roleCounts={{ headMentors, teamLeaders, contestants, observers, guests, remoteTranslators }}
+              allRolesFull={allRolesFull}
             />
           )}
         </div>
@@ -665,12 +674,14 @@ function AddMemberDialog({
   onAdd,
   isSaving,
   roleCounts,
+  allRolesFull,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
   roleCounts: { headMentors: number; teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
+  allRolesFull: boolean
 }) {
   // Check if roles have reached their limits
   const isRoleDisabled = (role: ParticipantRole) => {
@@ -790,10 +801,17 @@ function AddMemberDialog({
       if (!newOpen) setCurrentStep(1)
     }}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+        <Button
+          className={allRolesFull
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          }
+          disabled={allRolesFull}
+          title={allRolesFull ? "All roles are filled" : undefined}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Add Member
-          <Sparkles className="w-4 h-4 ml-2 opacity-70" />
+          {allRolesFull ? "Team Full" : "Add Member"}
+          {!allRolesFull && <Sparkles className="w-4 h-4 ml-2 opacity-70" />}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[98vw] sm:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto p-0">
