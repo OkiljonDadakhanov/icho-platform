@@ -6,7 +6,7 @@
 // Enums matching backend
 export type ParticipantRole =
   | 'HEAD_MENTOR'
-  | 'TEAM_LEADER'
+  | 'MENTOR'
   | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
@@ -15,7 +15,7 @@ export type ParticipantRole =
 // Fee role types (includes TEAM for flat team fee)
 export type FeeRoleType =
   | 'TEAM'
-  | 'TEAM_LEADER'
+  | 'MENTOR'
   | 'CONTESTANT'
   | 'OBSERVER'
   | 'GUEST'
@@ -95,7 +95,7 @@ export interface Coordinator {
 export interface PreRegistration {
   id: string;
   country: string;
-  num_team_leaders: number;
+  num_mentors: number;
   num_contestants: number;
   num_observers: number;
   num_guests: number;
@@ -350,7 +350,7 @@ export interface LoginResponse {
 }
 
 export interface PreRegistrationUpdateRequest {
-  num_team_leaders: number;
+  num_mentors: number;
   num_contestants: number;
   num_observers: number;
   num_guests: number;
@@ -433,9 +433,9 @@ export interface DelegationProgress {
 export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
     'Head Mentor': 'HEAD_MENTOR',
-    'Team Leader': 'TEAM_LEADER',
-    'Mentor': 'TEAM_LEADER',
-    'Deputy Leader': 'TEAM_LEADER',
+    'Mentor': 'MENTOR',
+    'Mentor': 'MENTOR',
+    'Deputy Leader': 'MENTOR',
     'Contestant': 'CONTESTANT',
     'Student': 'CONTESTANT',
     'Observer': 'OBSERVER',
@@ -452,7 +452,7 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
 export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
     'HEAD_MENTOR': 'Head Mentor',
-    'TEAM_LEADER': 'Team Leader',
+    'MENTOR': 'Mentor',
     'CONTESTANT': 'Contestant',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',

@@ -59,13 +59,13 @@ export default function PaymentPage() {
   }
 
   // Use pre-registration numbers for fee breakdown (matches invoice)
-  const teamLeaders = preRegistration?.num_team_leaders || 0
+  const mentors = preRegistration?.num_mentors || 0
   const contestants = preRegistration?.num_contestants || 0
   const observers = preRegistration?.num_observers || 0
   const guests = preRegistration?.num_guests || 0
 
   // Check if values exceed limits (need to update pre-registration)
-  const hasExceededLimits = teamLeaders > 2 || contestants > 4 || observers > 2
+  const hasExceededLimits = mentors > 2 || contestants > 4 || observers > 2
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role)
@@ -84,10 +84,10 @@ export default function PaymentPage() {
 
     // If we have stored breakdown from submission, use it (matches invoice exactly)
     if (storedBreakdown && storedTotal) {
-      // Handle both old format (TEAM_LEADER + CONTESTANT) and new format (TEAM)
+      // Handle both old format (MENTOR + CONTESTANT) and new format (TEAM)
       const teamFee = storedBreakdown.TEAM
         ? Number(storedBreakdown.TEAM)
-        : Number(storedBreakdown.TEAM_LEADER || 0) + Number(storedBreakdown.CONTESTANT || 0)
+        : Number(storedBreakdown.MENTOR || 0) + Number(storedBreakdown.CONTESTANT || 0)
       const observerTotal = Number(storedBreakdown.OBSERVER || 0)
       const guestTotal = Number(storedBreakdown.GUEST || 0)
 
@@ -97,7 +97,7 @@ export default function PaymentPage() {
 
       return {
         teamFee,
-        teamLeadersCount: teamLeaders,
+        mentorsCount: mentors,
         contestantsCount: contestants,
         observers: observerTotal,
         observerFee,
@@ -116,7 +116,7 @@ export default function PaymentPage() {
 
     return {
       teamFee,
-      teamLeadersCount: teamLeaders,
+      mentorsCount: mentors,
       contestantsCount: contestants,
       observers: observers * observerFee,
       observerFee,
@@ -126,7 +126,7 @@ export default function PaymentPage() {
       guestsCount: guests,
       total: teamFee + observers * observerFee + guests * guestFee,
     }
-  }, [preRegistration, teamLeaders, contestants, observers, guests, feeRules])
+  }, [preRegistration, mentors, contestants, observers, guests, feeRules])
 
   const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -416,10 +416,10 @@ export default function PaymentPage() {
                     <Badge className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white mr-2 text-xs">Team</Badge>
                     Team Registration (flat fee)
                   </span>
-                  {(teamLeaders > 0 || contestants > 0) && (
+                  {(mentors > 0 || contestants > 0) && (
                     <span className="text-xs text-gray-500 mt-1 ml-1">
-                      Includes: {teamLeaders > 0 && `${teamLeaders} mentor${teamLeaders !== 1 ? 's' : ''}`}
-                      {teamLeaders > 0 && contestants > 0 && ', '}
+                      Includes: {mentors > 0 && `${mentors} mentor${mentors !== 1 ? 's' : ''}`}
+                      {mentors > 0 && contestants > 0 && ', '}
                       {contestants > 0 && `${contestants} student${contestants !== 1 ? 's' : ''}`}
                     </span>
                   )}

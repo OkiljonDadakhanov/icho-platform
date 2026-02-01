@@ -50,7 +50,7 @@ import { format, parseISO } from "date-fns";
 import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
-  TEAM_LEADER: "bg-[#2f3090] text-white",
+  MENTOR: "bg-[#2f3090] text-white",
   CONTESTANT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
@@ -279,7 +279,7 @@ export default function CountryDetailsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Mentors</p>
-                  <p className="font-medium">{preReg.num_team_leaders}</p>
+                  <p className="font-medium">{preReg.num_mentors}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Students</p>

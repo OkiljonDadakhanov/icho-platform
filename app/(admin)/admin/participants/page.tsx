@@ -59,7 +59,7 @@ import { format, parseISO } from "date-fns";
 import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
-  TEAM_LEADER: "bg-[#2f3090] text-white",
+  MENTOR: "bg-[#2f3090] text-white",
   CONTESTANT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
@@ -156,7 +156,7 @@ export default function ParticipantsPage() {
   };
 
   // Stats
-  const teamLeaders = participants.filter((p) => p.role === "TEAM_LEADER").length;
+  const mentors = participants.filter((p) => p.role === "MENTOR").length;
   const contestants = participants.filter((p) => p.role === "CONTESTANT").length;
   const observers = participants.filter((p) => p.role === "OBSERVER").length;
   const guests = participants.filter((p) => p.role === "GUEST").length;
@@ -210,7 +210,7 @@ export default function ParticipantsPage() {
               <UserCircle className="w-5 h-5 text-[#2f3090]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{teamLeaders}</p>
+              <p className="text-2xl font-bold text-gray-900">{mentors}</p>
               <p className="text-sm text-gray-500">Mentors</p>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function ParticipantsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="TEAM_LEADER">Mentor</SelectItem>
+              <SelectItem value="MENTOR">Mentor</SelectItem>
               <SelectItem value="CONTESTANT">Student</SelectItem>
               <SelectItem value="OBSERVER">Observer</SelectItem>
               <SelectItem value="GUEST">Guest</SelectItem>
