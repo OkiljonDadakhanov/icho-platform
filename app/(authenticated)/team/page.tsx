@@ -1673,7 +1673,7 @@ function EditMemberDialog({
               </div>
             </div>
 
-            {/* Paternal Name and Badge - not for Remote Translators */}
+            {/* Paternal Name and Badge - hidden for Remote Translators */}
             {formData.role !== 'REMOTE_TRANSLATOR' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
