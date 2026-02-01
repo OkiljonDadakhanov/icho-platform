@@ -300,7 +300,7 @@ export default function TeamPage() {
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${teamLeaders >= (PARTICIPANT_LIMITS.TEAM_LEADER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
               <span className="text-xl font-semibold">{teamLeaders}/{PARTICIPANT_LIMITS.TEAM_LEADER ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Mentors</span>
+              <span className="text-white/70 ml-2 text-sm">Mentor</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${contestants >= (PARTICIPANT_LIMITS.CONTESTANT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
               <span className="text-xl font-semibold">{contestants}/{PARTICIPANT_LIMITS.CONTESTANT ?? '?'}</span>
