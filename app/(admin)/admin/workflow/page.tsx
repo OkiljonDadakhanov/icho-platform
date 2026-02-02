@@ -87,6 +87,7 @@ interface CountryStage {
   country_id: string;
   country_name: string;
   country_iso: string;
+  country_flag?: string;
   stage: WorkflowStage;
   status: "OPEN" | "COMPLETED" | "LOCKED";
   unlocked_until?: string;
@@ -135,6 +136,7 @@ export default function WorkflowPage() {
                 country_id: country.id,
                 country_name: country.name,
                 country_iso: country.iso_code,
+                country_flag: country.iso_code_2,
                 stage: stageName,
                 status: stageData.is_unlocked ? "OPEN" : stageData.status,
                 unlocked_until: stageData.unlocked_until ?? undefined,
@@ -147,6 +149,7 @@ export default function WorkflowPage() {
                 country_id: country.id,
                 country_name: country.name,
                 country_iso: country.iso_code,
+                country_flag: country.iso_code_2,
                 stage: stageName,
                 status: "LOCKED",
               });
@@ -466,7 +469,7 @@ export default function WorkflowPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <img
-                          src={`https://flagcdn.com/w40/${cs.country_iso?.toLowerCase().slice(0, 2) || "un"}.png`}
+                          src={`https://flagcdn.com/w40/${cs.country_flag || cs.country_iso?.toLowerCase().slice(0, 2) || "un"}.png`}
                           alt={cs.country_name || "Country"}
                           className="w-8 h-6 object-cover rounded shadow-sm"
                           onError={(e) => {

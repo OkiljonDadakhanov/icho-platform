@@ -34,6 +34,7 @@ export interface AdminCountry extends Country {
 export interface AdminPayment extends Payment {
   country_name?: string;
   country_iso?: string;
+  country_flag?: string;
   invoice_number?: string;
   invoice_amount?: number;
   proof_submitted_at?: string;
@@ -42,6 +43,7 @@ export interface AdminPayment extends Payment {
 export interface AdminParticipant extends Participant {
   country_name?: string;
   country_iso?: string;
+  country_flag?: string;
 }
 
 export interface AdminTravelInfo {
@@ -52,6 +54,7 @@ export interface AdminTravelInfo {
   country: string;
   country_name: string;
   country_iso: string;
+  country_flag?: string;
   arrival_datetime: string | null;
   departure_datetime: string | null;
   flight_number: string;
@@ -69,6 +72,7 @@ export interface AdminAccommodation {
   country: string;
   country_name: string;
   country_iso: string;
+  country_flag?: string;
   room_type: string;
   preferred_roommate: string | null;
   accessibility_requirements: string;

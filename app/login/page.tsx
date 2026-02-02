@@ -117,7 +117,7 @@ export default function LoginPage() {
                     <SelectItem key={country.id} value={country.name}>
                       <div className="flex items-center gap-2">
                         <img
-                          src={`https://flagcdn.com/16x12/${country.iso_code.toLowerCase().slice(0, 2)}.png`}
+                          src={`https://flagcdn.com/16x12/${country.iso_code_2 || country.iso_code.toLowerCase().slice(0, 2)}.png`}
                           alt={country.name}
                           className="w-4 h-3"
                           onError={(e) => {

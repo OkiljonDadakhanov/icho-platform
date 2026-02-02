@@ -75,6 +75,7 @@ export interface Country {
   id: string;
   name: string;
   iso_code: string;
+  iso_code_2: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -305,6 +306,7 @@ export interface CountryProgressResponse {
   id: string;
   name: string;
   iso_code: string;
+  iso_code_2?: string;
   stages?: Record<WorkflowStage, {
     status: StageStatus;
     is_unlocked: boolean;

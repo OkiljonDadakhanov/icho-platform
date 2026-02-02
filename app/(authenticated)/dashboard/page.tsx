@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   const countryName = user?.country?.name || "Your Country"
-  const countryCode = user?.country?.iso_code?.toLowerCase() || "un"
+  const countryCode = user?.country?.iso_code_2 || user?.country?.iso_code?.toLowerCase().slice(0, 2) || "un"
 
   useEffect(() => {
     const fetchData = async () => {

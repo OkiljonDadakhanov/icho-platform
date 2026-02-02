@@ -349,7 +349,7 @@ export default function TravelPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <img
-                            src={`https://flagcdn.com/w20/${travel.country_iso?.toLowerCase().slice(0, 2)}.png`}
+                            src={`https://flagcdn.com/w20/${travel.country_flag || travel.country_iso?.toLowerCase().slice(0, 2)}.png`}
                             alt={travel.country_name}
                             className="w-5 h-4 object-cover rounded"
                             onError={(e) => {
@@ -449,7 +449,7 @@ export default function TravelPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <img
-                            src={`https://flagcdn.com/w20/${accom.country_iso?.toLowerCase().slice(0, 2)}.png`}
+                            src={`https://flagcdn.com/w20/${accom.country_flag || accom.country_iso?.toLowerCase().slice(0, 2)}.png`}
                             alt={accom.country_name}
                             className="w-5 h-4 object-cover rounded"
                             onError={(e) => {
@@ -562,7 +562,7 @@ export default function TravelPage() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
-                        src={`https://flagcdn.com/w20/${selectedTravel.country_iso?.toLowerCase().slice(0, 2)}.png`}
+                        src={`https://flagcdn.com/w20/${selectedTravel.country_flag || selectedTravel.country_iso?.toLowerCase().slice(0, 2)}.png`}
                         alt=""
                         className="w-5 h-4 object-cover rounded"
                         onError={(e) => {
@@ -664,7 +664,7 @@ export default function TravelPage() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
-                        src={`https://flagcdn.com/w20/${selectedAccommodation.country_iso?.toLowerCase().slice(0, 2)}.png`}
+                        src={`https://flagcdn.com/w20/${selectedAccommodation.country_flag || selectedAccommodation.country_iso?.toLowerCase().slice(0, 2)}.png`}
                         alt=""
                         className="w-5 h-4 object-cover rounded"
                         onError={(e) => {
