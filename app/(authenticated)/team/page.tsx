@@ -504,6 +504,7 @@ export default function TeamPage() {
               onAdd={handleAddMember}
               isSaving={isSaving}
               roleCounts={{ headMentors, mentors, students, observers, guests, remoteTranslators }}
+              roleLimits={preRegLimits}
               allRolesFull={allRolesFull}
             />
           )}
@@ -695,6 +696,7 @@ function AddMemberDialog({
   onAdd,
   isSaving,
   roleCounts,
+  roleLimits,
   allRolesFull,
 }: {
   open: boolean
@@ -702,19 +704,18 @@ function AddMemberDialog({
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
   roleCounts: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
+  roleLimits: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
   allRolesFull: boolean
 }) {
-  // Check if roles have reached their limits
+  // Check if roles have reached their limits (using pre-registration limits)
   const isRoleDisabled = (role: ParticipantRole) => {
-    const limit = PARTICIPANT_LIMITS[role]
-    if (limit === null || limit === undefined) return false
     switch (role) {
-      case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
-      case 'MENTOR': return roleCounts.mentors >= limit
-      case 'STUDENT': return roleCounts.students >= limit
-      case 'OBSERVER': return roleCounts.observers >= limit
-      case 'GUEST': return roleCounts.guests >= limit
-      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
+      case 'HEAD_MENTOR': return roleCounts.headMentors >= roleLimits.headMentors
+      case 'MENTOR': return roleCounts.mentors >= roleLimits.mentors
+      case 'STUDENT': return roleCounts.students >= roleLimits.students
+      case 'OBSERVER': return roleCounts.observers >= roleLimits.observers
+      case 'GUEST': return roleCounts.guests >= roleLimits.guests
+      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= roleLimits.remoteTranslators
       default: return false
     }
   }
@@ -1039,39 +1040,39 @@ function AddMemberDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="HEAD_MENTOR" disabled={isRoleDisabled('HEAD_MENTOR')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('HEAD_MENTOR') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-yellow-600"></span>
-                          Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
+                          Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${roleLimits.headMentors} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="MENTOR" disabled={isRoleDisabled('MENTOR')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('MENTOR') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-[#2f3090]"></span>
-                          Mentor {isRoleDisabled('MENTOR') && `(${roleCounts.mentors}/${PARTICIPANT_LIMITS.MENTOR} max)`}
+                          Mentor {isRoleDisabled('MENTOR') && `(${roleCounts.mentors}/${roleLimits.mentors} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="STUDENT" disabled={isRoleDisabled('STUDENT')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('STUDENT') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Student {isRoleDisabled('STUDENT') && `(${roleCounts.students}/${PARTICIPANT_LIMITS.STUDENT} max)`}
+                          Student {isRoleDisabled('STUDENT') && `(${roleCounts.students}/${roleLimits.students} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('OBSERVER') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${roleLimits.observers} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('GUEST') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                          Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${PARTICIPANT_LIMITS.GUEST} max)`}
+                          Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${roleLimits.guests} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('REMOTE_TRANSLATOR') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-cyan-600"></span>
-                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
+                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${roleLimits.remoteTranslators} max)`}
                         </span>
                       </SelectItem>
                     </SelectContent>
