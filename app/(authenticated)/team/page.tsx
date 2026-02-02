@@ -1603,8 +1603,15 @@ function EditMemberDialog({
 
     // Validate role limits if role is being changed
     if (formData.role !== participant.role && isRoleDisabled(formData.role)) {
-      const limit = PARTICIPANT_LIMITS[formData.role]
-      toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
+      const roleToLimit: Record<string, number> = {
+        HEAD_MENTOR: roleLimits.headMentors,
+        MENTOR: roleLimits.mentors,
+        STUDENT: roleLimits.students,
+        OBSERVER: roleLimits.observers,
+        GUEST: roleLimits.guests,
+        REMOTE_TRANSLATOR: roleLimits.remoteTranslators,
+      }
+      toast.error(`Maximum ${roleToLimit[formData.role]} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
       return
     }
 
