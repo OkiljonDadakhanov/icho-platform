@@ -1753,22 +1753,34 @@ function EditMemberDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HEAD_MENTOR" disabled={isRoleDisabled('HEAD_MENTOR')}>
-                      Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${PARTICIPANT_LIMITS.HEAD_MENTOR}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
+                      <span className={isRoleDisabled('HEAD_MENTOR') ? 'text-gray-400' : ''}>
+                        Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
+                      </span>
                     </SelectItem>
                     <SelectItem value="MENTOR" disabled={isRoleDisabled('MENTOR')}>
-                      Mentor {isRoleDisabled('MENTOR') && `(${PARTICIPANT_LIMITS.MENTOR}/${PARTICIPANT_LIMITS.MENTOR} max)`}
+                      <span className={isRoleDisabled('MENTOR') ? 'text-gray-400' : ''}>
+                        Mentor {isRoleDisabled('MENTOR') && `(${roleCounts.mentors}/${PARTICIPANT_LIMITS.MENTOR} max)`}
+                      </span>
                     </SelectItem>
                     <SelectItem value="STUDENT" disabled={isRoleDisabled('STUDENT')}>
-                      Student {isRoleDisabled('STUDENT') && `(${PARTICIPANT_LIMITS.STUDENT}/${PARTICIPANT_LIMITS.STUDENT} max)`}
+                      <span className={isRoleDisabled('STUDENT') ? 'text-gray-400' : ''}>
+                        Student {isRoleDisabled('STUDENT') && `(${roleCounts.students}/${PARTICIPANT_LIMITS.STUDENT} max)`}
+                      </span>
                     </SelectItem>
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
-                      Observer {isRoleDisabled('OBSERVER') && `(${PARTICIPANT_LIMITS.OBSERVER}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                      <span className={isRoleDisabled('OBSERVER') ? 'text-gray-400' : ''}>
+                        Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                      </span>
                     </SelectItem>
                     <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
-                      Guest {isRoleDisabled('GUEST') && `(${PARTICIPANT_LIMITS.GUEST}/${PARTICIPANT_LIMITS.GUEST} max)`}
+                      <span className={isRoleDisabled('GUEST') ? 'text-gray-400' : ''}>
+                        Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${PARTICIPANT_LIMITS.GUEST} max)`}
+                      </span>
                     </SelectItem>
                     <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
-                      Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
+                      <span className={isRoleDisabled('REMOTE_TRANSLATOR') ? 'text-gray-400' : ''}>
+                        Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
+                      </span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
