@@ -597,6 +597,18 @@ export default function PaymentPage() {
                     </Button>
                   )}
 
+                  {inv.proof_file && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-green-300 text-green-700 hover:bg-green-50"
+                      onClick={() => window.open(inv.proof_file, '_blank')}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View Proof
+                    </Button>
+                  )}
+
                   {inv.status !== "APPROVED" && (
                     <>
                       <input
