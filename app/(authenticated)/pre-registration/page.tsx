@@ -201,13 +201,14 @@ export default function PreRegistrationPage() {
 
   const getFee = (role: string): number => {
     const rule = feeRules.find((r) => r.role === role);
-    return rule ? Number(rule.unit_fee) : 500; // Default to 500 if no rule found
+    return rule ? Number(rule.unit_fee) : 0;
   };
 
   const calculateTotal = () => {
+    // Backend uses flat TEAM fee for students + mentors combined
+    // plus per-person fees for observers and guests
     return (
-      formData.mentors * getFee("MENTOR") +
-      formData.students * getFee("STUDENT") +
+      getFee("TEAM") +
       formData.observers * getFee("OBSERVER") +
       formData.guests * getFee("GUEST")
     );
@@ -724,17 +725,14 @@ export default function PreRegistrationPage() {
             ${calculateTotal().toLocaleString()} USD
           </p>
           <div className="text-xs sm:text-sm text-muted-foreground mt-2 space-y-1">
-            {formData.mentors > 0 && (
-              <p>Mentors: {formData.mentors} × ${getFee("MENTOR")} = ${(formData.mentors * getFee("MENTOR")).toLocaleString()}</p>
-            )}
-            {formData.students > 0 && (
-              <p>Students: {formData.students} × ${getFee("STUDENT")} = ${(formData.students * getFee("STUDENT")).toLocaleString()}</p>
+            {getFee("TEAM") > 0 && (
+              <p>Team fee (students + mentors): ${getFee("TEAM").toLocaleString()}</p>
             )}
             {formData.observers > 0 && (
-              <p>Observers: {formData.observers} × ${getFee("OBSERVER")} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
+              <p>Observers: {formData.observers} × ${getFee("OBSERVER").toLocaleString()} = ${(formData.observers * getFee("OBSERVER")).toLocaleString()}</p>
             )}
             {formData.guests > 0 && (
-              <p>Guests: {formData.guests} × ${getFee("GUEST")} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
+              <p>Guests: {formData.guests} × ${getFee("GUEST").toLocaleString()} = ${(formData.guests * getFee("GUEST")).toLocaleString()}</p>
             )}
           </div>
         </div>
