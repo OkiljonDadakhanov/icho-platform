@@ -280,9 +280,10 @@ export default function TeamPage() {
     students: preRegistration?.num_students ?? PARTICIPANT_LIMITS.STUDENT ?? 4,
     observers: preRegistration?.num_observers ?? PARTICIPANT_LIMITS.OBSERVER ?? 2,
     guests: preRegistration?.num_guests ?? PARTICIPANT_LIMITS.GUEST ?? 10,
+    remoteTranslators: preRegistration?.num_remote_translators ?? PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? 2,
   }
 
-  // Calculate total registered vs total added
+  // Calculate total registered vs total added (excluding remote translators - they don't pay fees)
   const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests
   const totalAdded = headMentors + mentors + students + observers + guests
 
@@ -294,7 +295,7 @@ export default function TeamPage() {
     students >= preRegLimits.students &&
     observers >= preRegLimits.observers &&
     guests >= preRegLimits.guests &&
-    remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? 2)
+    remoteTranslators >= preRegLimits.remoteTranslators
 
   return (
     <div className="space-y-6">
@@ -321,28 +322,28 @@ export default function TeamPage() {
               <span className="text-2xl font-bold">{totalAdded}/{totalPreRegistered}</span>
               <span className="text-white/70 ml-2 text-sm">Registered</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= (PARTICIPANT_LIMITS.HEAD_MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
-              <span className="text-xl font-semibold">{headMentors}/{PARTICIPANT_LIMITS.HEAD_MENTOR ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= preRegLimits.headMentors ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
+              <span className="text-xl font-semibold">{headMentors}/{preRegLimits.headMentors}</span>
               <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${mentors >= (PARTICIPANT_LIMITS.MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
-              <span className="text-xl font-semibold">{mentors}/{PARTICIPANT_LIMITS.MENTOR ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${mentors >= preRegLimits.mentors ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
+              <span className="text-xl font-semibold">{mentors}/{preRegLimits.mentors}</span>
               <span className="text-white/70 ml-2 text-sm">Mentor</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${students >= (PARTICIPANT_LIMITS.STUDENT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
-              <span className="text-xl font-semibold">{students}/{PARTICIPANT_LIMITS.STUDENT ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${students >= preRegLimits.students ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
+              <span className="text-xl font-semibold">{students}/{preRegLimits.students}</span>
               <span className="text-white/70 ml-2 text-sm">Students</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
-              <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= preRegLimits.observers ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
+              <span className="text-xl font-semibold">{observers}/{preRegLimits.observers}</span>
               <span className="text-white/70 ml-2 text-sm">Observers</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${guests >= (PARTICIPANT_LIMITS.GUEST ?? 10) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
-              <span className="text-xl font-semibold">{guests}/{PARTICIPANT_LIMITS.GUEST ?? 10}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${guests >= preRegLimits.guests ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
+              <span className="text-xl font-semibold">{guests}/{preRegLimits.guests}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
-              <span className="text-xl font-semibold">{remoteTranslators}/{PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= preRegLimits.remoteTranslators ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
+              <span className="text-xl font-semibold">{remoteTranslators}/{preRegLimits.remoteTranslators}</span>
               <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
             </div>
           </div>
