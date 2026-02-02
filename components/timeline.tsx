@@ -4,16 +4,19 @@ import { getErrorMessage } from "@/lib/error-utils"
 
 import { useEffect, useState } from "react"
 import { format, isPast, isFuture, isWithinInterval, addDays } from "date-fns"
-import { Check, Clock, Lock, CalendarDays } from "lucide-react"
+import { Check, Clock, Lock, CalendarDays, CreditCard } from "lucide-react"
 import { workflowService } from "@/lib/services/workflow"
-import type { StageDeadline, DelegationProgress, WorkflowStage, StageStatus } from "@/lib/types"
+import { participantsService } from "@/lib/services/participants"
+import { paymentsService } from "@/lib/services/payments"
+import type { StageDeadline, DelegationProgress, WorkflowStage, StageStatus, Participant, SingleRoomInvoice } from "@/lib/types"
 
 interface TimelineStage {
-  stage: WorkflowStage
+  stage: WorkflowStage | 'SINGLE_ROOM_PAYMENT'
   label: string
   description: string
   deadline?: string
   status: StageStatus
+  isCustom?: boolean
 }
 
 const STAGE_CONFIG: Record<WorkflowStage, { label: string; description: string }> = {
@@ -51,14 +54,16 @@ export function Timeline() {
   const [stages, setStages] = useState<TimelineStage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [currentStage, setCurrentStage] = useState<WorkflowStage | null>(null)
+  const [currentStage, setCurrentStage] = useState<WorkflowStage | 'SINGLE_ROOM_PAYMENT' | null>(null)
 
   const fetchData = async (showLoading = true) => {
     try {
       if (showLoading) setIsLoading(true)
-      const [deadlines, progress] = await Promise.all([
+      const [deadlines, progress, participants, singleRoomInvoices] = await Promise.all([
         workflowService.getStageDeadlines(),
-        workflowService.getDelegationProgress()
+        workflowService.getDelegationProgress(),
+        participantsService.getAllParticipants().catch(() => []),
+        paymentsService.getSingleRoomInvoices().catch(() => [])
       ])
 
       // Create a map of deadlines by stage
@@ -73,17 +78,58 @@ export function Timeline() {
         statusMap.set(s.stage, s.status)
       })
 
+      // Check if any participant has single room preference
+      const hasSingleRoomRequests = participants.some((p: Participant) => p.prefers_single_room)
+
+      // Calculate single room payment status
+      let singleRoomStatus: StageStatus = 'LOCKED'
+      if (hasSingleRoomRequests) {
+        const allApproved = singleRoomInvoices.length > 0 &&
+          singleRoomInvoices.every((inv: SingleRoomInvoice) => inv.status === 'APPROVED')
+        const hasPending = singleRoomInvoices.some((inv: SingleRoomInvoice) => inv.status === 'PENDING')
+
+        if (allApproved) {
+          singleRoomStatus = 'COMPLETED'
+        } else if (hasPending || singleRoomInvoices.length > 0) {
+          singleRoomStatus = 'OPEN'
+        } else {
+          singleRoomStatus = 'OPEN' // Awaiting invoice generation
+        }
+      }
+
       // Build timeline stages
-      const timelineStages: TimelineStage[] = STAGE_ORDER.map(stage => ({
-        stage,
-        label: STAGE_CONFIG[stage].label,
-        description: STAGE_CONFIG[stage].description,
-        deadline: deadlineMap.get(stage),
-        status: statusMap.get(stage) || 'LOCKED'
-      }))
+      const timelineStages: TimelineStage[] = []
+
+      STAGE_ORDER.forEach(stage => {
+        timelineStages.push({
+          stage,
+          label: STAGE_CONFIG[stage].label,
+          description: STAGE_CONFIG[stage].description,
+          deadline: deadlineMap.get(stage),
+          status: statusMap.get(stage) || 'LOCKED'
+        })
+
+        // Insert Single Room Payment after PAYMENT stage if applicable
+        if (stage === 'PAYMENT' && hasSingleRoomRequests) {
+          timelineStages.push({
+            stage: 'SINGLE_ROOM_PAYMENT',
+            label: 'Single Room Payment',
+            description: `Pay for single room upgrades (${participants.filter((p: Participant) => p.prefers_single_room).length} requests)`,
+            status: singleRoomStatus,
+            isCustom: true
+          })
+        }
+      })
 
       setStages(timelineStages)
-      setCurrentStage(progress.current_stage)
+
+      // Determine current stage - if single room payment is pending, that's current
+      if (hasSingleRoomRequests && singleRoomStatus === 'OPEN') {
+        setCurrentStage('SINGLE_ROOM_PAYMENT')
+      } else {
+        setCurrentStage(progress.current_stage)
+      }
+
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to fetch timeline data:", err)
