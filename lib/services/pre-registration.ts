@@ -63,15 +63,6 @@ export const preRegistrationService = {
   },
 
   /**
-   * Upload passport scan for a coordinator
-   */
-  async uploadCoordinatorPassport(id: string, file: File): Promise<Coordinator> {
-    const formData = new FormData();
-    formData.append('passport_scan', file);
-    return api.upload<Coordinator>(`/pre-registration/coordinators/${id}/passport/`, formData);
-  },
-
-  /**
    * Get fee rules
    */
   async getFeeRules(): Promise<FeeRule[]> {
