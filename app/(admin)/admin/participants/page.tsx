@@ -309,7 +309,7 @@ export default function ParticipantsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <img
-                          src={`https://flagcdn.com/w20/${participant.country_iso?.toLowerCase()}.png`}
+                          src={`https://flagcdn.com/w20/${participant.country_flag || participant.country_iso?.toLowerCase()}.png`}
                           alt={participant.country_name}
                           className="w-5 h-4 object-cover rounded"
                           onError={(e) => {

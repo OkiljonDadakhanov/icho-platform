@@ -135,7 +135,7 @@ export default function CountryDetailsPage() {
         </Button>
         <div className="flex items-center gap-4 flex-1">
           <img
-            src={`https://flagcdn.com/w80/${country.iso_code?.toLowerCase() || "un"}.png`}
+            src={`https://flagcdn.com/w80/${country.iso_code_2 || country.iso_code?.toLowerCase().slice(0, 2) || "un"}.png`}
             alt={country.name || "Country"}
             className="w-16 h-12 object-cover rounded shadow-sm"
             onError={(e) => {

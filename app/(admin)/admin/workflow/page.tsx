@@ -130,7 +130,7 @@ export default function WorkflowPage() {
                 id: `${country.id}-${stageName}`,
                 country_id: country.id,
                 country_name: country.name,
-                country_iso: country.iso_code,
+                country_iso: country.iso_code_2 || country.iso_code,
                 stage: stageName as WorkflowStage,
                 status: stageData.is_unlocked ? "OPEN" : stageData.status,
                 unlocked_until: stageData.unlocked_until,

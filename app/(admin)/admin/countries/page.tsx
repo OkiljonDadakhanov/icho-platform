@@ -297,7 +297,7 @@ export default function CountriesPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img
-                        src={`https://flagcdn.com/w40/${country.iso_code.toLowerCase()}.png`}
+                        src={`https://flagcdn.com/w40/${country.iso_code_2 || country.iso_code.toLowerCase().slice(0, 2)}.png`}
                         alt={country.name}
                         className="w-8 h-6 object-cover rounded shadow-sm"
                         onError={(e) => {
