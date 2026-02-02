@@ -777,7 +777,7 @@ function AddMemberDialog({
       color_vision_deficiency: formData.role === 'STUDENT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
       email: formData.email,
       regulations_accepted: isRemoteTranslator(formData.role) ? true : formData.regulations_accepted,
-      prefers_single_room: (formData.role === 'MENTOR' || formData.role === 'HEAD_MENTOR') ? formData.prefers_single_room : undefined,
+      prefers_single_room: (formData.role === 'MENTOR' || formData.role === 'HEAD_MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: isRemoteTranslator(formData.role) ? undefined : consentForm || undefined,
@@ -1282,8 +1282,8 @@ function AddMemberDialog({
               </>
             )}
 
-            {/* Room Preference (Head Mentors and Mentors only) */}
-            {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') && (
+            {/* Room Preference (not for Students or Remote Translators) */}
+            {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') && (
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-200">
                 <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <UsersRound className="w-4 h-4 text-indigo-600" />
@@ -1656,7 +1656,7 @@ function EditMemberDialog({
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
       color_vision_deficiency: formData.role === 'STUDENT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
-      prefers_single_room: (formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') ? formData.prefers_single_room : undefined,
+      prefers_single_room: (formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
@@ -1999,8 +1999,8 @@ function EditMemberDialog({
             </div>
           )}
 
-          {/* Room Preference (Head Mentors and Mentors only) */}
-          {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR') && (
+          {/* Room Preference (not for Students or Remote Translators) */}
+          {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') && (
             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <UsersRound className="w-4 h-4 text-indigo-600" />
