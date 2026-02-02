@@ -38,7 +38,21 @@ export default function InvitationsPage() {
       ])
       // Filter out remote translators - they don't need invitation letters
       const filteredParticipants = participantsData.filter(p => p.role !== 'REMOTE_TRANSLATOR')
-      setParticipants(filteredParticipants)
+
+      // Sort by role order: Head Mentor, Mentor, Students, Observers, Guests
+      const roleOrder: Record<string, number> = {
+        'HEAD_MENTOR': 1,
+        'MENTOR': 2,
+        'STUDENT': 3,
+        'OBSERVER': 4,
+        'GUEST': 5,
+      }
+      const sortedParticipants = filteredParticipants.sort((a, b) => {
+        const orderA = roleOrder[a.role] || 99
+        const orderB = roleOrder[b.role] || 99
+        return orderA - orderB
+      })
+      setParticipants(sortedParticipants)
 
       const invitationMap: Record<string, InvitationLetter> = {}
       invitationsData.forEach(inv => {
