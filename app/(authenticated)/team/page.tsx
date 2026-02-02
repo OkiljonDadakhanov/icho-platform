@@ -815,8 +815,10 @@ function AddMemberDialog({
   const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && (isRemoteTranslator(formData.role) || formData.passport_number) && formData.date_of_birth && isRoleValid && formData.gender && (formData.role !== 'REMOTE_TRANSLATOR' || formData.translation_language) && (formData.role !== 'STUDENT' || formData.exam_language)
   // Remote translators skip step 2 validation
   const canProceedStep2 = isRemoteTranslator(formData.role) || (formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements))
-  // Remote translators have simplified requirements
-  const canSubmit = canProceedStep1 && canProceedStep2 && (isRemoteTranslator(formData.role) || formData.regulations_accepted)
+  // File requirements: passport and photo required for all, consent form required for non-remote-translators
+  const hasRequiredFiles = passportScan && profilePhoto && (isRemoteTranslator(formData.role) || consentForm)
+  // Remote translators have simplified requirements (no regulations acceptance needed)
+  const canSubmit = canProceedStep1 && canProceedStep2 && hasRequiredFiles && (isRemoteTranslator(formData.role) || formData.regulations_accepted)
 
   // If team is full, render a disabled button without dialog trigger
   if (allRolesFull) {
