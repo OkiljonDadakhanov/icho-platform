@@ -61,10 +61,12 @@ interface FormData {
   passportNumber: string;
   email: string;
   phone: string;
+  headMentors: number;
   mentors: number;
   students: number;
   observers: number;
   guests: number;
+  remoteTranslators: number;
 }
 
 export default function PreRegistrationPage() {
@@ -86,10 +88,12 @@ export default function PreRegistrationPage() {
     passportNumber: "",
     email: "",
     phone: "",
+    headMentors: 1,
     mentors: 1,
     students: 4,
-    observers: 2,
-    guests: 3,
+    observers: 0,
+    guests: 0,
+    remoteTranslators: 0,
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -156,10 +160,12 @@ export default function PreRegistrationPage() {
       if (data) {
         setFormData((prev) => ({
           ...prev,
+          headMentors: Math.min(data.num_head_mentors ?? 0, 1),
           mentors: Math.min(data.num_mentors ?? 0, 1),
           students: Math.min(data.num_students ?? 0, 4),
-          observers: Math.min(data.num_observers, 2),
-          guests: data.num_guests,
+          observers: Math.min(data.num_observers ?? 0, 2),
+          guests: data.num_guests ?? 0,
+          remoteTranslators: Math.min(data.num_remote_translators ?? 0, 2),
         }));
       }
 
@@ -290,10 +296,12 @@ export default function PreRegistrationPage() {
       setError(null);
 
       await preRegistrationService.updatePreRegistration({
+        num_head_mentors: formData.headMentors,
         num_mentors: formData.mentors,
         num_students: formData.students,
         num_observers: formData.observers,
         num_guests: formData.guests,
+        num_remote_translators: formData.remoteTranslators,
       });
       const coordinator = await upsertCoordinator();
       await uploadPassportScanIfNeeded(coordinator.id);
@@ -325,10 +333,12 @@ export default function PreRegistrationPage() {
     try {
       setIsSubmitting(true);
       await preRegistrationService.updatePreRegistration({
+        num_head_mentors: formData.headMentors,
         num_mentors: formData.mentors,
         num_students: formData.students,
         num_observers: formData.observers,
         num_guests: formData.guests,
+        num_remote_translators: formData.remoteTranslators,
       });
       const coordinator = await upsertCoordinator();
       await uploadPassportScanIfNeeded(coordinator.id);
@@ -624,7 +634,21 @@ export default function PreRegistrationPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
-              <Label className="text-base">Mentors *</Label>
+              <Label className="text-base">Head Mentor *</Label>
+              <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded">Max 1</span>
+            </div>
+            <NumberStepper
+              value={formData.headMentors}
+              onChange={(value) => setFormData({ ...formData, headMentors: value })}
+              min={0}
+              max={1}
+              disabled={!canEdit}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Mentor *</Label>
               <span className="text-xs font-medium text-[#2f3090] bg-[#2f3090]/10 px-2 py-0.5 rounded">Max 1</span>
             </div>
             <NumberStepper
@@ -664,7 +688,7 @@ export default function PreRegistrationPage() {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-gray-100 gap-3">
             <div className="flex items-center gap-3">
               <Label className="text-base">Guests</Label>
               <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded">No limit</span>
@@ -673,6 +697,21 @@ export default function PreRegistrationPage() {
               value={formData.guests}
               onChange={(value) => setFormData({ ...formData, guests: value })}
               min={0}
+              disabled={!canEdit}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 gap-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-base">Remote Translators</Label>
+              <span className="text-xs font-medium text-cyan-600 bg-cyan-100 px-2 py-0.5 rounded">Max 2</span>
+              <span className="text-xs text-gray-500">(No fee)</span>
+            </div>
+            <NumberStepper
+              value={formData.remoteTranslators}
+              onChange={(value) => setFormData({ ...formData, remoteTranslators: value })}
+              min={0}
+              max={2}
               disabled={!canEdit}
             />
           </div>

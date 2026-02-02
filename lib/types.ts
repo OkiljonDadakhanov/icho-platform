@@ -102,6 +102,7 @@ export interface PreRegistration {
   num_students?: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators?: number;
   fee_total: number;
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
@@ -351,10 +352,12 @@ export interface LoginResponse {
 }
 
 export interface PreRegistrationUpdateRequest {
+  num_head_mentors: number;
   num_mentors: number;
   num_students: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators: number;
 }
 
 export interface CoordinatorUpsertRequest {
