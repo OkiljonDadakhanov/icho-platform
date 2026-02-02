@@ -59,12 +59,12 @@ import { getErrorMessage } from "@/lib/error-utils"
 import Link from "next/link"
 
 // Participant limits per delegation
-const PARTICIPANT_LIMITS: Record<string, number | null> = {
+const PARTICIPANT_LIMITS: Record<string, number> = {
   HEAD_MENTOR: 1,
-  MENTOR: 1,  // Mentor
-  STUDENT: 4,   // Students
+  MENTOR: 1,
+  STUDENT: 4,
   OBSERVER: 2,
-  GUEST: null,     // Unlimited
+  GUEST: 10,
   REMOTE_TRANSLATOR: 2,
 }
 
@@ -279,11 +279,11 @@ export default function TeamPage() {
     mentors: preRegistration?.num_mentors ?? PARTICIPANT_LIMITS.MENTOR ?? 1,
     students: preRegistration?.num_students ?? PARTICIPANT_LIMITS.STUDENT ?? 4,
     observers: preRegistration?.num_observers ?? PARTICIPANT_LIMITS.OBSERVER ?? 2,
-    guests: preRegistration?.num_guests ?? Infinity, // Guests have no hard limit
+    guests: preRegistration?.num_guests ?? PARTICIPANT_LIMITS.GUEST ?? 10,
   }
 
   // Calculate total registered vs total added
-  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + (preRegLimits.guests === Infinity ? 0 : preRegLimits.guests)
+  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests
   const totalAdded = headMentors + mentors + students + observers + guests
 
   // Team is full when each role has reached its limit (preReg or hard limit)
@@ -293,7 +293,7 @@ export default function TeamPage() {
     mentors >= preRegLimits.mentors &&
     students >= preRegLimits.students &&
     observers >= preRegLimits.observers &&
-    (preRegLimits.guests === Infinity || guests >= preRegLimits.guests) &&
+    guests >= preRegLimits.guests &&
     remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? 2)
 
   return (
@@ -337,8 +337,8 @@ export default function TeamPage() {
               <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
               <span className="text-white/70 ml-2 text-sm">Observers</span>
             </div>
-            <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
-              <span className="text-xl font-semibold">{guests}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${guests >= (PARTICIPANT_LIMITS.GUEST ?? 10) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
+              <span className="text-xl font-semibold">{guests}/{PARTICIPANT_LIMITS.GUEST ?? 10}</span>
               <span className="text-white/70 ml-2 text-sm">Guests</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
@@ -705,12 +705,13 @@ function AddMemberDialog({
   // Check if roles have reached their limits
   const isRoleDisabled = (role: ParticipantRole) => {
     const limit = PARTICIPANT_LIMITS[role]
-    if (limit === null || limit === undefined) return false // Unlimited or unknown role
+    if (limit === null || limit === undefined) return false
     switch (role) {
       case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
       case 'MENTOR': return roleCounts.mentors >= limit
       case 'STUDENT': return roleCounts.students >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
+      case 'GUEST': return roleCounts.guests >= limit
       case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
       default: return false
     }
@@ -1059,10 +1060,10 @@ function AddMemberDialog({
                           Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="GUEST">
+                      <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                          Guest
+                          Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${PARTICIPANT_LIMITS.GUEST} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
@@ -1557,12 +1558,13 @@ function EditMemberDialog({
     // If the participant already has this role, it's not disabled
     if (participant.role === role) return false
     const limit = PARTICIPANT_LIMITS[role]
-    if (limit === null || limit === undefined) return false // Unlimited or unknown role
+    if (limit === null || limit === undefined) return false
     switch (role) {
       case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
       case 'MENTOR': return roleCounts.mentors >= limit
       case 'STUDENT': return roleCounts.students >= limit
       case 'OBSERVER': return roleCounts.observers >= limit
+      case 'GUEST': return roleCounts.guests >= limit
       case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
       default: return false
     }
@@ -1761,7 +1763,9 @@ function EditMemberDialog({
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
                       Observer {isRoleDisabled('OBSERVER') && `(${PARTICIPANT_LIMITS.OBSERVER}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
                     </SelectItem>
-                    <SelectItem value="GUEST">Guest</SelectItem>
+                    <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
+                      Guest {isRoleDisabled('GUEST') && `(${PARTICIPANT_LIMITS.GUEST}/${PARTICIPANT_LIMITS.GUEST} max)`}
+                    </SelectItem>
                     <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
                       Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
                     </SelectItem>
