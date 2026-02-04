@@ -122,7 +122,7 @@ export default function DashboardPage() {
             </div>
             <div className="px-4 py-2 bg-cyan-500/20 rounded-lg backdrop-blur-sm border border-cyan-500/20 transition-all hover:bg-cyan-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{remoteTranslators}</span>
-              <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
+              <span className="text-white/70 ml-2 text-sm">{remoteTranslators === 1 ? 'Translator' : 'Translators'}</span>
             </div>
           </div>
         </div>

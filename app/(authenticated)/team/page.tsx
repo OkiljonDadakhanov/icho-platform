@@ -284,9 +284,9 @@ export default function TeamPage() {
     remoteTranslators: preRegistration?.num_remote_translators ?? PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? 2,
   }
 
-  // Calculate total registered vs total added (excluding remote translators - they don't pay fees)
-  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests
-  const totalAdded = headMentors + mentors + students + observers + guests
+  // Calculate total registered vs total added
+  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests + preRegLimits.remoteTranslators
+  const totalAdded = headMentors + mentors + students + observers + guests + remoteTranslators
 
   // Team is full when each role has reached its limit (preReg or hard limit)
   // Check each role individually - all limited roles must be at their max
@@ -333,19 +333,19 @@ export default function TeamPage() {
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${students >= preRegLimits.students ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
               <span className="text-xl font-semibold">{students}/{preRegLimits.students}</span>
-              <span className="text-white/70 ml-2 text-sm">Students</span>
+              <span className="text-white/70 ml-2 text-sm">{students === 1 ? 'Student' : 'Students'}</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= preRegLimits.observers ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
               <span className="text-xl font-semibold">{observers}/{preRegLimits.observers}</span>
-              <span className="text-white/70 ml-2 text-sm">Observers</span>
+              <span className="text-white/70 ml-2 text-sm">{observers === 1 ? 'Observer' : 'Observers'}</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${guests >= preRegLimits.guests ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
               <span className="text-xl font-semibold">{guests}/{preRegLimits.guests}</span>
-              <span className="text-white/70 ml-2 text-sm">Guests</span>
+              <span className="text-white/70 ml-2 text-sm">{guests === 1 ? 'Guest' : 'Guests'}</span>
             </div>
             <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= preRegLimits.remoteTranslators ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
               <span className="text-xl font-semibold">{remoteTranslators}/{preRegLimits.remoteTranslators}</span>
-              <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
+              <span className="text-white/70 ml-2 text-sm">{remoteTranslators === 1 ? 'Translator' : 'Translators'}</span>
             </div>
           </div>
         </div>
