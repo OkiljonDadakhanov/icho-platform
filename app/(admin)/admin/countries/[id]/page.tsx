@@ -278,20 +278,28 @@ export default function CountryDetailsPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Mentors</p>
+                  <p className="text-gray-500">{preReg.num_head_mentors === 1 ? 'Head Mentor' : 'Head Mentors'}</p>
+                  <p className="font-medium">{preReg.num_head_mentors}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">{preReg.num_mentors === 1 ? 'Mentor' : 'Mentors'}</p>
                   <p className="font-medium">{preReg.num_mentors}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Students</p>
+                  <p className="text-gray-500">{preReg.num_students === 1 ? 'Student' : 'Students'}</p>
                   <p className="font-medium">{preReg.num_students}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Observers</p>
+                  <p className="text-gray-500">{preReg.num_observers === 1 ? 'Observer' : 'Observers'}</p>
                   <p className="font-medium">{preReg.num_observers}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Guests</p>
+                  <p className="text-gray-500">{preReg.num_guests === 1 ? 'Guest' : 'Guests'}</p>
                   <p className="font-medium">{preReg.num_guests}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">{preReg.num_remote_translators === 1 ? 'Translator' : 'Translators'}</p>
+                  <p className="font-medium">{preReg.num_remote_translators}</p>
                 </div>
               </div>
               <div className="pt-2 border-t">
