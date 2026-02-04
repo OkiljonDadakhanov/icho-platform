@@ -59,10 +59,12 @@ export default function DashboardPage() {
   }
 
   // Calculate stats
+  const headMentors = participants.filter(p => p.role === 'HEAD_MENTOR').length
   const mentors = participants.filter(p => p.role === 'MENTOR').length
   const students = participants.filter(p => p.role === 'STUDENT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
+  const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
 
   // Payment status calculations
   const participationFeeStatus = payment?.status || 'PENDING'
@@ -96,23 +98,31 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-4 mt-6">
             <div className="px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10 transition-all hover:bg-white/20 hover:scale-105">
               <span className="text-2xl font-bold">{participants.length}</span>
-              <span className="text-white/70 ml-2 text-sm">Total Members</span>
+              <span className="text-white/70 ml-2 text-sm">{participants.length === 1 ? 'Member' : 'Members'}</span>
+            </div>
+            <div className="px-4 py-2 bg-yellow-500/30 rounded-lg backdrop-blur-sm border border-yellow-500/30 transition-all hover:bg-yellow-500/50 hover:scale-105">
+              <span className="text-xl font-semibold">{headMentors}</span>
+              <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
             </div>
             <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
               <span className="text-xl font-semibold">{mentors}</span>
-              <span className="text-white/70 ml-2 text-sm">Mentors</span>
+              <span className="text-white/70 ml-2 text-sm">Mentor</span>
             </div>
             <div className="px-4 py-2 bg-[#00795d]/30 rounded-lg backdrop-blur-sm border border-[#00795d]/30 transition-all hover:bg-[#00795d]/50 hover:scale-105">
               <span className="text-xl font-semibold">{students}</span>
-              <span className="text-white/70 ml-2 text-sm">Students</span>
+              <span className="text-white/70 ml-2 text-sm">{students === 1 ? 'Student' : 'Students'}</span>
             </div>
             <div className="px-4 py-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/20 transition-all hover:bg-purple-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{observers}</span>
-              <span className="text-white/70 ml-2 text-sm">Observers</span>
+              <span className="text-white/70 ml-2 text-sm">{observers === 1 ? 'Observer' : 'Observers'}</span>
             </div>
             <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{guests}</span>
-              <span className="text-white/70 ml-2 text-sm">Guests</span>
+              <span className="text-white/70 ml-2 text-sm">{guests === 1 ? 'Guest' : 'Guests'}</span>
+            </div>
+            <div className="px-4 py-2 bg-cyan-500/20 rounded-lg backdrop-blur-sm border border-cyan-500/20 transition-all hover:bg-cyan-500/40 hover:scale-105">
+              <span className="text-xl font-semibold">{remoteTranslators}</span>
+              <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
             </div>
           </div>
         </div>
