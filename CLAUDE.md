@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Next.js frontend dashboard for the 57th International Chemistry Olympiad 2026 (Uzbekistan) registration system.
+Next.js frontend dashboard for the 58th International Chemistry Olympiad 2026 (Uzbekistan) registration system.
 
 **Tech Stack**: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui (Radix primitives)
 

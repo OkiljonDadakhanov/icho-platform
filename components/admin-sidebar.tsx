@@ -192,7 +192,7 @@ export function AdminSidebar() {
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-700 text-xs text-slate-500">
-            <p>57th International Chemistry Olympiad</p>
+            <p>58th International Chemistry Olympiad</p>
             <p className="mt-1">Uzbekistan 2026</p>
           </div>
         </div>
