@@ -171,6 +171,11 @@ export class ApiClient {
           }
           throw error;
         }
+      } else {
+        // Refresh failed — redirect to login to prevent stale polling
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       }
     }
 
@@ -269,6 +274,11 @@ export class ApiClient {
             } as ApiError;
           }
           throw error;
+        }
+      } else {
+        // Refresh failed — redirect to login to prevent stale polling
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
         }
       }
     }

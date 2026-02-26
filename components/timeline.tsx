@@ -8,6 +8,7 @@ import { Check, Clock, Lock, CalendarDays, CreditCard } from "lucide-react"
 import { workflowService } from "@/lib/services/workflow"
 import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
+import { api } from "@/lib/api"
 import type { StageDeadline, DelegationProgress, WorkflowStage, StageStatus, Participant, SingleRoomInvoice } from "@/lib/types"
 
 interface TimelineStage {
@@ -146,8 +147,12 @@ export function Timeline() {
     const handleFocus = () => fetchData(false)
     window.addEventListener('focus', handleFocus)
 
-    // Also refresh every 30 seconds
-    const interval = setInterval(() => fetchData(false), 30000)
+    // Also refresh every 30 seconds, but only if still authenticated
+    const interval = setInterval(() => {
+      if (api.isAuthenticated()) {
+        fetchData(false)
+      }
+    }, 30000)
 
     return () => {
       window.removeEventListener('focus', handleFocus)
