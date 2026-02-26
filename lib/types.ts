@@ -6,8 +6,8 @@
 // Enums matching backend
 export type ParticipantRole =
   | 'HEAD_MENTOR'
-  | 'TEAM_LEADER'
-  | 'CONTESTANT'
+  | 'MENTOR'
+  | 'STUDENT'
   | 'OBSERVER'
   | 'GUEST'
   | 'REMOTE_TRANSLATOR';
@@ -15,8 +15,8 @@ export type ParticipantRole =
 // Fee role types (includes TEAM for flat team fee)
 export type FeeRoleType =
   | 'TEAM'
-  | 'TEAM_LEADER'
-  | 'CONTESTANT'
+  | 'MENTOR'
+  | 'STUDENT'
   | 'OBSERVER'
   | 'GUEST'
   | 'SINGLE_ROOM_SURCHARGE';
@@ -24,6 +24,8 @@ export type FeeRoleType =
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
+
+export type ColorVisionDeficiency = 'NONE' | 'RED_GREEN' | 'BLUE_YELLOW' | 'COMPLETE';
 
 export type DietaryRequirement = 'NORMAL' | 'HALAL' | 'VEGETARIAN' | 'VEGAN' | 'KOSHER' | 'OTHER';
 
@@ -86,8 +88,6 @@ export interface Coordinator {
   role: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
-  passport_scan?: string;
   email: string;
   phone: string;
   is_primary: boolean;
@@ -98,10 +98,12 @@ export interface Coordinator {
 export interface PreRegistration {
   id: string;
   country: string;
-  num_team_leaders: number;
-  num_contestants: number;
+  num_head_mentors?: number;
+  num_mentors?: number;
+  num_students?: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators?: number;
   fee_total: number;
   fee_breakdown: Record<string, number>;
   submitted_at: string | null;
@@ -131,6 +133,7 @@ export interface Participant {
   dietary_requirements: DietaryRequirement;
   other_dietary_requirements?: string;
   medical_requirements?: string;
+  color_vision_deficiency?: ColorVisionDeficiency;
   email: string;
   consent_form_signed?: string;
   commitment_form_signed?: string;
@@ -299,6 +302,19 @@ export interface CountryStageStatus {
   created_at: string;
 }
 
+export interface CountryProgressResponse {
+  id: string;
+  name: string;
+  iso_code: string;
+  iso_code_2?: string;
+  stages?: Record<WorkflowStage, {
+    status: StageStatus;
+    is_unlocked: boolean;
+    unlocked_until?: string | null;
+    unlock_reason?: string | null;
+  }>;
+}
+
 export interface Notification {
   id: string;
   user: string;
@@ -339,22 +355,22 @@ export interface LoginResponse {
 }
 
 export interface PreRegistrationUpdateRequest {
-  num_team_leaders: number;
-  num_contestants: number;
+  num_head_mentors: number;
+  num_mentors: number;
+  num_students: number;
   num_observers: number;
   num_guests: number;
+  num_remote_translators: number;
 }
 
 export interface CoordinatorUpsertRequest {
   full_name: string;
-  role: string;
+  role?: string;
   gender: Gender;
   date_of_birth: string;
-  passport_number: string;
   email: string;
   phone: string;
   is_primary?: boolean;
-  passport_scan?: File;
 }
 
 export interface ParticipantCreateRequest {
@@ -370,6 +386,7 @@ export interface ParticipantCreateRequest {
   dietary_requirements: DietaryRequirement;
   other_dietary_requirements?: string;
   medical_requirements?: string;
+  color_vision_deficiency?: ColorVisionDeficiency;
   email: string;
   passport_scan?: File;
   profile_photo?: File;
@@ -422,11 +439,8 @@ export interface DelegationProgress {
 export function mapRoleToBackend(frontendRole: string): ParticipantRole {
   const mapping: Record<string, ParticipantRole> = {
     'Head Mentor': 'HEAD_MENTOR',
-    'Team Leader': 'TEAM_LEADER',
-    'Mentor': 'TEAM_LEADER',
-    'Deputy Leader': 'TEAM_LEADER',
-    'Contestant': 'CONTESTANT',
-    'Student': 'CONTESTANT',
+    'Mentor': 'MENTOR',
+    'Student': 'STUDENT',
     'Observer': 'OBSERVER',
     'Guest': 'GUEST',
     'Remote Translator': 'REMOTE_TRANSLATOR',
@@ -441,8 +455,8 @@ export function mapRoleToBackend(frontendRole: string): ParticipantRole {
 export function mapRoleToFrontend(backendRole: ParticipantRole): string {
   const mapping: Record<ParticipantRole, string> = {
     'HEAD_MENTOR': 'Head Mentor',
-    'TEAM_LEADER': 'Mentor',
-    'CONTESTANT': 'Student',
+    'MENTOR': 'Mentor',
+    'STUDENT': 'Student',
     'OBSERVER': 'Observer',
     'GUEST': 'Guest',
     'REMOTE_TRANSLATOR': 'Remote Translator',

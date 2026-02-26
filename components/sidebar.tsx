@@ -22,12 +22,12 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
 const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Pre-Registration", href: "/pre-registration", icon: ClipboardList },
   { name: "Payment", href: "/payment", icon: CreditCard },
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Coordinators", href: "/coordinators", icon: Users },
+  { name: "Contact Persons", href: "/coordinators", icon: Users },
   { name: "Team", href: "/team", icon: UsersRound },
-  { name: "Travel", href: "/travel", icon: Plane },
+  { name: "Travel & Accommodation", href: "/travel", icon: Plane },
   { name: "Invitations", href: "/invitations", icon: FileText },
 ];
 
@@ -36,8 +36,8 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setIsOpen(false);
   };
 
@@ -84,7 +84,7 @@ export function Sidebar() {
           {user && (
             <div className="p-4 border-b bg-gray-50">
               <p className="text-sm font-medium text-gray-900 truncate">
-                {user.country?.name || "Administrator"}
+                {user.country?.name ? `${user.country.name} Team` : "Administrator"}
               </p>
             </div>
           )}

@@ -44,7 +44,9 @@ export class ApiClient {
       // Use Secure in production (HTTPS), SameSite=Lax for CSRF protection
       const isSecure = window.location.protocol === 'https:';
       const secureFlag = isSecure ? '; Secure' : '';
-      document.cookie = `accessToken=${accessToken}; path=/; max-age=${60 * 30}; SameSite=Lax${secureFlag}`; // 30 minutes
+      // Cookie lifetime should match refresh token so middleware doesn't redirect prematurely
+      // The API client handles actual token validation and refresh
+      document.cookie = `accessToken=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secureFlag}`; // 7 days (match refresh token)
       document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secureFlag}`; // 7 days
     }
   }
@@ -69,6 +71,25 @@ export class ApiClient {
 
   isAuthenticated(): boolean {
     return !!this.accessToken;
+  }
+
+  async logout(): Promise<void> {
+    if (this.refreshToken) {
+      try {
+        // Blacklist the refresh token on the server
+        await fetch(`${API_URL}/auth/logout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.accessToken}`,
+          },
+          body: JSON.stringify({ refresh: this.refreshToken }),
+        });
+      } catch {
+        // Ignore errors - we'll clear tokens locally regardless
+      }
+    }
+    this.clearTokens();
   }
 
   private async refreshAccessToken(): Promise<boolean> {
@@ -367,6 +388,15 @@ export class ApiClient {
 
     return response.blob();
   }
+
+  // Download file and open in new tab (secure - no token in URL)
+  async downloadAndOpen(endpoint: string): Promise<void> {
+    const blob = await this.download(endpoint);
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    // Clean up blob URL after a delay to allow the new tab to load
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
 }
 
 // Export singleton instance
@@ -380,3 +410,5 @@ export const apiPatch = <T>(endpoint: string, data: unknown) => api.patch<T>(end
 export const apiDelete = <T>(endpoint: string) => api.delete<T>(endpoint);
 export const apiUpload = <T>(endpoint: string, formData: FormData) => api.upload<T>(endpoint, formData);
 export const apiDownload = (endpoint: string) => api.download(endpoint);
+export const apiDownloadAndOpen = (endpoint: string) => api.downloadAndOpen(endpoint);
+export const apiLogout = () => api.logout();

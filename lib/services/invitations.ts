@@ -41,9 +41,12 @@ export const invitationsService = {
 
   /**
    * Request invitation letter for a participant
+   * @param participantId - The participant ID
+   * @param force - Force regeneration even if invitation exists and is up to date
    */
-  async requestInvitation(participantId: string): Promise<InvitationLetter> {
-    return api.post<InvitationLetter>(`/v1/invitations/participant/${participantId}/request/`);
+  async requestInvitation(participantId: string, force: boolean = false): Promise<InvitationLetter> {
+    const url = `/v1/invitations/participant/${participantId}/request/${force ? '?force=true' : ''}`;
+    return api.post<InvitationLetter>(url);
   },
 
   /**

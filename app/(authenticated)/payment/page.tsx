@@ -55,8 +55,8 @@ export default function PaymentPage() {
   }
 
   // Use pre-registration numbers for fee breakdown (matches invoice)
-  const mentors = preRegistration?.num_team_leaders || 0
-  const students = preRegistration?.num_contestants || 0
+  const mentors = preRegistration?.num_mentors || 0
+  const students = preRegistration?.num_students || 0
   const observers = preRegistration?.num_observers || 0
   const guests = preRegistration?.num_guests || 0
 
@@ -157,6 +157,17 @@ export default function PaymentPage() {
     } catch (err: any) {
       console.error("Failed to download single room invoice:", err)
       toast.error("Failed to download invoice. Please try again.")
+    }
+  }
+
+  const handleViewSingleRoomProof = async (invoiceId: string) => {
+    try {
+      const blob = await paymentsService.downloadSingleRoomProof(invoiceId)
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err: any) {
+      console.error("Failed to view single room proof:", err)
+      toast.error("Failed to view proof. Please try again.")
     }
   }
 
@@ -411,17 +422,32 @@ export default function PaymentPage() {
 
         {paymentStatus === "APPROVED" ? (
           <div className="p-6 bg-gradient-to-r from-[#00795d]/10 to-[#00795d]/5 border border-[#00795d]/30 rounded-xl">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-[#00795d] rounded-full">
-                <CheckCircle2 className="w-5 h-5 text-white" />
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-[#00795d] rounded-full">
+                    <CheckCircle2 className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="font-semibold text-[#00795d] text-lg">Payment Verified</p>
+                </div>
+                {payment?.reviewed_at && (
+                  <p className="text-sm text-[#00795d]/80 ml-11">
+                    Verified on: {new Date(payment.reviewed_at).toLocaleDateString()}
+                  </p>
+                )}
               </div>
-              <p className="font-semibold text-[#00795d] text-lg">Payment Verified</p>
+              {payment?.proof_file && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#00795d] text-[#00795d] hover:bg-[#00795d]/10"
+                  onClick={handleViewProof}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View Proof
+                </Button>
+              )}
             </div>
-            {payment?.reviewed_at && (
-              <p className="text-sm text-[#00795d]/80 ml-11">
-                Verified on: {new Date(payment.reviewed_at).toLocaleDateString()}
-              </p>
-            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -594,6 +620,18 @@ export default function PaymentPage() {
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Download Invoice
+                    </Button>
+                  )}
+
+                  {inv.proof_file && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-green-300 text-green-700 hover:bg-green-50"
+                      onClick={() => handleViewSingleRoomProof(inv.id)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View Proof
                     </Button>
                   )}
 

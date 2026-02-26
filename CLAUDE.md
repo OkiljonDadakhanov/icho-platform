@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Next.js frontend dashboard for the 57th International Chemistry Olympiad 2026 (Uzbekistan) registration system.
+Next.js frontend dashboard for the 58th International Chemistry Olympiad 2026 (Uzbekistan) registration system.
 
 **Tech Stack**: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui (Radix primitives)
 
@@ -102,3 +102,20 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 - `sonner` - Toast notifications
 - `date-fns` - Date utilities
 - `recharts` - Charts
+
+## Important: Participant Role Names
+
+**CRITICAL: Use the correct role names throughout the codebase:**
+
+- `HEAD_MENTOR` - Head Mentor (1 per delegation)
+- `MENTOR` - Mentor (1 per delegation)
+- `STUDENT` - Student (4 per delegation)
+- `OBSERVER` - Observer (2 per delegation)
+- `GUEST` - Guest (unlimited)
+- `REMOTE_TRANSLATOR` - Remote Translator (2 per delegation, no travel/invitation needed)
+
+**DO NOT use these deprecated role names:**
+- ~~TEAM_LEADER~~ → Use `MENTOR` instead
+- ~~CONTESTANT~~ → Use `STUDENT` instead
+
+If you encounter `TEAM_LEADER` or `CONTESTANT` anywhere in the code, it is a legacy bug that should be fixed.

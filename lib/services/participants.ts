@@ -70,6 +70,9 @@ export const participantsService = {
     if (data.medical_requirements) {
       formData.append('medical_requirements', data.medical_requirements);
     }
+    if (data.color_vision_deficiency) {
+      formData.append('color_vision_deficiency', data.color_vision_deficiency);
+    }
     if (data.prefers_single_room !== undefined) {
       formData.append('prefers_single_room', String(data.prefers_single_room));
     }
@@ -114,6 +117,7 @@ export const participantsService = {
     if (data.other_dietary_requirements !== undefined) formData.append('other_dietary_requirements', data.other_dietary_requirements);
     if (data.email !== undefined) formData.append('email', data.email);
     if (data.medical_requirements !== undefined) formData.append('medical_requirements', data.medical_requirements);
+    if (data.color_vision_deficiency !== undefined) formData.append('color_vision_deficiency', data.color_vision_deficiency);
     if (data.regulations_accepted !== undefined) formData.append('regulations_accepted', String(data.regulations_accepted));
     if (data.prefers_single_room !== undefined) formData.append('prefers_single_room', String(data.prefers_single_room));
     if (data.passport_scan) formData.append('passport_scan', data.passport_scan);

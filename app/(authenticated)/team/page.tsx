@@ -43,41 +43,43 @@ import {
   FileCheck,
   Trash2,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
 import { paymentsService } from "@/lib/services/payments"
+import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, Payment } from "@/lib/types"
+import type { Participant, ParticipantCreateRequest, Gender, ParticipantRole, TshirtSize, DietaryRequirement, ColorVisionDeficiency, Payment, PreRegistration } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend, mapDietaryToFrontend } from "@/lib/types"
 import { getErrorMessage } from "@/lib/error-utils"
 import Link from "next/link"
 
 // Participant limits per delegation
-const PARTICIPANT_LIMITS: Record<string, number | null> = {
+const PARTICIPANT_LIMITS: Record<string, number> = {
   HEAD_MENTOR: 1,
-  TEAM_LEADER: 2,
-  CONTESTANT: 4,
+  MENTOR: 1,
+  STUDENT: 4,
   OBSERVER: 2,
-  GUEST: null, // Unlimited
+  GUEST: 10,
   REMOTE_TRANSLATOR: 2,
 }
 
 // Role priority for ordering (lower number = higher priority)
 const ROLE_PRIORITY: Record<string, number> = {
   HEAD_MENTOR: 1,
-  TEAM_LEADER: 2,
-  CONTESTANT: 3,
+  MENTOR: 2,
+  STUDENT: 3,
   OBSERVER: 4,
   GUEST: 5,
   REMOTE_TRANSLATOR: 6,
 }
 
-// Exam languages for contestants
+// Exam languages for students
 const EXAM_LANGUAGES = [
   'Arabic',
   'Armenian',
@@ -138,6 +140,7 @@ export default function TeamPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
   const [payment, setPayment] = useState<Payment | null>(null)
+  const [preRegistration, setPreRegistration] = useState<PreRegistration | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -157,12 +160,14 @@ export default function TeamPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true)
-      const [participantsData, paymentData] = await Promise.all([
+      const [participantsData, paymentData, preRegData] = await Promise.all([
         participantsService.getAllParticipants().catch(() => []),
         paymentsService.getPayment().catch(() => null),
+        preRegistrationService.getPreRegistration().catch(() => null),
       ])
       setParticipants(participantsData)
       setPayment(paymentData)
+      setPreRegistration(preRegData)
       setError(null)
     } catch (err: any) {
       console.error("Failed to fetch data:", err)
@@ -263,11 +268,35 @@ export default function TeamPage() {
 
   // Calculate stats
   const headMentors = participants.filter(p => p.role === 'HEAD_MENTOR').length
-  const teamLeaders = participants.filter(p => p.role === 'TEAM_LEADER').length
-  const contestants = participants.filter(p => p.role === 'CONTESTANT').length
+  const mentors = participants.filter(p => p.role === 'MENTOR').length
+  const students = participants.filter(p => p.role === 'STUDENT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
   const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
+
+  // Get pre-registration limits (what the country registered for)
+  const preRegLimits = {
+    headMentors: preRegistration?.num_head_mentors ?? PARTICIPANT_LIMITS.HEAD_MENTOR ?? 1,
+    mentors: preRegistration?.num_mentors ?? PARTICIPANT_LIMITS.MENTOR ?? 1,
+    students: preRegistration?.num_students ?? PARTICIPANT_LIMITS.STUDENT ?? 4,
+    observers: preRegistration?.num_observers ?? PARTICIPANT_LIMITS.OBSERVER ?? 2,
+    guests: preRegistration?.num_guests ?? PARTICIPANT_LIMITS.GUEST ?? 10,
+    remoteTranslators: preRegistration?.num_remote_translators ?? PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? 2,
+  }
+
+  // Calculate total registered vs total added
+  const totalPreRegistered = preRegLimits.headMentors + preRegLimits.mentors + preRegLimits.students + preRegLimits.observers + preRegLimits.guests + preRegLimits.remoteTranslators
+  const totalAdded = headMentors + mentors + students + observers + guests + remoteTranslators
+
+  // Team is full when each role has reached its limit (preReg or hard limit)
+  // Check each role individually - all limited roles must be at their max
+  const allRolesFull =
+    headMentors >= preRegLimits.headMentors &&
+    mentors >= preRegLimits.mentors &&
+    students >= preRegLimits.students &&
+    observers >= preRegLimits.observers &&
+    guests >= preRegLimits.guests &&
+    remoteTranslators >= preRegLimits.remoteTranslators
 
   return (
     <div className="space-y-6">
@@ -291,32 +320,32 @@ export default function TeamPage() {
           {/* Stats row */}
           <div className="flex flex-wrap gap-4 mt-6">
             <div className="px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10 transition-all hover:bg-white/20 hover:scale-105">
-              <span className="text-2xl font-bold">{participants.length}</span>
-              <span className="text-white/70 ml-2 text-sm">Total</span>
+              <span className="text-2xl font-bold">{totalAdded}/{totalPreRegistered}</span>
+              <span className="text-white/70 ml-2 text-sm">Registered</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= (PARTICIPANT_LIMITS.HEAD_MENTOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
-              <span className="text-xl font-semibold">{headMentors}/{PARTICIPANT_LIMITS.HEAD_MENTOR ?? '?'}</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${headMentors >= preRegLimits.headMentors ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-yellow-500/30 border-yellow-500/30 hover:bg-yellow-500/50'}`}>
+              <span className="text-xl font-semibold">{headMentors}/{preRegLimits.headMentors}</span>
               <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${teamLeaders >= (PARTICIPANT_LIMITS.TEAM_LEADER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
-              <span className="text-xl font-semibold">{teamLeaders}/{PARTICIPANT_LIMITS.TEAM_LEADER ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Mentors</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${mentors >= preRegLimits.mentors ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#2f3090]/30 border-[#2f3090]/30 hover:bg-[#2f3090]/50'}`}>
+              <span className="text-xl font-semibold">{mentors}/{preRegLimits.mentors}</span>
+              <span className="text-white/70 ml-2 text-sm">Mentor</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${contestants >= (PARTICIPANT_LIMITS.CONTESTANT ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
-              <span className="text-xl font-semibold">{contestants}/{PARTICIPANT_LIMITS.CONTESTANT ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Students</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${students >= preRegLimits.students ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-[#00795d]/30 border-[#00795d]/30 hover:bg-[#00795d]/50'}`}>
+              <span className="text-xl font-semibold">{students}/{preRegLimits.students}</span>
+              <span className="text-white/70 ml-2 text-sm">{students === 1 ? 'Student' : 'Students'}</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= (PARTICIPANT_LIMITS.OBSERVER ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
-              <span className="text-xl font-semibold">{observers}/{PARTICIPANT_LIMITS.OBSERVER ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Observers</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${observers >= preRegLimits.observers ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/40'}`}>
+              <span className="text-xl font-semibold">{observers}/{preRegLimits.observers}</span>
+              <span className="text-white/70 ml-2 text-sm">{observers === 1 ? 'Observer' : 'Observers'}</span>
             </div>
-            <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
-              <span className="text-xl font-semibold">{guests}</span>
-              <span className="text-white/70 ml-2 text-sm">Guests</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${guests >= preRegLimits.guests ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-orange-500/20 border-orange-500/20 hover:bg-orange-500/40'}`}>
+              <span className="text-xl font-semibold">{guests}/{preRegLimits.guests}</span>
+              <span className="text-white/70 ml-2 text-sm">{guests === 1 ? 'Guest' : 'Guests'}</span>
             </div>
-            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= (PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? Infinity) ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
-              <span className="text-xl font-semibold">{remoteTranslators}/{PARTICIPANT_LIMITS.REMOTE_TRANSLATOR ?? '?'}</span>
-              <span className="text-white/70 ml-2 text-sm">Remote Trans.</span>
+            <div className={`px-4 py-2 rounded-lg backdrop-blur-sm border transition-all hover:scale-105 ${remoteTranslators >= preRegLimits.remoteTranslators ? 'bg-red-500/30 border-red-500/30 hover:bg-red-500/50' : 'bg-cyan-500/20 border-cyan-500/20 hover:bg-cyan-500/40'}`}>
+              <span className="text-xl font-semibold">{remoteTranslators}/{preRegLimits.remoteTranslators}</span>
+              <span className="text-white/70 ml-2 text-sm">{remoteTranslators === 1 ? 'Translator' : 'Translators'}</span>
             </div>
           </div>
         </div>
@@ -475,7 +504,9 @@ export default function TeamPage() {
               onOpenChange={setIsAddDialogOpen}
               onAdd={handleAddMember}
               isSaving={isSaving}
-              roleCounts={{ headMentors, teamLeaders, contestants, observers, guests, remoteTranslators }}
+              roleCounts={{ headMentors, mentors, students, observers, guests, remoteTranslators }}
+              roleLimits={preRegLimits}
+              allRolesFull={allRolesFull}
             />
           )}
         </div>
@@ -590,7 +621,8 @@ export default function TeamPage() {
                             onEdit={handleEditMember}
                             onDelete={handleDeleteMember}
                             isSaving={isSaving}
-                            roleCounts={{ headMentors, teamLeaders, contestants, observers, guests, remoteTranslators }}
+                            roleCounts={{ headMentors, mentors, students, observers, guests, remoteTranslators }}
+                            roleLimits={preRegLimits}
                           />
                         )}
                       </td>
@@ -665,23 +697,26 @@ function AddMemberDialog({
   onAdd,
   isSaving,
   roleCounts,
+  roleLimits,
+  allRolesFull,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdd: (data: ParticipantCreateRequest) => void
   isSaving: boolean
-  roleCounts: { headMentors: number; teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
+  roleCounts: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
+  roleLimits: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
+  allRolesFull: boolean
 }) {
-  // Check if roles have reached their limits
+  // Check if roles have reached their limits (using pre-registration limits)
   const isRoleDisabled = (role: ParticipantRole) => {
-    const limit = PARTICIPANT_LIMITS[role]
-    if (limit === null || limit === undefined) return false // Unlimited or unknown role
     switch (role) {
-      case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
-      case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
-      case 'CONTESTANT': return roleCounts.contestants >= limit
-      case 'OBSERVER': return roleCounts.observers >= limit
-      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
+      case 'HEAD_MENTOR': return roleCounts.headMentors >= roleLimits.headMentors
+      case 'MENTOR': return roleCounts.mentors >= roleLimits.mentors
+      case 'STUDENT': return roleCounts.students >= roleLimits.students
+      case 'OBSERVER': return roleCounts.observers >= roleLimits.observers
+      case 'GUEST': return roleCounts.guests >= roleLimits.guests
+      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= roleLimits.remoteTranslators
       default: return false
     }
   }
@@ -702,6 +737,7 @@ function AddMemberDialog({
     other_dietary_requirements: "",
     passport_number: "",
     medical_requirements: "",
+    color_vision_deficiency: "" as ColorVisionDeficiency | "",
     email: "",
     translation_language: "",
     exam_language: "",
@@ -738,15 +774,16 @@ function AddMemberDialog({
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
       passport_number: formData.passport_number,
       medical_requirements: formData.medical_requirements || undefined,
+      color_vision_deficiency: formData.role === 'STUDENT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
       email: formData.email,
       regulations_accepted: isRemoteTranslator(formData.role) ? true : formData.regulations_accepted,
-      prefers_single_room: (formData.role === 'TEAM_LEADER' || formData.role === 'HEAD_MENTOR') ? formData.prefers_single_room : undefined,
+      prefers_single_room: (formData.role === 'MENTOR' || formData.role === 'HEAD_MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: isRemoteTranslator(formData.role) ? undefined : consentForm || undefined,
       commitment_form_signed: commitmentForm || undefined,
       translation_language: isRemoteTranslator(formData.role) ? formData.translation_language : undefined,
-      exam_language: formData.role === 'CONTESTANT' ? formData.exam_language : undefined,
+      exam_language: formData.role === 'STUDENT' ? formData.exam_language : undefined,
     })
     // Reset form
     setFormData({
@@ -762,6 +799,7 @@ function AddMemberDialog({
       other_dietary_requirements: "",
       passport_number: "",
       medical_requirements: "",
+      color_vision_deficiency: "",
       email: "",
       regulations_accepted: false,
       prefers_single_room: false,
@@ -778,11 +816,27 @@ function AddMemberDialog({
   const isRoleValid = formData.role && !isRoleDisabled(formData.role as ParticipantRole)
   const isEmailValid = formData.email && isValidEmail(formData.email)
   // Remote translators don't need passport number
-  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && (isRemoteTranslator(formData.role) || formData.passport_number) && formData.date_of_birth && isRoleValid && formData.gender && (formData.role !== 'REMOTE_TRANSLATOR' || formData.translation_language) && (formData.role !== 'CONTESTANT' || formData.exam_language)
+  const canProceedStep1 = formData.first_name && formData.last_name && isEmailValid && (isRemoteTranslator(formData.role) || formData.passport_number) && formData.date_of_birth && isRoleValid && formData.gender && (formData.role !== 'REMOTE_TRANSLATOR' || formData.translation_language) && (formData.role !== 'STUDENT' || formData.exam_language)
   // Remote translators skip step 2 validation
   const canProceedStep2 = isRemoteTranslator(formData.role) || (formData.tshirt_size && formData.dietary_requirements && (formData.dietary_requirements !== 'OTHER' || formData.other_dietary_requirements))
-  // Remote translators have simplified requirements
-  const canSubmit = canProceedStep1 && canProceedStep2 && (isRemoteTranslator(formData.role) || formData.regulations_accepted)
+  // File requirements: passport and photo required for all, consent form required for non-remote-translators
+  const hasRequiredFiles = passportScan && profilePhoto && (isRemoteTranslator(formData.role) || consentForm)
+  // Remote translators have simplified requirements (no regulations acceptance needed)
+  const canSubmit = canProceedStep1 && canProceedStep2 && hasRequiredFiles && (isRemoteTranslator(formData.role) || formData.regulations_accepted)
+
+  // If team is full, render a disabled button without dialog trigger
+  if (allRolesFull) {
+    return (
+      <Button
+        className="bg-gray-400 cursor-not-allowed opacity-60"
+        disabled
+        title="All roles are filled"
+      >
+        <Plus className="w-4 h-4 mr-2" />
+        Team Full
+      </Button>
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
@@ -790,7 +844,9 @@ function AddMemberDialog({
       if (!newOpen) setCurrentStep(1)
     }}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+        <Button
+          className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Member
           <Sparkles className="w-4 h-4 ml-2 opacity-70" />
@@ -883,32 +939,35 @@ function AddMemberDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paternal_name" className="text-gray-600">
-                    Paternal Name <span className="text-gray-400 text-xs">(optional)</span>
-                  </Label>
-                  <Input
-                    id="paternal_name"
-                    placeholder="Optional"
-                    value={formData.paternal_name}
-                    onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
-                    className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
-                  />
+              {/* Paternal Name and Badge Name - not for Remote Translators */}
+              {!isRemoteTranslator(formData.role) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="paternal_name" className="text-gray-600">
+                      Paternal Name <span className="text-gray-400 text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      id="paternal_name"
+                      placeholder="Optional"
+                      value={formData.paternal_name}
+                      onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
+                      className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="badge_name" className="text-gray-600">
+                      Name for Badge <span className="text-gray-400 text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      id="badge_name"
+                      placeholder="Display name on badge"
+                      value={formData.badge_name}
+                      onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
+                      className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="badge_name" className="text-gray-600">
-                    Name for Badge <span className="text-gray-400 text-xs">(optional)</span>
-                  </Label>
-                  <Input
-                    id="badge_name"
-                    placeholder="Display name on badge"
-                    value={formData.badge_name}
-                    onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
-                    className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 transition-all"
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
@@ -987,39 +1046,39 @@ function AddMemberDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="HEAD_MENTOR" disabled={isRoleDisabled('HEAD_MENTOR')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('HEAD_MENTOR') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-yellow-600"></span>
-                          Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
+                          Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${roleLimits.headMentors} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
-                        <span className="flex items-center gap-2">
+                      <SelectItem value="MENTOR" disabled={isRoleDisabled('MENTOR')}>
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('MENTOR') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-[#2f3090]"></span>
-                          Mentor {isRoleDisabled('TEAM_LEADER') && `(${roleCounts.teamLeaders}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
+                          Mentor {isRoleDisabled('MENTOR') && `(${roleCounts.mentors}/${roleLimits.mentors} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
-                        <span className="flex items-center gap-2">
+                      <SelectItem value="STUDENT" disabled={isRoleDisabled('STUDENT')}>
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('STUDENT') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-[#00795d]"></span>
-                          Student {isRoleDisabled('CONTESTANT') && `(${roleCounts.contestants}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
+                          Student {isRoleDisabled('STUDENT') && `(${roleCounts.students}/${roleLimits.students} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('OBSERVER') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                          Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${roleLimits.observers} max)`}
                         </span>
                       </SelectItem>
-                      <SelectItem value="GUEST">
-                        <span className="flex items-center gap-2">
+                      <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('GUEST') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                          Guest
+                          Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${roleLimits.guests} max)`}
                         </span>
                       </SelectItem>
                       <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
-                        <span className="flex items-center gap-2">
+                        <span className={`flex items-center gap-2 ${isRoleDisabled('REMOTE_TRANSLATOR') ? 'text-gray-400' : ''}`}>
                           <span className="w-2 h-2 rounded-full bg-cyan-600"></span>
-                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
+                          Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${roleLimits.remoteTranslators} max)`}
                         </span>
                       </SelectItem>
                     </SelectContent>
@@ -1046,7 +1105,7 @@ function AddMemberDialog({
               </div>
 
               {/* Exam Language (for Students) */}
-              {formData.role === 'CONTESTANT' && (
+              {formData.role === 'STUDENT' && (
                 <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 animate-in slide-in-from-top-2 duration-200">
                   <Label className="text-gray-700 flex items-center gap-2 mb-2">
                     <FileText className="w-4 h-4 text-green-600" />
@@ -1097,93 +1156,134 @@ function AddMemberDialog({
 
           {/* Step 2: Preferences */}
           <div className={`space-y-4 transition-all duration-300 ${currentStep === 2 ? "block" : "hidden"}`}>
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
-              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <Shirt className="w-4 h-4 text-amber-600" />
-                Apparel & Dietary
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tshirt_size" className="text-gray-600 flex items-center gap-1">
-                    <Shirt className="w-3 h-3" /> T-shirt Size <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.tshirt_size}
-                    onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
-                  >
-                    <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
-                        <SelectItem key={size} value={size}>{size}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dietary_requirements" className="text-gray-600 flex items-center gap-1">
-                    <UtensilsCrossed className="w-3 h-3" /> Dietary Requirements <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.dietary_requirements}
-                    onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
-                  >
-                    <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
-                      <SelectValue placeholder="Select dietary" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NORMAL">Normal</SelectItem>
-                      <SelectItem value="HALAL">Halal</SelectItem>
-                      <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
-                      <SelectItem value="VEGAN">Vegan</SelectItem>
-                      <SelectItem value="KOSHER">Kosher</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Remote Translators skip preferences - show message */}
+            {isRemoteTranslator(formData.role) ? (
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl border border-cyan-100 text-center">
+                <h3 className="font-semibold text-gray-700 mb-2">No Preferences Required</h3>
+                <p className="text-gray-500 text-sm">Remote translators work remotely and don't need apparel or dietary preferences.</p>
+                <p className="text-gray-500 text-sm mt-2">Click "Continue" to proceed to document upload.</p>
               </div>
+            ) : (
+              <>
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+                  <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Shirt className="w-4 h-4 text-amber-600" />
+                    Apparel & Dietary
+                  </h3>
 
-              {formData.dietary_requirements === 'OTHER' && (
-                <div className="space-y-2 mt-4 animate-in slide-in-from-top-2 duration-200">
-                  <Label htmlFor="other_dietary_requirements" className="text-gray-600 flex items-center gap-1">
-                    Please specify <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="other_dietary_requirements"
-                    placeholder="Describe your dietary requirements"
-                    value={formData.other_dietary_requirements}
-                    onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
-                    className="border-amber-200 focus:border-amber-500 focus:ring-amber-500/20 transition-all"
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tshirt_size" className="text-gray-600 flex items-center gap-1">
+                        <Shirt className="w-3 h-3" /> T-shirt Size <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.tshirt_size}
+                        onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
+                      >
+                        <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
+                            <SelectItem key={size} value={size}>{size}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dietary_requirements" className="text-gray-600 flex items-center gap-1">
+                        <UtensilsCrossed className="w-3 h-3" /> Dietary Requirements <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.dietary_requirements}
+                        onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
+                      >
+                        <SelectTrigger className="border-gray-200 focus:border-amber-500 focus:ring-amber-500/20">
+                          <SelectValue placeholder="Select dietary" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NORMAL">Normal</SelectItem>
+                          <SelectItem value="HALAL">Halal</SelectItem>
+                          <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
+                          <SelectItem value="VEGAN">Vegan</SelectItem>
+                          <SelectItem value="KOSHER">Kosher</SelectItem>
+                          <SelectItem value="OTHER">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {formData.dietary_requirements === 'OTHER' && (
+                    <div className="space-y-2 mt-4 animate-in slide-in-from-top-2 duration-200">
+                      <Label htmlFor="other_dietary_requirements" className="text-gray-600 flex items-center gap-1">
+                        Please specify <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="other_dietary_requirements"
+                        placeholder="Describe your dietary requirements"
+                        value={formData.other_dietary_requirements}
+                        onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
+                        className="border-amber-200 focus:border-amber-500 focus:ring-amber-500/20 transition-all"
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-xl border border-rose-100">
-              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-rose-600" />
-                Medical Information
-              </h3>
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 rounded-xl border border-rose-100">
+                  <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-rose-600" />
+                    Medical Information
+                  </h3>
 
-              <div className="space-y-2">
-                <Label htmlFor="medical_requirements" className="text-gray-600">
-                  Medical Requirements <span className="text-gray-400 text-xs">(optional)</span>
-                </Label>
-                <Input
-                  id="medical_requirements"
-                  placeholder="Any allergies, medical conditions, or special requirements"
-                  value={formData.medical_requirements}
-                  onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
-                  className="border-gray-200 focus:border-rose-500 focus:ring-rose-500/20 transition-all"
-                />
-                <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="medical_requirements" className="text-gray-600">
+                      Medical Requirements <span className="text-gray-400 text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      id="medical_requirements"
+                      placeholder="Any allergies, medical conditions, or special requirements"
+                      value={formData.medical_requirements}
+                      onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+                      className="border-gray-200 focus:border-rose-500 focus:ring-rose-500/20 transition-all"
+                    />
+                    <p className="text-xs text-gray-500">This information will be kept confidential and shared only with medical staff if needed.</p>
+                  </div>
+                </div>
 
-            {/* Room Preference (Head Mentors and Mentors only) */}
-            {(formData.role === 'HEAD_MENTOR' || formData.role === 'TEAM_LEADER') && (
+                {/* Color Vision Information (students only) */}
+                {formData.role === 'STUDENT' && (
+                  <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100 animate-in slide-in-from-top-2 duration-200">
+                    <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-cyan-600" />
+                      Color Vision Information
+                    </h3>
+                    <div className="space-y-2">
+                      <Label className="text-gray-600">
+                        Do you have color blindness or color vision deficiency (CVD)? <span className="text-gray-400 text-xs">(optional)</span>
+                      </Label>
+                      <Select
+                        value={formData.color_vision_deficiency}
+                        onValueChange={(value) => setFormData({ ...formData, color_vision_deficiency: value as ColorVisionDeficiency })}
+                      >
+                        <SelectTrigger className="border-gray-200 focus:border-cyan-500 focus:ring-cyan-500/20">
+                          <SelectValue placeholder="Select if applicable" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">None (no color blindness)</SelectItem>
+                          <SelectItem value="RED_GREEN">Red-Green (Protan/Deutan)</SelectItem>
+                          <SelectItem value="BLUE_YELLOW">Blue-Yellow (Tritan)</SelectItem>
+                          <SelectItem value="COMPLETE">Complete color blindness (Monochromacy)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500">This helps us prepare accessible exam materials if needed.</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Room Preference (not for Students or Remote Translators) */}
+            {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') && (
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2 duration-200">
                 <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <UsersRound className="w-4 h-4 text-indigo-600" />
@@ -1260,20 +1360,22 @@ function AddMemberDialog({
                   color="violet"
                 />
 
-                {/* Consent Form */}
-                <FileUploadField
-                  id="consent_form"
-                  label={`Signed Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
-                  required
-                  accept="image/*,.pdf"
-                  file={consentForm}
-                  onChange={setConsentForm}
-                  icon={<FileText className="w-4 h-4" />}
-                  color="violet"
-                />
+                {/* Consent Form - Not for Remote Translators */}
+                {!isRemoteTranslator(formData.role) && (
+                  <FileUploadField
+                    id="consent_form"
+                    label={`Signed Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
+                    required
+                    accept="image/*,.pdf"
+                    file={consentForm}
+                    onChange={setConsentForm}
+                    icon={<FileText className="w-4 h-4" />}
+                    color="violet"
+                  />
+                )}
 
                 {/* Commitment Form - Only for Students */}
-                {formData.role === 'CONTESTANT' && (
+                {formData.role === 'STUDENT' && (
                   <FileUploadField
                     id="commitment_form"
                     label="Signed Commitment Form (Students only)"
@@ -1301,7 +1403,7 @@ function AddMemberDialog({
                   />
                 </div>
                 <Label htmlFor="regulations_accepted" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
-                  I have read and agree to the <span className="font-semibold text-[#2f3090]">IChO 2026 regulations and rules</span>.
+                  I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>.
                   I understand and accept all terms and conditions. <span className="text-red-500">*</span>
                 </Label>
               </div>
@@ -1483,25 +1585,26 @@ function EditMemberDialog({
   onDelete,
   isSaving,
   roleCounts,
+  roleLimits,
 }: {
   participant: Participant
   onEdit: (id: string, data: Partial<ParticipantCreateRequest>) => void
   onDelete: (id: string) => void
   isSaving: boolean
-  roleCounts: { headMentors: number; teamLeaders: number; contestants: number; observers: number; guests: number; remoteTranslators: number }
+  roleCounts: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
+  roleLimits: { headMentors: number; mentors: number; students: number; observers: number; guests: number; remoteTranslators: number }
 }) {
   // Check if roles have reached their limits (excluding current participant's role)
   const isRoleDisabled = (role: ParticipantRole) => {
     // If the participant already has this role, it's not disabled
     if (participant.role === role) return false
-    const limit = PARTICIPANT_LIMITS[role]
-    if (limit === null || limit === undefined) return false // Unlimited or unknown role
     switch (role) {
-      case 'HEAD_MENTOR': return roleCounts.headMentors >= limit
-      case 'TEAM_LEADER': return roleCounts.teamLeaders >= limit
-      case 'CONTESTANT': return roleCounts.contestants >= limit
-      case 'OBSERVER': return roleCounts.observers >= limit
-      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= limit
+      case 'HEAD_MENTOR': return roleCounts.headMentors >= roleLimits.headMentors
+      case 'MENTOR': return roleCounts.mentors >= roleLimits.mentors
+      case 'STUDENT': return roleCounts.students >= roleLimits.students
+      case 'OBSERVER': return roleCounts.observers >= roleLimits.observers
+      case 'GUEST': return roleCounts.guests >= roleLimits.guests
+      case 'REMOTE_TRANSLATOR': return roleCounts.remoteTranslators >= roleLimits.remoteTranslators
       default: return false
     }
   }
@@ -1519,6 +1622,7 @@ function EditMemberDialog({
     other_dietary_requirements: participant.other_dietary_requirements || "",
     passport_number: participant.passport_number,
     medical_requirements: participant.medical_requirements || "",
+    color_vision_deficiency: (participant.color_vision_deficiency || "") as ColorVisionDeficiency | "",
     email: participant.email || "",
     regulations_accepted: participant.regulations_accepted,
     prefers_single_room: participant.prefers_single_room || false,
@@ -1536,21 +1640,29 @@ function EditMemberDialog({
 
     // Validate role limits if role is being changed
     if (formData.role !== participant.role && isRoleDisabled(formData.role)) {
-      const limit = PARTICIPANT_LIMITS[formData.role]
-      toast.error(`Maximum ${limit} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
+      const roleToLimit: Record<string, number> = {
+        HEAD_MENTOR: roleLimits.headMentors,
+        MENTOR: roleLimits.mentors,
+        STUDENT: roleLimits.students,
+        OBSERVER: roleLimits.observers,
+        GUEST: roleLimits.guests,
+        REMOTE_TRANSLATOR: roleLimits.remoteTranslators,
+      }
+      toast.error(`Maximum ${roleToLimit[formData.role]} ${formData.role.toLowerCase().replace('_', ' ')}s allowed per delegation`)
       return
     }
 
     onEdit(participant.id, {
       ...formData,
       other_dietary_requirements: formData.dietary_requirements === 'OTHER' ? formData.other_dietary_requirements : undefined,
-      prefers_single_room: (formData.role === 'HEAD_MENTOR' || formData.role === 'TEAM_LEADER') ? formData.prefers_single_room : undefined,
+      color_vision_deficiency: formData.role === 'STUDENT' && formData.color_vision_deficiency ? formData.color_vision_deficiency as ColorVisionDeficiency : undefined,
+      prefers_single_room: (formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') ? formData.prefers_single_room : undefined,
       passport_scan: passportScan || undefined,
       profile_photo: profilePhoto || undefined,
       consent_form_signed: consentForm || undefined,
       commitment_form_signed: commitmentForm || undefined,
       translation_language: formData.role === 'REMOTE_TRANSLATOR' ? formData.translation_language : undefined,
-      exam_language: formData.role === 'CONTESTANT' ? formData.exam_language : undefined,
+      exam_language: formData.role === 'STUDENT' ? formData.exam_language : undefined,
     })
     setOpen(false)
   }
@@ -1611,25 +1723,28 @@ function EditMemberDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <div className="space-y-2">
-                <Label className="text-gray-600">Paternal Name</Label>
-                <Input
-                  value={formData.paternal_name}
-                  onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
-                  className="border-gray-200 focus:border-[#2f3090]"
-                />
+            {/* Paternal Name and Badge - hidden for Remote Translators */}
+            {formData.role !== 'REMOTE_TRANSLATOR' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Paternal Name</Label>
+                  <Input
+                    value={formData.paternal_name}
+                    onChange={(e) => setFormData({ ...formData, paternal_name: e.target.value })}
+                    className="border-gray-200 focus:border-[#2f3090]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Name for Badge</Label>
+                  <Input
+                    placeholder="Display name on badge"
+                    value={formData.badge_name}
+                    onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
+                    className="border-gray-200 focus:border-[#2f3090]"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-gray-600">Name for Badge</Label>
-                <Input
-                  placeholder="Display name on badge"
-                  value={formData.badge_name}
-                  onChange={(e) => setFormData({ ...formData, badge_name: e.target.value })}
-                  className="border-gray-200 focus:border-[#2f3090]"
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Contact & Identity */}
@@ -1685,20 +1800,34 @@ function EditMemberDialog({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HEAD_MENTOR" disabled={isRoleDisabled('HEAD_MENTOR')}>
-                      Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${PARTICIPANT_LIMITS.HEAD_MENTOR}/${PARTICIPANT_LIMITS.HEAD_MENTOR} max)`}
+                      <span className={isRoleDisabled('HEAD_MENTOR') ? 'text-gray-400' : ''}>
+                        Head Mentor {isRoleDisabled('HEAD_MENTOR') && `(${roleCounts.headMentors}/${roleLimits.headMentors} max)`}
+                      </span>
                     </SelectItem>
-                    <SelectItem value="TEAM_LEADER" disabled={isRoleDisabled('TEAM_LEADER')}>
-                      Mentor {isRoleDisabled('TEAM_LEADER') && `(${PARTICIPANT_LIMITS.TEAM_LEADER}/${PARTICIPANT_LIMITS.TEAM_LEADER} max)`}
+                    <SelectItem value="MENTOR" disabled={isRoleDisabled('MENTOR')}>
+                      <span className={isRoleDisabled('MENTOR') ? 'text-gray-400' : ''}>
+                        Mentor {isRoleDisabled('MENTOR') && `(${roleCounts.mentors}/${roleLimits.mentors} max)`}
+                      </span>
                     </SelectItem>
-                    <SelectItem value="CONTESTANT" disabled={isRoleDisabled('CONTESTANT')}>
-                      Student {isRoleDisabled('CONTESTANT') && `(${PARTICIPANT_LIMITS.CONTESTANT}/${PARTICIPANT_LIMITS.CONTESTANT} max)`}
+                    <SelectItem value="STUDENT" disabled={isRoleDisabled('STUDENT')}>
+                      <span className={isRoleDisabled('STUDENT') ? 'text-gray-400' : ''}>
+                        Student {isRoleDisabled('STUDENT') && `(${roleCounts.students}/${roleLimits.students} max)`}
+                      </span>
                     </SelectItem>
                     <SelectItem value="OBSERVER" disabled={isRoleDisabled('OBSERVER')}>
-                      Observer {isRoleDisabled('OBSERVER') && `(${PARTICIPANT_LIMITS.OBSERVER}/${PARTICIPANT_LIMITS.OBSERVER} max)`}
+                      <span className={isRoleDisabled('OBSERVER') ? 'text-gray-400' : ''}>
+                        Observer {isRoleDisabled('OBSERVER') && `(${roleCounts.observers}/${roleLimits.observers} max)`}
+                      </span>
                     </SelectItem>
-                    <SelectItem value="GUEST">Guest</SelectItem>
+                    <SelectItem value="GUEST" disabled={isRoleDisabled('GUEST')}>
+                      <span className={isRoleDisabled('GUEST') ? 'text-gray-400' : ''}>
+                        Guest {isRoleDisabled('GUEST') && `(${roleCounts.guests}/${roleLimits.guests} max)`}
+                      </span>
+                    </SelectItem>
                     <SelectItem value="REMOTE_TRANSLATOR" disabled={isRoleDisabled('REMOTE_TRANSLATOR')}>
-                      Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR}/${PARTICIPANT_LIMITS.REMOTE_TRANSLATOR} max)`}
+                      <span className={isRoleDisabled('REMOTE_TRANSLATOR') ? 'text-gray-400' : ''}>
+                        Remote Translator {isRoleDisabled('REMOTE_TRANSLATOR') && `(${roleCounts.remoteTranslators}/${roleLimits.remoteTranslators} max)`}
+                      </span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -1722,7 +1851,7 @@ function EditMemberDialog({
             </div>
 
             {/* Exam Language (for Students) */}
-            {formData.role === 'CONTESTANT' && (
+            {formData.role === 'STUDENT' && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <Label className="text-gray-700 flex items-center gap-2 mb-2">
                   <FileText className="w-4 h-4 text-green-600" />
@@ -1770,76 +1899,108 @@ function EditMemberDialog({
             )}
           </div>
 
-          {/* Preferences */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
-            <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <Shirt className="w-4 h-4 text-amber-600" />
-              Preferences
-            </h3>
+          {/* Preferences - not for Remote Translators */}
+          {formData.role !== 'REMOTE_TRANSLATOR' && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <Shirt className="w-4 h-4 text-amber-600" />
+                Preferences
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-gray-600">T-shirt Size *</Label>
-                <Select
-                  value={formData.tshirt_size}
-                  onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
-                      <SelectItem key={size} value={size}>{size}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-600">T-shirt Size *</Label>
+                  <Select
+                    value={formData.tshirt_size}
+                    onValueChange={(value) => setFormData({ ...formData, tshirt_size: value as TshirtSize })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map(size => (
+                        <SelectItem key={size} value={size}>{size}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-600">Dietary Requirements *</Label>
+                  <Select
+                    value={formData.dietary_requirements}
+                    onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
+                  >
+                    <SelectTrigger className="border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="NORMAL">Normal</SelectItem>
+                      <SelectItem value="HALAL">Halal</SelectItem>
+                      <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
+                      <SelectItem value="VEGAN">Vegan</SelectItem>
+                      <SelectItem value="KOSHER">Kosher</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-gray-600">Dietary Requirements *</Label>
-                <Select
-                  value={formData.dietary_requirements}
-                  onValueChange={(value) => setFormData({ ...formData, dietary_requirements: value as DietaryRequirement })}
-                >
-                  <SelectTrigger className="border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NORMAL">Normal</SelectItem>
-                    <SelectItem value="HALAL">Halal</SelectItem>
-                    <SelectItem value="VEGETARIAN">Vegetarian</SelectItem>
-                    <SelectItem value="VEGAN">Vegan</SelectItem>
-                    <SelectItem value="KOSHER">Kosher</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {formData.dietary_requirements === 'OTHER' && (
+              {formData.dietary_requirements === 'OTHER' && (
+                <div className="space-y-2 mt-4">
+                  <Label className="text-gray-600">Please specify *</Label>
+                  <Input
+                    required
+                    value={formData.other_dietary_requirements}
+                    onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
+                    className="border-amber-200"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2 mt-4">
-                <Label className="text-gray-600">Please specify *</Label>
+                <Label className="text-gray-600">Medical Requirements</Label>
                 <Input
-                  required
-                  value={formData.other_dietary_requirements}
-                  onChange={(e) => setFormData({ ...formData, other_dietary_requirements: e.target.value })}
-                  className="border-amber-200"
+                  placeholder="Any allergies, medical conditions, or special requirements"
+                  value={formData.medical_requirements}
+                  onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
+                  className="border-gray-200"
                 />
               </div>
-            )}
-
-            <div className="space-y-2 mt-4">
-              <Label className="text-gray-600">Medical Requirements</Label>
-              <Input
-                placeholder="Any allergies, medical conditions, or special requirements"
-                value={formData.medical_requirements}
-                onChange={(e) => setFormData({ ...formData, medical_requirements: e.target.value })}
-                className="border-gray-200"
-              />
             </div>
-          </div>
+          )}
 
-          {/* Room Preference (Head Mentors and Mentors only) */}
-          {(formData.role === 'HEAD_MENTOR' || formData.role === 'TEAM_LEADER') && (
+          {/* Color Vision Information (students only) */}
+          {formData.role === 'STUDENT' && (
+            <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100">
+              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <Eye className="w-4 h-4 text-cyan-600" />
+                Color Vision Information
+              </h3>
+              <div className="space-y-2">
+                <Label className="text-gray-600">
+                  Do you have color blindness or color vision deficiency (CVD)? <span className="text-gray-400 text-xs">(optional)</span>
+                </Label>
+                <Select
+                  value={formData.color_vision_deficiency}
+                  onValueChange={(value) => setFormData({ ...formData, color_vision_deficiency: value as ColorVisionDeficiency })}
+                >
+                  <SelectTrigger className="border-gray-200 focus:border-cyan-500 focus:ring-cyan-500/20">
+                    <SelectValue placeholder="Select if applicable" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None (no color blindness)</SelectItem>
+                    <SelectItem value="RED_GREEN">Red-Green (Protan/Deutan)</SelectItem>
+                    <SelectItem value="BLUE_YELLOW">Blue-Yellow (Tritan)</SelectItem>
+                    <SelectItem value="COMPLETE">Complete color blindness (Monochromacy)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">This helps us prepare accessible exam materials if needed.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Room Preference (not for Students or Remote Translators) */}
+          {(formData.role === 'HEAD_MENTOR' || formData.role === 'MENTOR' || formData.role === 'OBSERVER' || formData.role === 'GUEST') && (
             <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100">
               <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <UsersRound className="w-4 h-4 text-indigo-600" />
@@ -1917,15 +2078,18 @@ function EditMemberDialog({
                 onChange={setProfilePhoto}
                 accept="image/*"
               />
-              <FileUploadFieldEdit
-                label={`Consent Form${formData.role === 'CONTESTANT' ? ' (Student)' : formData.role === 'TEAM_LEADER' ? ' (Mentor)' : ''}`}
-                hasExisting={!!participant.consent_form_signed}
-                file={consentForm}
-                onChange={setConsentForm}
-                accept="image/*,.pdf"
-              />
+              {/* Consent Form - not for Remote Translators */}
+              {formData.role !== 'REMOTE_TRANSLATOR' && (
+                <FileUploadFieldEdit
+                  label={`Consent Form${formData.role === 'STUDENT' ? ' (Student)' : formData.role === 'MENTOR' ? ' (Mentor)' : ''}`}
+                  hasExisting={!!participant.consent_form_signed}
+                  file={consentForm}
+                  onChange={setConsentForm}
+                  accept="image/*,.pdf"
+                />
+              )}
               {/* Commitment Form - Only for Students */}
-              {formData.role === 'CONTESTANT' && (
+              {formData.role === 'STUDENT' && (
                 <FileUploadFieldEdit
                   label="Commitment Form (Students only)"
                   hasExisting={!!participant.commitment_form_signed}
@@ -1948,7 +2112,7 @@ function EditMemberDialog({
                 className="w-5 h-5 mt-0.5 rounded border-sky-300 text-[#2f3090] focus:ring-[#2f3090]/20"
               />
               <Label htmlFor={`regulations_accepted_${participant.id}`} className="text-sm text-gray-700 cursor-pointer">
-                I have read and agree to the IChO 2026 regulations and rules
+                I have read and agree to the <a href="https://www.icho2026.uz/about/regulations" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2f3090] hover:underline">IChO 2026 regulations and rules</a>
               </Label>
             </div>
           </div>

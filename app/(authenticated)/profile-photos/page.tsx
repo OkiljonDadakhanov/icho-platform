@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,9 +35,9 @@ export default function ProfilePhotosPage() {
       const data = await participantsService.getAllParticipants()
       setParticipants(data)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch participants:", err)
-      setError(err?.message || "Failed to load participants")
+      setError(getErrorMessage(err, "Failed to load participants"))
     } finally {
       setIsLoading(false)
     }
@@ -47,9 +49,9 @@ export default function ProfilePhotosPage() {
       await participantsService.uploadProfilePhoto(participantId, file)
       await fetchParticipants()
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to upload photo:", err)
-      setError(err?.message || "Failed to upload photo")
+      setError(getErrorMessage(err, "Failed to upload photo"))
     } finally {
       setUploadingFor(null)
     }

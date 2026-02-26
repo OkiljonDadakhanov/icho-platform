@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -14,6 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ArrowLeft,
   Key,
   Users,
@@ -25,10 +33,30 @@ import {
   Mail,
   Calendar,
   FileText,
+  Shirt,
+  UtensilsCrossed,
+  FileImage,
+  FileCheck,
+  ExternalLink,
+  AlertTriangle,
+  User as UserIcon,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminCountry, type AdminParticipant } from "@/lib/services/admin";
+import { AuthenticatedAvatar } from "@/components/ui/authenticated-avatar";
+import { apiDownloadAndOpen } from "@/lib/api";
+import { format, parseISO } from "date-fns";
+import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
+
+const roleColors: Record<string, string> = {
+  HEAD_MENTOR: "bg-yellow-600 text-white",
+  MENTOR: "bg-[#2f3090] text-white",
+  STUDENT: "bg-[#00795d] text-white",
+  OBSERVER: "bg-purple-500 text-white",
+  GUEST: "bg-orange-500 text-white",
+  REMOTE_TRANSLATOR: "bg-cyan-600 text-white",
+};
 
 export default function CountryDetailsPage() {
   const params = useParams();
@@ -39,6 +67,8 @@ export default function CountryDetailsPage() {
   const [participants, setParticipants] = useState<AdminParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<AdminParticipant | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,9 +81,9 @@ export default function CountryDetailsPage() {
         setCountry(countryData);
         setParticipants(participantsData);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch country details:", err);
-        setError(err?.message || "Failed to load country details");
+        setError(getErrorMessage(err, "Failed to load country details"));
       } finally {
         setIsLoading(false);
       }
@@ -97,19 +127,16 @@ export default function CountryDetailsPage() {
   };
 
   const getRoleBadge = (role: string) => {
-    const colors: Record<string, string> = {
-      TEAM_LEADER: "bg-purple-100 text-purple-700",
-      CONTESTANT: "bg-blue-100 text-blue-700",
-      OBSERVER: "bg-amber-100 text-amber-700",
-      GUEST: "bg-gray-100 text-gray-700",
-      MENTOR: "bg-emerald-100 text-emerald-700",
-      HEAD_MENTOR: "bg-indigo-100 text-indigo-700",
-    };
     return (
-      <Badge className={`${colors[role] || "bg-gray-100 text-gray-700"} border-0`}>
+      <Badge className={`${roleColors[role] || "bg-gray-500 text-white"} border-0`}>
         {role.replace("_", " ")}
       </Badge>
     );
+  };
+
+  const viewDetails = (participant: AdminParticipant) => {
+    setSelectedParticipant(participant);
+    setShowDetailDialog(true);
   };
 
   if (isLoading) {
@@ -251,20 +278,28 @@ export default function CountryDetailsPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Team Leaders</p>
-                  <p className="font-medium">{preReg.num_team_leaders}</p>
+                  <p className="text-gray-500">{preReg.num_head_mentors === 1 ? 'Head Mentor' : 'Head Mentors'}</p>
+                  <p className="font-medium">{preReg.num_head_mentors}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Contestants</p>
-                  <p className="font-medium">{preReg.num_contestants}</p>
+                  <p className="text-gray-500">{preReg.num_mentors === 1 ? 'Mentor' : 'Mentors'}</p>
+                  <p className="font-medium">{preReg.num_mentors}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Observers</p>
+                  <p className="text-gray-500">{preReg.num_students === 1 ? 'Student' : 'Students'}</p>
+                  <p className="font-medium">{preReg.num_students}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">{preReg.num_observers === 1 ? 'Observer' : 'Observers'}</p>
                   <p className="font-medium">{preReg.num_observers}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Guests</p>
+                  <p className="text-gray-500">{preReg.num_guests === 1 ? 'Guest' : 'Guests'}</p>
                   <p className="font-medium">{preReg.num_guests}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">{preReg.num_remote_translators === 1 ? 'Translator' : 'Translators'}</p>
+                  <p className="font-medium">{preReg.num_remote_translators}</p>
                 </div>
               </div>
               <div className="pt-2 border-t">
@@ -308,7 +343,11 @@ export default function CountryDetailsPage() {
               </TableHeader>
               <TableBody>
                 {participants.map((participant) => (
-                  <TableRow key={participant.id}>
+                  <TableRow
+                    key={participant.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => viewDetails(participant)}
+                  >
                     <TableCell>
                       <div>
                         <p className="font-medium">{participant.full_name}</p>
@@ -345,6 +384,205 @@ export default function CountryDetailsPage() {
         )}
       </Card>
 
+      {/* Participant Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Participant Details</DialogTitle>
+          </DialogHeader>
+
+          {selectedParticipant && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <AuthenticatedAvatar
+                  participantId={selectedParticipant.id}
+                  hasPhoto={!!selectedParticipant.profile_photo}
+                  initials={selectedParticipant.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                  className="w-16 h-16"
+                  fallbackClassName="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-xl"
+                />
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">{selectedParticipant.full_name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge className={roleColors[selectedParticipant.role]}>
+                      {mapRoleToFrontend(selectedParticipant.role)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <Mail className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="text-sm font-medium">{selectedParticipant.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Date of Birth</p>
+                    <p className="text-sm font-medium">
+                      {selectedParticipant.date_of_birth
+                        ? format(parseISO(selectedParticipant.date_of_birth), "MMM d, yyyy")
+                        : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <FileText className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Passport</p>
+                    <p className="text-sm font-medium">{selectedParticipant.passport_number}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <UserIcon className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Gender</p>
+                    <p className="text-sm font-medium">{mapGenderToFrontend(selectedParticipant.gender)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <Shirt className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">T-Shirt Size</p>
+                    <p className="text-sm font-medium">{selectedParticipant.tshirt_size}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <UtensilsCrossed className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Dietary</p>
+                    <p className="text-sm font-medium capitalize">
+                      {selectedParticipant.dietary_requirements?.toLowerCase() || "N/A"}
+                    </p>
+                    {selectedParticipant.dietary_requirements === "OTHER" && selectedParticipant.other_dietary_requirements && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        {selectedParticipant.other_dietary_requirements}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {selectedParticipant.medical_requirements && (
+                  <div className="col-span-2 flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-amber-700">Medical Requirements</p>
+                      <p className="text-sm text-amber-900">
+                        {selectedParticipant.medical_requirements}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Documents */}
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500 mb-3">Documents</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {selectedParticipant.passport_scan ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/passport/download/`)}
+                    >
+                      <FileImage className="w-4 h-4 text-blue-500" />
+                      Passport Scan
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <FileImage className="w-4 h-4" />
+                      Passport Scan - Not uploaded
+                    </div>
+                  )}
+
+                  {selectedParticipant.consent_form_signed ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/consent-form/download/`)}
+                    >
+                      <FileCheck className="w-4 h-4 text-green-500" />
+                      Consent Form
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <FileCheck className="w-4 h-4" />
+                      Consent Form - Not uploaded
+                    </div>
+                  )}
+
+                  {selectedParticipant.commitment_form_signed ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/commitment-form/download/`)}
+                    >
+                      <FileCheck className="w-4 h-4 text-purple-500" />
+                      Commitment Form
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <FileCheck className="w-4 h-4" />
+                      Commitment Form - Not uploaded
+                    </div>
+                  )}
+
+                  {selectedParticipant.profile_photo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/photo/download/`)}
+                    >
+                      <UserIcon className="w-4 h-4 text-orange-500" />
+                      Profile Photo
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Registration Info */}
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500 mb-2">Registration</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Registered</span>
+                  <span>
+                    {selectedParticipant.created_at
+                      ? format(parseISO(selectedParticipant.created_at), "MMM d, yyyy")
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-1">
+                  <span className="text-gray-600">Last Updated</span>
+                  <span>
+                    {selectedParticipant.updated_at
+                      ? format(parseISO(selectedParticipant.updated_at), "MMM d, yyyy")
+                      : "N/A"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

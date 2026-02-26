@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +43,7 @@ import {
   GraduationCap,
   Eye as EyeIcon,
   User as UserIcon,
+  Loader2,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -50,8 +53,8 @@ import { format, parseISO } from "date-fns";
 import { mapRoleToFrontend, type ParticipantRole } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
-  TEAM_LEADER: "bg-[#2f3090] text-white",
-  CONTESTANT: "bg-[#00795d] text-white",
+  MENTOR: "bg-[#2f3090] text-white",
+  STUDENT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
 };
@@ -66,10 +69,12 @@ export default function TravelPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState("all");
+  const [roomTypeFilter, setRoomTypeFilter] = useState("all");
   const [selectedTravel, setSelectedTravel] = useState<AdminTravelInfo | null>(null);
   const [selectedAccommodation, setSelectedAccommodation] = useState<AdminAccommodation | null>(null);
   const [showTravelDialog, setShowTravelDialog] = useState(false);
   const [showAccommodationDialog, setShowAccommodationDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get unique countries from travel info
   const countries = Array.from(
@@ -87,9 +92,9 @@ export default function TravelPage() {
         setTravelInfo(travelData);
         setAccommodation(accommodationData);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch travel data:", err);
-        setError(err?.message || "Failed to load travel data");
+        setError(getErrorMessage(err, "Failed to load travel data"));
       } finally {
         setIsLoading(false);
       }
@@ -128,6 +133,10 @@ export default function TravelPage() {
       filtered = filtered.filter((a) => a.country === countryFilter);
     }
 
+    if (roomTypeFilter !== "all") {
+      filtered = filtered.filter((a) => a.room_type === roomTypeFilter);
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -138,20 +147,24 @@ export default function TravelPage() {
     }
 
     setFilteredAccommodation(filtered);
-  }, [countryFilter, searchQuery, accommodation]);
+  }, [countryFilter, roomTypeFilter, searchQuery, accommodation]);
 
   const handleExport = async () => {
     try {
+      setIsExporting(true);
       const blob = await adminService.exportTravelData();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "travel_export.xlsx";
+      a.download = "icho_travel.xlsx";
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Travel data exported successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("Failed to export travel data:", err);
       toast.error("Failed to export travel data");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -170,6 +183,7 @@ export default function TravelPage() {
   const withFlights = travelInfo.filter((t) => t.flight_number).length;
   const totalAccommodation = accommodation.length;
   const singleRooms = accommodation.filter((a) => a.room_type === "SINGLE").length;
+  const sharedRooms = accommodation.filter((a) => a.room_type === "SHARED").length;
 
   if (isLoading) {
     return <Loading message="Loading travel data..." />;
@@ -187,14 +201,22 @@ export default function TravelPage() {
           <h1 className="text-3xl font-bold text-gray-900">Travel & Accommodation</h1>
           <p className="text-gray-500 mt-1">Manage travel info and accommodation preferences</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d]" onClick={handleExport}>
-          <Download className="w-4 h-4" />
-          Export to Excel
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Travel"}
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -224,7 +246,18 @@ export default function TravelPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{totalAccommodation}</p>
-              <p className="text-sm text-gray-500">Accommodation</p>
+              <p className="text-sm text-gray-500">Total Participants</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Users className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{sharedRooms}</p>
+              <p className="text-sm text-gray-500">Shared Rooms</p>
             </div>
           </div>
         </Card>
@@ -279,6 +312,18 @@ export default function TravelPage() {
                 ))}
               </SelectContent>
             </Select>
+            {activeTab === "accommodation" && (
+              <Select value={roomTypeFilter} onValueChange={setRoomTypeFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Filter by room type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Room Types</SelectItem>
+                  <SelectItem value="SHARED">Shared Room</SelectItem>
+                  <SelectItem value="SINGLE">Single Room</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <TabsContent value="travel" className="mt-0">
@@ -304,7 +349,7 @@ export default function TravelPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <img
-                            src={`https://flagcdn.com/w20/${travel.country_flag || travel.country_iso?.toLowerCase()}.png`}
+                            src={`https://flagcdn.com/w20/${travel.country_flag || travel.country_iso?.toLowerCase().slice(0, 2)}.png`}
                             alt={travel.country_name}
                             className="w-5 h-4 object-cover rounded"
                             onError={(e) => {
@@ -390,7 +435,7 @@ export default function TravelPage() {
                     <TableHead className="font-semibold">Country</TableHead>
                     <TableHead className="font-semibold">Role</TableHead>
                     <TableHead className="font-semibold">Room Type</TableHead>
-                    <TableHead className="font-semibold">Roommate</TableHead>
+                    <TableHead className="font-semibold">Invoice Status</TableHead>
                     <TableHead className="font-semibold">Special</TableHead>
                     <TableHead className="font-semibold text-right">Actions</TableHead>
                   </TableRow>
@@ -404,7 +449,7 @@ export default function TravelPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <img
-                            src={`https://flagcdn.com/w20/${accom.country_flag || accom.country_iso?.toLowerCase()}.png`}
+                            src={`https://flagcdn.com/w20/${accom.country_flag || accom.country_iso?.toLowerCase().slice(0, 2)}.png`}
                             alt={accom.country_name}
                             className="w-5 h-4 object-cover rounded"
                             onError={(e) => {
@@ -425,8 +470,19 @@ export default function TravelPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {accom.preferred_roommate ? (
-                          <span className="text-sm">{accom.preferred_roommate}</span>
+                        {accom.room_type === "SINGLE" && accom.single_room_invoice_status ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              accom.single_room_invoice_status === "APPROVED"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : accom.single_room_invoice_status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            }
+                          >
+                            {accom.single_room_invoice_status}
+                          </Badge>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
@@ -506,7 +562,11 @@ export default function TravelPage() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
+<<<<<<< HEAD
                         src={`https://flagcdn.com/w20/${selectedTravel.country_flag || selectedTravel.country_iso?.toLowerCase()}.png`}
+=======
+                        src={`https://flagcdn.com/w20/${selectedTravel.country_flag || selectedTravel.country_iso?.toLowerCase().slice(0, 2)}.png`}
+>>>>>>> main
                         alt=""
                         className="w-5 h-4 object-cover rounded"
                         onError={(e) => {
@@ -608,7 +668,11 @@ export default function TravelPage() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
+<<<<<<< HEAD
                         src={`https://flagcdn.com/w20/${selectedAccommodation.country_flag || selectedAccommodation.country_iso?.toLowerCase()}.png`}
+=======
+                        src={`https://flagcdn.com/w20/${selectedAccommodation.country_flag || selectedAccommodation.country_iso?.toLowerCase().slice(0, 2)}.png`}
+>>>>>>> main
                         alt=""
                         className="w-5 h-4 object-cover rounded"
                         onError={(e) => {
@@ -620,6 +684,27 @@ export default function TravelPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Single Room Invoice Status */}
+              {selectedAccommodation.room_type === "SINGLE" && selectedAccommodation.single_room_invoice_status && (
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  selectedAccommodation.single_room_invoice_status === "APPROVED"
+                    ? "bg-green-50 border border-green-200"
+                    : selectedAccommodation.single_room_invoice_status === "REJECTED"
+                    ? "bg-red-50 border border-red-200"
+                    : "bg-yellow-50 border border-yellow-200"
+                }`}>
+                  <span className={`text-sm font-medium ${
+                    selectedAccommodation.single_room_invoice_status === "APPROVED"
+                      ? "text-green-700"
+                      : selectedAccommodation.single_room_invoice_status === "REJECTED"
+                      ? "text-red-700"
+                      : "text-yellow-700"
+                  }`}>
+                    Single room invoice status: {selectedAccommodation.single_room_invoice_status}
+                  </span>
+                </div>
+              )}
 
               {/* Details */}
               <div className="grid grid-cols-2 gap-4">

@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +55,7 @@ import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService } from "@/lib/services/admin";
 import { toast } from "sonner";
 import { format, parseISO, isAfter, isBefore, addHours } from "date-fns";
-import type { StageDeadline, WorkflowStage } from "@/lib/types";
+import type { StageDeadline, WorkflowStage, CountryProgressResponse } from "@/lib/types";
 
 // Stage icons mapping
 const stageIcons: Record<string, React.ElementType> = {
@@ -85,6 +87,7 @@ interface CountryStage {
   country_id: string;
   country_name: string;
   country_iso: string;
+  country_flag?: string;
   stage: WorkflowStage;
   status: "OPEN" | "COMPLETED" | "LOCKED";
   unlocked_until?: string;
@@ -121,29 +124,43 @@ export default function WorkflowPage() {
         // Transform progress data to CountryStage format
         // Backend returns: { id, name, iso_code, stages: { STAGE_NAME: { status, is_unlocked, ... } } }
         // Frontend needs: flat list of { id, country_id, country_name, country_iso, stage, status, ... }
+        // We show ALL 5 stages for each country, with LOCKED as default for missing stages
+        const allStages: WorkflowStage[] = ['PRE_REGISTRATION', 'PAYMENT', 'PARTICIPANTS', 'TRAVEL', 'INVITATIONS'];
         const stages: CountryStage[] = [];
-        for (const country of progressData as any[]) {
-          // If country has stages data, create entries for each stage
-          if (country.stages && Object.keys(country.stages).length > 0) {
-            for (const [stageName, stageData] of Object.entries(country.stages as Record<string, any>)) {
+        for (const country of progressData as CountryProgressResponse[]) {
+          for (const stageName of allStages) {
+            const stageData = country.stages?.[stageName];
+            if (stageData) {
               stages.push({
                 id: `${country.id}-${stageName}`,
                 country_id: country.id,
                 country_name: country.name,
-                country_iso: country.iso_code_2 || country.iso_code,
-                stage: stageName as WorkflowStage,
+                country_iso: country.iso_code,
+                country_flag: country.iso_code_2,
+                stage: stageName,
                 status: stageData.is_unlocked ? "OPEN" : stageData.status,
-                unlocked_until: stageData.unlocked_until,
-                unlock_reason: stageData.unlock_reason,
+                unlocked_until: stageData.unlocked_until ?? undefined,
+                unlock_reason: stageData.unlock_reason ?? undefined,
+              });
+            } else {
+              // Stage not yet created in DB - show as LOCKED by default
+              stages.push({
+                id: `${country.id}-${stageName}`,
+                country_id: country.id,
+                country_name: country.name,
+                country_iso: country.iso_code,
+                country_flag: country.iso_code_2,
+                stage: stageName,
+                status: "LOCKED",
               });
             }
           }
         }
         setCountryStages(stages);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch workflow data:", err);
-        setError(err?.message || "Failed to load workflow data");
+        setError(getErrorMessage(err, "Failed to load workflow data"));
       } finally {
         setIsLoading(false);
       }
@@ -162,7 +179,7 @@ export default function WorkflowPage() {
       );
       setEditingDeadline(null);
       toast.success(`${stageNames[deadline.stage]} deadline updated`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to update deadline");
     }
   };
@@ -194,7 +211,7 @@ export default function WorkflowPage() {
 
       toast.success(`${selectedCountryStage.stage} unlocked for ${selectedCountryStage.country_name}`);
       setShowUnlockDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to unlock stage");
     } finally {
       setIsSubmitting(false);
@@ -212,7 +229,7 @@ export default function WorkflowPage() {
         )
       );
       toast.success(`${stageNames[countryStage.stage]} locked for ${countryStage.country_name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to lock stage");
     }
   };
@@ -452,7 +469,7 @@ export default function WorkflowPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <img
-                          src={`https://flagcdn.com/w40/${cs.country_iso?.toLowerCase() || "un"}.png`}
+                          src={`https://flagcdn.com/w40/${cs.country_flag || cs.country_iso?.toLowerCase().slice(0, 2) || "un"}.png`}
                           alt={cs.country_name || "Country"}
                           className="w-8 h-6 object-cover rounded shadow-sm"
                           onError={(e) => {

@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AuthenticatedAvatar } from "@/components/ui/authenticated-avatar";
 import {
   Search,
   Download,
@@ -37,27 +38,33 @@ import {
   Eye as EyeIcon,
   User as UserIcon,
   Mail,
-  Phone,
   Calendar,
   FileText,
-  Globe,
   Shirt,
   UtensilsCrossed,
+  Loader2,
+  FileImage,
+  FileCheck,
+  ExternalLink,
+  AlertTriangle,
+  Bed,
+  BadgeCheck,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminParticipant } from "@/lib/services/admin";
+import { apiDownloadAndOpen } from "@/lib/api";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { mapRoleToFrontend, mapGenderToFrontend } from "@/lib/types";
 
 const roleColors: Record<string, string> = {
-  TEAM_LEADER: "bg-[#2f3090] text-white",
-  CONTESTANT: "bg-[#00795d] text-white",
+  HEAD_MENTOR: "bg-yellow-600 text-white",
+  MENTOR: "bg-[#2f3090] text-white",
+  STUDENT: "bg-[#00795d] text-white",
   OBSERVER: "bg-purple-500 text-white",
   GUEST: "bg-orange-500 text-white",
-  MENTOR: "bg-blue-500 text-white",
-  HEAD_MENTOR: "bg-indigo-500 text-white",
+  REMOTE_TRANSLATOR: "bg-cyan-600 text-white",
 };
 
 
@@ -71,6 +78,7 @@ export default function ParticipantsPage() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [selectedParticipant, setSelectedParticipant] = useState<AdminParticipant | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get unique countries for filter
   const countries = Array.from(
@@ -84,9 +92,9 @@ export default function ParticipantsPage() {
         const data = await adminService.getParticipants();
         setParticipants(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch participants:", err);
-        setError(err?.message || "Failed to load participants");
+        setError(getErrorMessage(err, "Failed to load participants"));
       } finally {
         setIsLoading(false);
       }
@@ -122,6 +130,7 @@ export default function ParticipantsPage() {
 
   const handleExport = async () => {
     try {
+      setIsExporting(true);
       const blob = await adminService.exportParticipants({
         country: countryFilter !== "all" ? countryFilter : undefined,
         role: roleFilter !== "all" ? roleFilter : undefined,
@@ -129,12 +138,15 @@ export default function ParticipantsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "participants.xlsx";
+      a.download = "icho_participants.xlsx";
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Participants exported successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("Failed to export participants:", err);
       toast.error("Failed to export participants");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -144,8 +156,8 @@ export default function ParticipantsPage() {
   };
 
   // Stats
-  const teamLeaders = participants.filter((p) => p.role === "TEAM_LEADER").length;
-  const contestants = participants.filter((p) => p.role === "CONTESTANT").length;
+  const mentors = participants.filter((p) => p.role === "MENTOR").length;
+  const students = participants.filter((p) => p.role === "STUDENT").length;
   const observers = participants.filter((p) => p.role === "OBSERVER").length;
   const guests = participants.filter((p) => p.role === "GUEST").length;
 
@@ -165,9 +177,17 @@ export default function ParticipantsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Participants</h1>
           <p className="text-gray-500 mt-1">All registered participants across countries</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d]" onClick={handleExport}>
-          <Download className="w-4 h-4" />
-          Export to Excel
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Participants"}
         </Button>
       </div>
 
@@ -190,8 +210,8 @@ export default function ParticipantsPage() {
               <UserCircle className="w-5 h-5 text-[#2f3090]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{teamLeaders}</p>
-              <p className="text-sm text-gray-500">Team Leaders</p>
+              <p className="text-2xl font-bold text-gray-900">{mentors}</p>
+              <p className="text-sm text-gray-500">Mentors</p>
             </div>
           </div>
         </Card>
@@ -201,8 +221,8 @@ export default function ParticipantsPage() {
               <GraduationCap className="w-5 h-5 text-[#00795d]" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{contestants}</p>
-              <p className="text-sm text-gray-500">Contestants</p>
+              <p className="text-2xl font-bold text-gray-900">{students}</p>
+              <p className="text-sm text-gray-500">Students</p>
             </div>
           </div>
         </Card>
@@ -248,8 +268,8 @@ export default function ParticipantsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="TEAM_LEADER">Team Leader</SelectItem>
-              <SelectItem value="CONTESTANT">Contestant</SelectItem>
+              <SelectItem value="MENTOR">Mentor</SelectItem>
+              <SelectItem value="STUDENT">Student</SelectItem>
               <SelectItem value="OBSERVER">Observer</SelectItem>
               <SelectItem value="GUEST">Guest</SelectItem>
             </SelectContent>
@@ -278,72 +298,47 @@ export default function ParticipantsPage() {
                 <TableHead className="font-semibold">Role</TableHead>
                 <TableHead className="font-semibold">Gender</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredParticipants.map((participant) => {
-                const initials = participant.full_name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2);
-
-                return (
-                  <TableRow key={participant.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-9 h-9">
-                          <AvatarImage src={participant.profile_photo} />
-                          <AvatarFallback className="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-sm">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-gray-900">{participant.full_name}</p>
-                          <p className="text-xs text-gray-500">{participant.passport_number}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={`https://flagcdn.com/w20/${participant.country_flag || participant.country_iso?.toLowerCase()}.png`}
-                          alt={participant.country_name}
-                          className="w-5 h-4 object-cover rounded"
-                          onError={(e) => {
-                            e.currentTarget.src = "https://flagcdn.com/w20/un.png";
-                          }}
-                        />
-                        <span className="text-sm">{participant.country_name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={roleColors[participant.role] || "bg-gray-500 text-white"}>
-                        {mapRoleToFrontend(participant.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {mapGenderToFrontend(participant.gender)}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-600">{participant.email}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => viewDetails(participant)}
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {filteredParticipants.map((participant) => (
+                <TableRow
+                  key={participant.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => viewDetails(participant)}
+                >
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-gray-900">{participant.full_name}</p>
+                      <p className="text-xs text-gray-500">{participant.passport_number}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={`https://flagcdn.com/w20/${participant.country_flag || participant.country_iso?.toLowerCase().slice(0, 2)}.png`}
+                        alt={participant.country_name}
+                        className="w-5 h-4 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://flagcdn.com/w20/un.png";
+                        }}
+                      />
+                      <span className="text-sm">{participant.country_name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={roleColors[participant.role] || "bg-gray-500 text-white"}>
+                      {mapRoleToFrontend(participant.role)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {mapGenderToFrontend(participant.gender)}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600">{participant.email}</span>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
@@ -375,12 +370,13 @@ export default function ParticipantsPage() {
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-center gap-4 pb-4 border-b">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={selectedParticipant.profile_photo} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-xl">
-                    {selectedParticipant.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <AuthenticatedAvatar
+                  participantId={selectedParticipant.id}
+                  hasPhoto={!!selectedParticipant.profile_photo}
+                  initials={selectedParticipant.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                  className="w-16 h-16"
+                  fallbackClassName="bg-gradient-to-br from-[#2f3090] to-[#00795d] text-white text-xl"
+                />
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">{selectedParticipant.full_name}</h3>
                   <div className="flex items-center gap-2 mt-1">
@@ -389,7 +385,7 @@ export default function ParticipantsPage() {
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <img
-                        src={`https://flagcdn.com/w20/${selectedParticipant.country_iso?.toLowerCase()}.png`}
+                        src={`https://flagcdn.com/w20/${selectedParticipant.country_flag || selectedParticipant.country_iso?.toLowerCase().slice(0, 2)}.png`}
                         alt={selectedParticipant.country_name}
                         className="w-5 h-4 object-cover rounded"
                       />
@@ -436,6 +432,22 @@ export default function ParticipantsPage() {
                 </div>
 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <UserIcon className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Paternal Name</p>
+                    <p className="text-sm font-medium">{selectedParticipant.paternal_name || <span className="text-gray-400 italic">Not provided</span>}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <BadgeCheck className="w-5 h-5 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-500">Name for Badge</p>
+                    <p className="text-sm font-medium">{selectedParticipant.badge_name || <span className="text-gray-400 italic">Same as full name</span>}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <Shirt className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-500">T-Shirt Size</p>
@@ -450,7 +462,178 @@ export default function ParticipantsPage() {
                     <p className="text-sm font-medium capitalize">
                       {selectedParticipant.dietary_requirements.toLowerCase()}
                     </p>
+                    {selectedParticipant.dietary_requirements === "OTHER" && selectedParticipant.other_dietary_requirements && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        {selectedParticipant.other_dietary_requirements}
+                      </p>
+                    )}
                   </div>
+                </div>
+
+                {selectedParticipant.medical_requirements && (
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200 col-span-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-amber-700">Medical Requirements</p>
+                      <p className="text-sm text-amber-900">
+                        {selectedParticipant.medical_requirements}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Accommodation Preference (non-students only) */}
+              {selectedParticipant.role !== "STUDENT" && (
+                <div className="pt-4 border-t">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bed className="w-4 h-4 text-indigo-600" />
+                    <p className="text-sm font-medium text-gray-700">Accommodation Preference</p>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-3">
+                    By default, participants may share a twin room with another participant from a different country.
+                  </p>
+
+                  {/* Invoice Status Banner */}
+                  {selectedParticipant.prefers_single_room && selectedParticipant.single_room_invoice_status && (
+                    <div className={`flex items-center gap-2 p-2 rounded-lg mb-3 ${
+                      selectedParticipant.single_room_invoice_status === "APPROVED"
+                        ? "bg-green-50 border border-green-200"
+                        : selectedParticipant.single_room_invoice_status === "REJECTED"
+                        ? "bg-red-50 border border-red-200"
+                        : "bg-yellow-50 border border-yellow-200"
+                    }`}>
+                      <span className={`text-sm font-medium ${
+                        selectedParticipant.single_room_invoice_status === "APPROVED"
+                          ? "text-green-700"
+                          : selectedParticipant.single_room_invoice_status === "REJECTED"
+                          ? "text-red-700"
+                          : "text-yellow-700"
+                      }`}>
+                        Single room invoice status: {selectedParticipant.single_room_invoice_status}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Options Display */}
+                  <div className="space-y-2">
+                    <div className={`p-3 rounded-lg border ${
+                      !selectedParticipant.prefers_single_room
+                        ? "bg-indigo-50 border-indigo-200"
+                        : "bg-gray-50 border-gray-200"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          !selectedParticipant.prefers_single_room
+                            ? "border-indigo-600"
+                            : "border-gray-300"
+                        }`}>
+                          {!selectedParticipant.prefers_single_room && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Share twin room (included)</p>
+                          <p className="text-xs text-gray-500">Share with another participant from a different country</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`p-3 rounded-lg border ${
+                      selectedParticipant.prefers_single_room
+                        ? "bg-indigo-50 border-indigo-200"
+                        : "bg-gray-50 border-gray-200"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          selectedParticipant.prefers_single_room
+                            ? "border-indigo-600"
+                            : "border-gray-300"
+                        }`}>
+                          {selectedParticipant.prefers_single_room && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Single room (additional fee)</p>
+                          <p className="text-xs text-gray-500">A separate invoice will be generated for admin approval</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Documents */}
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500 mb-3">Documents</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {selectedParticipant.passport_scan ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/passport/download/`)}
+                    >
+                      <FileImage className="w-4 h-4 text-blue-500" />
+                      Passport Scan
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <FileImage className="w-4 h-4" />
+                      Passport Scan - Not uploaded
+                    </div>
+                  )}
+
+                  {selectedParticipant.consent_form_signed ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/consent-form/download/`)}
+                    >
+                      <FileCheck className="w-4 h-4 text-green-500" />
+                      Consent Form
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <FileCheck className="w-4 h-4" />
+                      Consent Form - Not uploaded
+                    </div>
+                  )}
+
+                  {selectedParticipant.commitment_form_signed ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/commitment-form/download/`)}
+                    >
+                      <FileCheck className="w-4 h-4 text-purple-500" />
+                      Commitment Form
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
+                      <FileCheck className="w-4 h-4" />
+                      Commitment Form - Not uploaded
+                    </div>
+                  )}
+
+                  {selectedParticipant.profile_photo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="justify-start gap-2"
+                      onClick={() => apiDownloadAndOpen(`/v1/participants/${selectedParticipant.id}/photo/download/`)}
+                    >
+                      <UserIcon className="w-4 h-4 text-orange-500" />
+                      Profile Photo
+                      <ExternalLink className="w-3 h-3 ml-auto text-gray-400" />
+                    </Button>
+                  )}
                 </div>
               </div>
 

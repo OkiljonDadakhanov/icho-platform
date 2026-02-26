@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -38,6 +40,7 @@ import {
   Clock,
   Globe,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -54,6 +57,7 @@ export default function CountriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleViewDetails = (country: AdminCountry) => {
     router.push(`/admin/countries/${country.id}`);
@@ -67,9 +71,9 @@ export default function CountriesPage() {
         setCountries(data);
         setFilteredCountries(data);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch countries:", err);
-        setError(err?.message || "Failed to load countries");
+        setError(getErrorMessage(err, "Failed to load countries"));
       } finally {
         setIsLoading(false);
       }
@@ -111,18 +115,22 @@ export default function CountriesPage() {
     setFilteredCountries(filtered);
   }, [searchQuery, statusFilter, paymentFilter, countries]);
 
-  const handleExportAnalytics = async () => {
+  const handleExport = async () => {
     try {
-      const blob = await adminService.exportAnalytics();
+      setIsExporting(true);
+      const blob = await adminService.exportCountries();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "icho_analytics.xlsx";
+      a.download = "icho_countries.xlsx";
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Analytics exported successfully");
-    } catch (err: any) {
-      toast.error("Failed to export analytics");
+      toast.success("Countries exported successfully");
+    } catch (err: unknown) {
+      console.error("Failed to export countries:", err);
+      toast.error("Failed to export countries");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -178,10 +186,15 @@ export default function CountriesPage() {
         </div>
         <Button
           className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
-          onClick={handleExportAnalytics}
+          onClick={handleExport}
+          disabled={isExporting}
         >
-          <Download className="w-4 h-4" />
-          Export Analytics
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Countries"}
         </Button>
       </div>
 

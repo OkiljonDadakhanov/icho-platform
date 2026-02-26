@@ -11,6 +11,7 @@ import type {
   AuditLog,
   StageDeadline,
   CountryStageStatus,
+  CountryProgressResponse,
   PaginatedResponse,
   PreRegistration,
   User,
@@ -33,6 +34,7 @@ export interface AdminCountry extends Country {
 export interface AdminPayment extends Payment {
   country_name?: string;
   country_iso?: string;
+  country_flag?: string;
   invoice_number?: string;
   invoice_amount?: number;
   proof_submitted_at?: string;
@@ -41,6 +43,7 @@ export interface AdminPayment extends Payment {
 export interface AdminParticipant extends Participant {
   country_name?: string;
   country_iso?: string;
+  country_flag?: string;
 }
 
 export interface AdminTravelInfo {
@@ -51,6 +54,7 @@ export interface AdminTravelInfo {
   country: string;
   country_name: string;
   country_iso: string;
+  country_flag?: string;
   arrival_datetime: string | null;
   departure_datetime: string | null;
   flight_number: string;
@@ -68,6 +72,7 @@ export interface AdminAccommodation {
   country: string;
   country_name: string;
   country_iso: string;
+  country_flag?: string;
   room_type: string;
   preferred_roommate: string | null;
   accessibility_requirements: string;
@@ -77,6 +82,7 @@ export interface AdminAccommodation {
   additional_nights_after: number;
   notes: string;
   created_at: string;
+  single_room_invoice_status?: string;
 }
 
 export interface AdminStats {
@@ -143,6 +149,13 @@ export const adminService = {
     return apiDownload('/v1/admin/analytics/export.xlsx');
   },
 
+  /**
+   * Export countries to Excel
+   */
+  async exportCountries(): Promise<Blob> {
+    return apiDownload('/v1/admin/countries/export.xlsx');
+  },
+
   // ============= Payments Management =============
 
   /**
@@ -179,6 +192,14 @@ export const adminService = {
    */
   async downloadPaymentProof(paymentId: string): Promise<Blob> {
     return apiDownload(`/v1/admin/payments/${paymentId}/proof/download/`);
+  },
+
+  /**
+   * Export payments to Excel
+   */
+  async exportPayments(status?: string): Promise<Blob> {
+    const params = status && status !== 'all' ? `?status=${status}` : '';
+    return apiDownload(`/v1/admin/payments/export.xlsx${params}`);
   },
 
   // ============= Participants Management =============
@@ -229,8 +250,8 @@ export const adminService = {
   /**
    * Get all countries progress
    */
-  async getCountriesProgress(): Promise<CountryStageStatus[]> {
-    return api.get<CountryStageStatus[]>('/v1/admin/countries/progress/');
+  async getCountriesProgress(): Promise<CountryProgressResponse[]> {
+    return api.get<CountryProgressResponse[]>('/v1/admin/countries/progress/');
   },
 
   /**

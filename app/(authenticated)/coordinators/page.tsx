@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,30 +17,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Edit, Users, AlertCircle, CheckCircle2, Upload, FileText, Plus, Trash2 } from "lucide-react"
+import { Edit, Users, AlertCircle, Plus, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { preRegistrationService } from "@/lib/services/pre-registration"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
 import type { Coordinator, CoordinatorUpsertRequest } from "@/lib/types"
-
-const ALLOWED_PASSPORT_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"]
-const MAX_PASSPORT_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-
-function validatePassportFile(file: File): string | null {
-  const dotIndex = file.name.lastIndexOf(".")
-  if (dotIndex === -1) {
-    return "Invalid file type. Only PDF, JPG, and PNG files are allowed."
-  }
-  const ext = file.name.toLowerCase().slice(dotIndex)
-  if (!ALLOWED_PASSPORT_EXTENSIONS.includes(ext)) {
-    return `Invalid file type "${ext}". Only PDF, JPG, and PNG files are allowed.`
-  }
-  if (file.size > MAX_PASSPORT_FILE_SIZE) {
-    return "File size exceeds 10MB limit."
-  }
-  return null
-}
 
 function getTodayDateString(): string {
   return new Date().toISOString().split("T")[0]
@@ -67,9 +51,9 @@ export default function CoordinatorsPage() {
       const data = await preRegistrationService.getCoordinators()
       setCoordinators(data)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch coordinators:", err)
-      setError(err?.message || "Failed to load coordinator information")
+      setError(getErrorMessage(err, "Failed to load contact person information"))
     } finally {
       setIsLoading(false)
     }
@@ -83,9 +67,9 @@ export default function CoordinatorsPage() {
       setEditingCoordinatorId(null)
       setError(null)
       return null
-    } catch (err: any) {
-      console.error("Failed to update coordinator:", err)
-      const msg = err?.message || "Failed to update coordinator"
+    } catch (err: unknown) {
+      console.error("Failed to update contact person:", err)
+      const msg = getErrorMessage(err, "Failed to update contact person")
       setError(msg)
       return msg
     } finally {
@@ -93,17 +77,17 @@ export default function CoordinatorsPage() {
     }
   }
 
-  const handleAddCoordinator = async (data: CoordinatorUpsertRequest, passportScan?: File): Promise<string | null> => {
+  const handleAddCoordinator = async (data: CoordinatorUpsertRequest): Promise<string | null> => {
     try {
       setIsSaving(true)
-      await preRegistrationService.createCoordinator(data, passportScan)
+      await preRegistrationService.createCoordinator(data)
       await fetchCoordinators()
       setIsAddDialogOpen(false)
       setError(null)
       return null
-    } catch (err: any) {
-      console.error("Failed to add coordinator:", err)
-      const msg = err?.message || "Failed to add coordinator"
+    } catch (err: unknown) {
+      console.error("Failed to add contact person:", err)
+      const msg = getErrorMessage(err, "Failed to add contact person")
       return msg
     } finally {
       setIsSaving(false)
@@ -111,22 +95,22 @@ export default function CoordinatorsPage() {
   }
 
   const handleDeleteCoordinator = async (coordinatorId: string) => {
-    if (!confirm("Are you sure you want to delete this coordinator?")) return
+    if (!confirm("Are you sure you want to delete this contact person?")) return
     try {
       setIsDeleting(coordinatorId)
       await preRegistrationService.deleteCoordinator(coordinatorId)
       await fetchCoordinators()
       setError(null)
-    } catch (err: any) {
-      console.error("Failed to delete coordinator:", err)
-      setError(err?.message || "Failed to delete coordinator")
+    } catch (err: unknown) {
+      console.error("Failed to delete contact person:", err)
+      setError(getErrorMessage(err, "Failed to delete contact person"))
     } finally {
       setIsDeleting(null)
     }
   }
 
   if (isLoading) {
-    return <Loading message="Loading coordinator information..." />
+    return <Loading message="Loading contact person information..." />
   }
 
   if (error && coordinators.length === 0) {
@@ -138,9 +122,9 @@ export default function CoordinatorsPage() {
       <div className="bg-gradient-to-r from-[#2f3090] to-[#00795d] text-white p-8 rounded-lg">
         <div className="flex items-center gap-3 mb-2">
           <Users className="w-8 h-8" />
-          <h1 className="text-3xl font-bold">Coordinators for {countryName}</h1>
+          <h1 className="text-3xl font-bold">Country Contact Persons for {countryName}</h1>
         </div>
-        <p className="text-white/80">The coordinators below can view and edit team information.</p>
+        <p className="text-white/80">The contact persons below can view and edit team information.</p>
       </div>
 
       {error && (
@@ -152,7 +136,7 @@ export default function CoordinatorsPage() {
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Coordinators</h2>
+          <h2 className="text-xl font-semibold">Contact Persons</h2>
           {coordinators.length < MAX_COORDINATORS && (
             <AddCoordinatorDialog
               onAdd={handleAddCoordinator}
@@ -166,8 +150,8 @@ export default function CoordinatorsPage() {
         {coordinators.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No coordinator information registered yet.</p>
-            <p className="text-sm mt-2">Please complete the pre-registration to add coordinator details.</p>
+            <p>No contact person information registered yet.</p>
+            <p className="text-sm mt-2">Please complete the pre-registration to add contact person details.</p>
             <Button className="mt-4 bg-[#2f3090] hover:bg-[#4547a9]" asChild>
               <a href="/pre-registration">Go to Pre-Registration</a>
             </Button>
@@ -178,7 +162,6 @@ export default function CoordinatorsPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 font-medium">Person</th>
-                  <th className="text-left py-3 font-medium">Role</th>
                   <th className="text-left py-3 font-medium">E-mail</th>
                   <th className="text-left py-3 font-medium">Phone</th>
                   <th className="text-left py-3 font-medium">Action</th>
@@ -190,7 +173,6 @@ export default function CoordinatorsPage() {
                     <td className="py-4 font-medium">
                       {coordinator.full_name}
                     </td>
-                    <td className="py-4 text-muted-foreground">{coordinator.role}</td>
                     <td className="py-4">
                       <a href={`mailto:${coordinator.email}`} className="text-[#2f3090] hover:underline">
                         {coordinator.email}
@@ -212,7 +194,7 @@ export default function CoordinatorsPage() {
                           className="text-red-500 hover:bg-red-50 hover:text-red-600"
                           onClick={() => handleDeleteCoordinator(coordinator.id)}
                           disabled={isDeleting === coordinator.id || coordinator.is_primary}
-                          title={coordinator.is_primary ? "Cannot delete primary coordinator" : "Delete coordinator"}
+                          title={coordinator.is_primary ? "Cannot delete primary contact person" : "Delete contact person"}
                         >
                           {isDeleting === coordinator.id ? (
                             <span className="animate-spin">⏳</span>
@@ -248,21 +230,6 @@ export default function CoordinatorsPage() {
                     <p className="text-muted-foreground">Date of Birth</p>
                     <p className="font-medium">{new Date(coordinator.date_of_birth).toLocaleDateString()}</p>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Passport Number</p>
-                    <p className="font-medium font-mono">{coordinator.passport_number}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Passport Scan</p>
-                    {coordinator.passport_scan ? (
-                      <div className="flex items-center gap-2 text-[#00795d]">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Uploaded</span>
-                      </div>
-                    ) : (
-                      <span className="text-amber-600">Not uploaded</span>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
@@ -273,9 +240,9 @@ export default function CoordinatorsPage() {
       <Card className="p-6 bg-[#2f3090]/5 border-[#2f3090]/20">
         <h3 className="font-semibold mb-4">About Coordinators</h3>
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>The coordinator has full access to manage delegation information</li>
+          <li>The contact person has full access to manage delegation information</li>
           <li>They can add/edit participants, upload documents, and submit travel details</li>
-          <li>The coordinator receives login credentials for the registration portal</li>
+          <li>The contact person receives login credentials for the registration portal</li>
           <li>Coordinator information is submitted during pre-registration</li>
         </ul>
       </Card>
@@ -298,34 +265,17 @@ function EditCoordinatorDialog({
 }) {
   const [formData, setFormData] = useState({
     full_name: coordinator.full_name,
-    role: coordinator.role,
+    gender: coordinator.gender,
+    date_of_birth: coordinator.date_of_birth,
     email: coordinator.email,
     phone: coordinator.phone,
   })
-  const [passportScan, setPassportScan] = useState<File | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
-
-  const handleFileChange = (file: File | null) => {
-    setFileError(null)
-    if (file) {
-      const error = validatePassportFile(file)
-      if (error) {
-        setFileError(error)
-        setPassportScan(null)
-        return
-      }
-    }
-    setPassportScan(file)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setDialogError(null)
-    const error = await onEdit({
-      ...formData,
-      passport_scan: passportScan || undefined,
-    })
+    const error = await onEdit(formData)
     if (error) {
       setDialogError(error)
     }
@@ -334,7 +284,6 @@ function EditCoordinatorDialog({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
       if (!isOpen) {
-        setFileError(null)
         setDialogError(null)
       }
       onOpenChange(isOpen)
@@ -344,10 +293,10 @@ function EditCoordinatorDialog({
           <Edit className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Edit Coordinator</DialogTitle>
-          <DialogDescription>Update coordinator contact information.</DialogDescription>
+          <DialogTitle>Edit Contact Person</DialogTitle>
+          <DialogDescription>Update contact person information.</DialogDescription>
         </DialogHeader>
         {dialogError && (
           <Alert variant="destructive">
@@ -365,79 +314,62 @@ function EditCoordinatorDialog({
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role *</Label>
-            <Input
-              id="role"
-              required
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
-              title="Please enter a valid email address"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number *</Label>
-            <Input
-              id="phone"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Passport Scan (PDF/JPG/PNG)</Label>
-            <div className={`flex items-center gap-3 p-3 bg-gray-50 rounded-lg border ${fileError ? "border-red-300" : "border-gray-200"}`}>
-              <div className="p-2 bg-white rounded-lg border flex-shrink-0">
-                <FileText className="w-4 h-4 text-gray-500" />
-              </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                {passportScan ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm truncate block">{passportScan.name}</span>
-                  </div>
-                ) : coordinator.passport_scan ? (
-                  <span className="text-sm text-green-600">Already uploaded</span>
-                ) : (
-                  <span className="text-sm text-gray-500">No file uploaded</span>
-                )}
-              </div>
-              <label className="cursor-pointer flex-shrink-0">
-                <span className="text-sm font-medium text-[#2f3090] bg-[#2f3090]/10 px-3 py-1.5 rounded-lg hover:bg-[#2f3090]/20 transition-colors flex items-center gap-1">
-                  <Upload className="w-3 h-3" />
-                  {coordinator.passport_scan || passportScan ? "Replace" : "Upload"}
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_gender">Gender *</Label>
+              <select
+                id="edit_gender"
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value as "MALE" | "FEMALE" | "OTHER" })}
+              >
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+              </select>
             </div>
-            {fileError && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                {fileError}
-              </p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="edit_dob">Date of Birth *</Label>
+              <Input
+                id="edit_dob"
+                type="date"
+                required
+                max={getTodayDateString()}
+                min="1920-01-01"
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                title="Please enter a valid email address"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number *</Label>
+              <Input
+                id="phone"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving || !!fileError}>
+            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -453,42 +385,25 @@ function AddCoordinatorDialog({
   open,
   onOpenChange,
 }: {
-  onAdd: (data: CoordinatorUpsertRequest, passportScan?: File) => Promise<string | null>
+  onAdd: (data: CoordinatorUpsertRequest) => Promise<string | null>
   isSaving: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const [formData, setFormData] = useState<CoordinatorUpsertRequest>({
     full_name: "",
-    role: "",
     gender: "MALE",
     date_of_birth: "",
-    passport_number: "",
     email: "",
     phone: "",
     is_primary: false,
   })
-  const [passportScan, setPassportScan] = useState<File | null>(null)
-  const [fileError, setFileError] = useState<string | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
-
-  const handleFileChange = (file: File | null) => {
-    setFileError(null)
-    if (file) {
-      const error = validatePassportFile(file)
-      if (error) {
-        setFileError(error)
-        setPassportScan(null)
-        return
-      }
-    }
-    setPassportScan(file)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setDialogError(null)
-    const error = await onAdd(formData, passportScan || undefined)
+    const error = await onAdd(formData)
     if (error) {
       setDialogError(error)
     }
@@ -497,16 +412,12 @@ function AddCoordinatorDialog({
   const resetForm = () => {
     setFormData({
       full_name: "",
-      role: "",
       gender: "MALE",
       date_of_birth: "",
-      passport_number: "",
       email: "",
       phone: "",
       is_primary: false,
     })
-    setPassportScan(null)
-    setFileError(null)
     setDialogError(null)
   }
 
@@ -518,13 +429,13 @@ function AddCoordinatorDialog({
       <DialogTrigger asChild>
         <Button className="bg-[#2f3090] hover:bg-[#4547a9]">
           <Plus className="w-4 h-4 mr-2" />
-          Add Coordinator
+          Add Contact Person
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Coordinator</DialogTitle>
-          <DialogDescription>Add a new coordinator for your delegation (max 3 per country).</DialogDescription>
+          <DialogTitle>Add New Contact Person</DialogTitle>
+          <DialogDescription>Add a new contact person for your delegation (max 3 per country).</DialogDescription>
         </DialogHeader>
         {dialogError && (
           <Alert variant="destructive">
@@ -533,26 +444,14 @@ function AddCoordinatorDialog({
           </Alert>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="add_full_name">Full Name *</Label>
-              <Input
-                id="add_full_name"
-                required
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="add_role">Role *</Label>
-              <Input
-                id="add_role"
-                required
-                placeholder="e.g., Head Mentor, Coordinator"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="add_full_name">Full Name *</Label>
+            <Input
+              id="add_full_name"
+              required
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -583,15 +482,6 @@ function AddCoordinatorDialog({
               <p className="text-xs text-muted-foreground">Format: dd-mm-yyyy</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="add_passport">Passport Number *</Label>
-            <Input
-              id="add_passport"
-              required
-              value={formData.passport_number}
-              onChange={(e) => setFormData({ ...formData, passport_number: e.target.value })}
-            />
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="add_email">Email Address *</Label>
@@ -615,48 +505,12 @@ function AddCoordinatorDialog({
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Passport Scan (PDF/JPG/PNG) *</Label>
-            <div className={`flex items-center gap-3 p-3 bg-gray-50 rounded-lg border ${fileError ? "border-red-300" : "border-gray-200"}`}>
-              <div className="p-2 bg-white rounded-lg border flex-shrink-0">
-                <FileText className="w-4 h-4 text-gray-500" />
-              </div>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                {passportScan ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm truncate block">{passportScan.name}</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-gray-500">No file uploaded</span>
-                )}
-              </div>
-              <label className="cursor-pointer flex-shrink-0">
-                <span className="text-sm font-medium text-[#2f3090] bg-[#2f3090]/10 px-3 py-1.5 rounded-lg hover:bg-[#2f3090]/20 transition-colors flex items-center gap-1">
-                  <Upload className="w-3 h-3" />
-                  {passportScan ? "Replace" : "Upload"}
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            {fileError && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                {fileError}
-              </p>
-            )}
-          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving || !passportScan || !!fileError}>
-              {isSaving ? "Adding..." : "Add Coordinator"}
+            <Button type="submit" className="bg-[#2f3090] hover:bg-[#4547a9]" disabled={isSaving}>
+              {isSaving ? "Adding..." : "Add Contact Person"}
             </Button>
           </DialogFooter>
         </form>

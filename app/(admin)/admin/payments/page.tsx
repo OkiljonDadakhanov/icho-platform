@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/error-utils";
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -45,10 +47,12 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { adminService, type AdminPayment } from "@/lib/services/admin";
+import { apiDownloadAndOpen } from "@/lib/api";
 import type { SingleRoomInvoice } from "@/lib/types";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -65,6 +69,7 @@ export default function PaymentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [countryFilter, setCountryFilter] = useState("all");
   const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
@@ -81,6 +86,7 @@ export default function PaymentsPage() {
   const [singleRoomAction, setSingleRoomAction] = useState<"approve" | "reject" | null>(null);
   const [singleRoomComment, setSingleRoomComment] = useState("");
   const [activeTab, setActiveTab] = useState<"delegation" | "single-room">("delegation");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,9 +99,9 @@ export default function PaymentsPage() {
         setPayments(paymentsData);
         setSingleRoomInvoices(singleRoomData);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch payments:", err);
-        setError(err?.message || "Failed to load payments");
+        setError(getErrorMessage(err, "Failed to load payments"));
       } finally {
         setIsLoading(false);
       }
@@ -104,12 +110,28 @@ export default function PaymentsPage() {
     fetchData();
   }, []);
 
+  // Get unique countries for filter dropdown
+  const countries = [...new Set(payments.map((p) => p.country_name))].filter(Boolean).sort();
+
   useEffect(() => {
     let filtered = payments;
 
+    // Filter by country
+    if (countryFilter !== "all") {
+      filtered = filtered.filter((p) => p.country_name === countryFilter);
+    }
+
     // Filter by status
     if (statusFilter !== "all") {
-      filtered = filtered.filter((p) => p.status === statusFilter);
+      if (statusFilter === "AWAITING_PROOF") {
+        // Show payments without proof uploaded
+        filtered = filtered.filter((p) => !p.proof_file);
+      } else if (statusFilter === "PENDING") {
+        // Only show payments with proof uploaded that are pending review
+        filtered = filtered.filter((p) => p.status === "PENDING" && p.proof_file);
+      } else {
+        filtered = filtered.filter((p) => p.status === statusFilter);
+      }
     }
 
     // Filter by search query
@@ -122,7 +144,7 @@ export default function PaymentsPage() {
     }
 
     setFilteredPayments(filtered);
-  }, [statusFilter, searchQuery, payments]);
+  }, [statusFilter, countryFilter, searchQuery, payments]);
 
   // Filter single room invoices
   useEffect(() => {
@@ -130,7 +152,12 @@ export default function PaymentsPage() {
 
     // Filter by status
     if (singleRoomStatusFilter !== "all") {
-      filtered = filtered.filter((inv) => inv.status === singleRoomStatusFilter);
+      if (singleRoomStatusFilter === "PENDING") {
+        // Only show invoices with proof uploaded that are pending review
+        filtered = filtered.filter((inv) => inv.status === "PENDING" && inv.proof_file);
+      } else {
+        filtered = filtered.filter((inv) => inv.status === singleRoomStatusFilter);
+      }
     }
 
     // Filter by search query
@@ -189,7 +216,7 @@ export default function PaymentsPage() {
           : `Payment for ${selectedPayment.country_name} rejected`
       );
       setShowReviewDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
@@ -240,7 +267,7 @@ export default function PaymentsPage() {
           : `Single room payment for ${selectedSingleRoom.participant_name} rejected`
       );
       setShowSingleRoomDialog(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to submit review:", err);
       toast.error("Failed to submit review");
     } finally {
@@ -276,12 +303,13 @@ export default function PaymentsPage() {
     }
   };
 
-  const pendingCount = payments.filter((p) => p.status === "PENDING").length;
+  const awaitingProofCount = payments.filter((p) => !p.proof_file).length;
+  const pendingCount = payments.filter((p) => p.status === "PENDING" && p.proof_file).length;
   const approvedCount = payments.filter((p) => p.status === "APPROVED").length;
   const rejectedCount = payments.filter((p) => p.status === "REJECTED").length;
   const totalAmount = payments
     .filter((p) => p.status === "APPROVED")
-    .reduce((acc, p) => acc + (p.invoice?.amount || 0), 0);
+    .reduce((acc, p) => acc + (Number(p.invoice_amount) || p.invoice?.amount || 0), 0);
 
   // Single room stats
   const singleRoomPendingCount = singleRoomInvoices.filter((inv) => inv.status === "PENDING" && inv.proof_file).length;
@@ -290,7 +318,7 @@ export default function PaymentsPage() {
   const singleRoomAwaitingProof = singleRoomInvoices.filter((inv) => !inv.proof_file).length;
   const singleRoomTotalAmount = singleRoomInvoices
     .filter((inv) => inv.status === "APPROVED")
-    .reduce((acc, inv) => acc + (inv.amount || 0), 0);
+    .reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0);
 
   if (isLoading) {
     return <Loading message="Loading payments..." />;
@@ -308,9 +336,34 @@ export default function PaymentsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 mt-1">Review and manage payment proofs</p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download className="w-4 h-4" />
-          Export Report
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:opacity-90"
+          disabled={isExporting}
+          onClick={async () => {
+            try {
+              setIsExporting(true);
+              const blob = await adminService.exportPayments(statusFilter);
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "icho_payments.xlsx";
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success("Payments exported successfully");
+            } catch (err: unknown) {
+              console.error("Failed to export payments:", err);
+              toast.error("Failed to export payments");
+            } finally {
+              setIsExporting(false);
+            }
+          }}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isExporting ? "Exporting..." : "Export Payments"}
         </Button>
       </div>
 
@@ -335,7 +388,18 @@ export default function PaymentsPage() {
 
         <TabsContent value="delegation" className="space-y-6">
           {/* Delegation Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card className="p-4 bg-gray-50 border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-500 rounded-lg">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{awaitingProofCount}</p>
+                  <p className="text-sm text-gray-700">Awaiting Proof</p>
+                </div>
+              </div>
+            </Card>
             <Card className="p-4 bg-amber-50 border-amber-200">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500 rounded-lg">
@@ -395,6 +459,12 @@ export default function PaymentsPage() {
                   {payments.length}
                 </Badge>
               </TabsTrigger>
+              <TabsTrigger value="AWAITING_PROOF" className="gap-1">
+                Awaiting Proof
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-gray-200 text-gray-800">
+                  {awaitingProofCount}
+                </Badge>
+              </TabsTrigger>
               <TabsTrigger value="PENDING" className="gap-1">
                 Pending
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-amber-200 text-amber-800">
@@ -416,6 +486,20 @@ export default function PaymentsPage() {
             </TabsList>
 
             <div className="flex-1" />
+
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {countries.map((country) => (
+                  <SelectItem key={country} value={country!}>
+                    {country}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -446,7 +530,11 @@ export default function PaymentsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <img
+<<<<<<< HEAD
                           src={`https://flagcdn.com/w40/${payment.country_flag || payment.country_iso?.toLowerCase()}.png`}
+=======
+                          src={`https://flagcdn.com/w40/${payment.country_flag || payment.country_iso?.toLowerCase().slice(0, 2)}.png`}
+>>>>>>> main
                           alt={payment.country_name}
                           className="w-8 h-6 object-cover rounded shadow-sm"
                           onError={(e) => {
@@ -486,7 +574,16 @@ export default function PaymentsPage() {
                         <span className="text-gray-400">Not submitted</span>
                       )}
                     </TableCell>
-                    <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                    <TableCell>
+                      {!payment.proof_file ? (
+                        <Badge className="bg-gray-100 text-gray-700 border-0 gap-1">
+                          <FileText className="w-3 h-3" />
+                          Awaiting Proof
+                        </Badge>
+                      ) : (
+                        getStatusBadge(payment.status)
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
 {payment.proof_file ? (
@@ -494,18 +591,7 @@ export default function PaymentsPage() {
                             variant="ghost"
                             size="sm"
                             className="gap-1 text-gray-600"
-                            onClick={async () => {
-                              try {
-                                console.log(`Downloading proof for payment ID: ${payment.id}, country: ${payment.country_name}`);
-                                const blob = await adminService.downloadPaymentProof(payment.id);
-                                console.log(`Downloaded blob: ${blob.size} bytes, type: ${blob.type}`);
-                                const url = URL.createObjectURL(blob);
-                                window.open(url, "_blank");
-                              } catch (err: any) {
-                                console.error("Failed to open proof:", err);
-                                toast.error("Failed to open payment proof");
-                              }
-                            }}
+                            onClick={() => apiDownloadAndOpen(`/v1/admin/payments/${payment.id}/proof/download/`)}
                           >
                             <Eye className="w-4 h-4" />
                             View Proof
@@ -740,16 +826,7 @@ export default function PaymentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="gap-1 text-gray-600"
-                                onClick={async () => {
-                                  try {
-                                    const blob = await adminService.downloadSingleRoomProof(invoice.id);
-                                    const url = URL.createObjectURL(blob);
-                                    window.open(url, "_blank");
-                                  } catch (err: any) {
-                                    console.error("Failed to open proof:", err);
-                                    toast.error("Failed to open payment proof");
-                                  }
-                                }}
+                                onClick={() => apiDownloadAndOpen(`/v1/payments/admin/single-room-invoices/${invoice.id}/proof/download/`)}
                               >
                                 <Eye className="w-4 h-4" />
                                 View Proof
@@ -963,26 +1040,73 @@ export default function PaymentsPage() {
                 <span>{selectedSingleRoom?.country_name}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-gray-500">Invoice Number</span>
+                <code className="px-2 py-0.5 bg-gray-200 rounded text-sm">{selectedSingleRoom?.number}</code>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-500">Amount</span>
                 <span className="font-semibold">
                   ${selectedSingleRoom?.amount?.toLocaleString()} {selectedSingleRoom?.currency}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Submitted</span>
-                <span>
-                  {selectedSingleRoom?.proof_submitted_at &&
-                    format(new Date(selectedSingleRoom.proof_submitted_at), "MMM d, yyyy h:mm a")}
-                </span>
+                <span className="text-gray-500">Status</span>
+                {selectedSingleRoom && getStatusBadge(selectedSingleRoom.status)}
               </div>
-              {selectedSingleRoom?.reviewed_at && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Reviewed</span>
-                  <span>
-                    {format(new Date(selectedSingleRoom.reviewed_at), "MMM d, yyyy h:mm a")}
-                  </span>
+            </div>
+
+            {/* History Timeline */}
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Invoice History
+              </p>
+              <div className="space-y-3">
+                {/* Created */}
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-400"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">Invoice Created</p>
+                    <p className="text-xs text-gray-500">
+                      {selectedSingleRoom?.created_at &&
+                        format(new Date(selectedSingleRoom.created_at), "MMM d, yyyy h:mm a")}
+                    </p>
+                  </div>
                 </div>
-              )}
+                {/* Proof Submitted */}
+                {selectedSingleRoom?.proof_submitted_at ? (
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-1.5 rounded-full bg-amber-500"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700">Payment Proof Submitted</p>
+                      <p className="text-xs text-gray-500">
+                        {format(new Date(selectedSingleRoom.proof_submitted_at), "MMM d, yyyy h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-300"></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-400">Payment Proof Not Submitted</p>
+                    </div>
+                  </div>
+                )}
+                {/* Reviewed */}
+                {selectedSingleRoom?.reviewed_at && (
+                  <div className="flex items-start gap-3">
+                    <div className={`w-2 h-2 mt-1.5 rounded-full ${selectedSingleRoom.status === 'APPROVED' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-700">
+                        {selectedSingleRoom.status === 'APPROVED' ? 'Payment Approved' : 'Payment Rejected'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {format(new Date(selectedSingleRoom.reviewed_at), "MMM d, yyyy h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Existing comment (if viewing) */}

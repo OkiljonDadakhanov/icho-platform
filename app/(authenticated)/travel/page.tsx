@@ -1,5 +1,7 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -60,16 +62,41 @@ export default function TravelPage() {
         participantsService.getAllParticipants(),
         travelService.getAllTravelInfo()
       ])
-      setParticipants(participantsData)
+      // Filter out remote translators - they don't need travel info
+      const filteredParticipants = participantsData.filter(p => p.role !== 'REMOTE_TRANSLATOR')
+      setParticipants(filteredParticipants)
       setTravelInfos(travelData)
       setError(null)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch data:", err)
-      setError(err?.message || "Failed to load data")
+      setError(getErrorMessage(err, "Failed to load data"))
     } finally {
       setIsLoading(false)
     }
   }
+
+  // Role order for sorting
+  const ROLE_ORDER: Record<string, number> = {
+    'HEAD_MENTOR': 1,
+    'MENTOR': 2,
+    'STUDENT': 3,
+    'OBSERVER': 4,
+    'GUEST': 5,
+    'REMOTE_TRANSLATOR': 6,
+  }
+
+  // Sort travel infos by participant role
+  const sortedTravelInfos = [...travelInfos].sort((a, b) => {
+    const participantA = participants.find(p => p.id === a.participant)
+    const participantB = participants.find(p => p.id === b.participant)
+    const roleOrderA = participantA ? (ROLE_ORDER[participantA.role] ?? 99) : 99
+    const roleOrderB = participantB ? (ROLE_ORDER[participantB.role] ?? 99) : 99
+    if (roleOrderA !== roleOrderB) return roleOrderA - roleOrderB
+    // Same role - sort by name
+    const nameA = participantA?.full_name ?? ''
+    const nameB = participantB?.full_name ?? ''
+    return nameA.localeCompare(nameB)
+  })
 
   const participantsWithTravel = new Set(travelInfos.map(t => t.participant))
   const missingTravel = participants.filter(p => !participantsWithTravel.has(p.id))
@@ -86,9 +113,9 @@ export default function TravelPage() {
         )
       )
       await fetchData()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add travel info:", err)
-      setError(err?.message || "Failed to add travel information")
+      setError(getErrorMessage(err, "Failed to add travel information"))
     } finally {
       setIsSaving(false)
     }
@@ -99,9 +126,9 @@ export default function TravelPage() {
       setIsSaving(true)
       await travelService.updateTravelInfo(id, data)
       await fetchData()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update travel info:", err)
-      setError(err?.message || "Failed to update travel information")
+      setError(getErrorMessage(err, "Failed to update travel information"))
     } finally {
       setIsSaving(false)
     }
@@ -112,9 +139,9 @@ export default function TravelPage() {
       setIsSaving(true)
       await travelService.deleteTravelInfo(id)
       await fetchData()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete travel info:", err)
-      setError(err?.message || "Failed to delete travel information")
+      setError(getErrorMessage(err, "Failed to delete travel information"))
     } finally {
       setIsSaving(false)
     }
@@ -255,7 +282,7 @@ export default function TravelPage() {
                 </tr>
               </thead>
               <tbody>
-                {travelInfos.map((travel, index) => {
+                {sortedTravelInfos.map((travel, index) => {
                   const participant = participants.find(p => p.id === travel.participant)
                   if (!participant) return null
 
@@ -375,6 +402,18 @@ function AddTravelDialog({
 
   const availableParticipants = participants.filter(p => !existingTravelParticipants.has(p.id))
 
+  // Validate arrival is before departure
+  const getDateTimeError = (): string | null => {
+    if (formData.arrival_date && formData.arrival_time && formData.departure_date && formData.departure_time) {
+      const arrival = new Date(`${formData.arrival_date}T${formData.arrival_time}`)
+      const departure = new Date(`${formData.departure_date}T${formData.departure_time}`)
+      if (arrival >= departure) {
+        return 'Arrival must be before departure'
+      }
+    }
+    return null
+  }
+
   const toggleParticipant = (participantId: string) => {
     setSelectedParticipants(prev =>
       prev.includes(participantId)
@@ -429,7 +468,7 @@ function AddTravelDialog({
           <Sparkles className="w-4 h-4 ml-2 opacity-70" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-xl text-white">
@@ -497,7 +536,7 @@ function AddTravelDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -524,8 +563,8 @@ function AddTravelDialog({
                 value={formData.arrival_timezone}
                 onValueChange={(value) => setFormData({ ...formData, arrival_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,7 +576,7 @@ function AddTravelDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -564,8 +603,8 @@ function AddTravelDialog({
                 value={formData.departure_timezone}
                 onValueChange={(value) => setFormData({ ...formData, departure_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -598,6 +637,13 @@ function AddTravelDialog({
             </div>
           </div>
 
+          {getDateTimeError() && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-600">{getDateTimeError()}</p>
+            </div>
+          )}
+
           <DialogFooter className="pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="border-gray-300">
               Cancel
@@ -605,7 +651,7 @@ function AddTravelDialog({
             <Button
               type="submit"
               className="bg-gradient-to-r from-[#2f3090] to-[#00795d] hover:from-[#4547a9] hover:to-[#00a67d]"
-              disabled={isSaving || selectedParticipants.length === 0}
+              disabled={isSaving || selectedParticipants.length === 0 || !!getDateTimeError()}
             >
               {isSaving ? "Saving..." : `Add Travel Info${selectedParticipants.length > 1 ? ` (${selectedParticipants.length})` : ''}`}
             </Button>
@@ -666,7 +712,7 @@ function EditTravelDialog({
           <Edit className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl overflow-x-hidden">
+      <DialogContent className="w-[95vw] max-w-4xl overflow-x-hidden">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-xl text-white">
@@ -679,7 +725,7 @@ function EditTravelDialog({
           </div>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Arrival Date *</Label>
               <Input
@@ -706,8 +752,8 @@ function EditTravelDialog({
                 value={formData.arrival_timezone}
                 onValueChange={(value) => setFormData({ ...formData, arrival_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>
@@ -719,7 +765,7 @@ function EditTravelDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-700">Departure Date *</Label>
               <Input
@@ -746,8 +792,8 @@ function EditTravelDialog({
                 value={formData.departure_timezone}
                 onValueChange={(value) => setFormData({ ...formData, departure_timezone: value })}
               >
-                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20">
-                  <Globe className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectTrigger className="border-gray-200 focus:border-[#2f3090] focus:ring-[#2f3090]/20 w-full">
+                  <Globe className="w-4 h-4 mr-2 text-gray-500 shrink-0" />
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
                 <SelectContent>

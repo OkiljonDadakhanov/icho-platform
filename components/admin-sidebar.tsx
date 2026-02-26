@@ -48,10 +48,10 @@ const adminNavigation = [
     description: "All registrations",
   },
   {
-    name: "Travel",
+    name: "Travel & Accommodation",
     href: "/admin/travel",
     icon: Plane,
-    description: "Travel & accommodation",
+    description: "Manage travel info",
   },
   {
     name: "Workflow",
@@ -72,8 +72,8 @@ export function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setIsOpen(false);
   };
 
@@ -192,7 +192,7 @@ export function AdminSidebar() {
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-700 text-xs text-slate-500">
-            <p>57th International Chemistry Olympiad</p>
+            <p>58th International Chemistry Olympiad</p>
             <p className="mt-1">Uzbekistan 2026</p>
           </div>
         </div>

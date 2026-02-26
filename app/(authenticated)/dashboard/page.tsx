@@ -4,12 +4,13 @@ import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Home, Edit, UsersRound, CreditCard, Plane } from "lucide-react"
+import { Home, Edit, UsersRound, CreditCard, Plane, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { participantsService } from "@/lib/services/participants"
+import { paymentsService } from "@/lib/services/payments"
 import { Loading } from "@/components/ui/loading"
 import { ErrorDisplay } from "@/components/ui/error-display"
-import type { Participant } from "@/lib/types"
+import type { Participant, Payment, SingleRoomInvoice } from "@/lib/types"
 import { mapRoleToFrontend, mapGenderToFrontend, mapTshirtToFrontend } from "@/lib/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Timeline } from "@/components/timeline"
@@ -17,6 +18,8 @@ import { Timeline } from "@/components/timeline"
 export default function DashboardPage() {
   const { user } = useAuth()
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [payment, setPayment] = useState<Payment | null>(null)
+  const [singleRoomInvoices, setSingleRoomInvoices] = useState<SingleRoomInvoice[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,21 +27,27 @@ export default function DashboardPage() {
   const countryCode = user?.country?.iso_code_2 || user?.country?.iso_code?.toLowerCase().slice(0, 2) || "un"
 
   useEffect(() => {
-    const fetchParticipants = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        const data = await participantsService.getAllParticipants()
-        setParticipants(data)
+        const [participantsData, paymentData, singleRoomData] = await Promise.all([
+          participantsService.getAllParticipants(),
+          paymentsService.getPayment().catch(() => null),
+          paymentsService.getSingleRoomInvoices().catch(() => [])
+        ])
+        setParticipants(participantsData)
+        setPayment(paymentData)
+        setSingleRoomInvoices(singleRoomData)
         setError(null)
       } catch (err: any) {
-        console.error("Failed to fetch participants:", err)
-        setError(err?.message || "Failed to load participants")
+        console.error("Failed to fetch data:", err)
+        setError(err?.message || "Failed to load dashboard data")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchParticipants()
+    fetchData()
   }, [])
 
   if (isLoading) {
@@ -50,10 +59,21 @@ export default function DashboardPage() {
   }
 
   // Calculate stats
-  const teamLeaders = participants.filter(p => p.role === 'TEAM_LEADER').length
-  const contestants = participants.filter(p => p.role === 'CONTESTANT').length
+  const headMentors = participants.filter(p => p.role === 'HEAD_MENTOR').length
+  const mentors = participants.filter(p => p.role === 'MENTOR').length
+  const students = participants.filter(p => p.role === 'STUDENT').length
   const observers = participants.filter(p => p.role === 'OBSERVER').length
   const guests = participants.filter(p => p.role === 'GUEST').length
+  const remoteTranslators = participants.filter(p => p.role === 'REMOTE_TRANSLATOR').length
+
+  // Payment status calculations
+  const participationFeeStatus = payment?.status || 'PENDING'
+  const participantsWithSingleRoom = participants.filter(p => p.prefers_single_room)
+  const hasSingleRoomRequests = participantsWithSingleRoom.length > 0
+
+  // Single room payment status: check if all single room invoices are approved
+  const pendingSingleRoomInvoices = singleRoomInvoices.filter(inv => inv.status !== 'APPROVED')
+  const allSingleRoomPaid = hasSingleRoomRequests && singleRoomInvoices.length > 0 && pendingSingleRoomInvoices.length === 0
 
   return (
     <div className="space-y-6">
@@ -78,23 +98,31 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-4 mt-6">
             <div className="px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10 transition-all hover:bg-white/20 hover:scale-105">
               <span className="text-2xl font-bold">{participants.length}</span>
-              <span className="text-white/70 ml-2 text-sm">Total Members</span>
+              <span className="text-white/70 ml-2 text-sm">{participants.length === 1 ? 'Member' : 'Members'}</span>
+            </div>
+            <div className="px-4 py-2 bg-yellow-500/30 rounded-lg backdrop-blur-sm border border-yellow-500/30 transition-all hover:bg-yellow-500/50 hover:scale-105">
+              <span className="text-xl font-semibold">{headMentors}</span>
+              <span className="text-white/70 ml-2 text-sm">Head Mentor</span>
             </div>
             <div className="px-4 py-2 bg-[#2f3090]/30 rounded-lg backdrop-blur-sm border border-[#2f3090]/30 transition-all hover:bg-[#2f3090]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{teamLeaders}</span>
-              <span className="text-white/70 ml-2 text-sm">Leaders</span>
+              <span className="text-xl font-semibold">{mentors}</span>
+              <span className="text-white/70 ml-2 text-sm">Mentor</span>
             </div>
             <div className="px-4 py-2 bg-[#00795d]/30 rounded-lg backdrop-blur-sm border border-[#00795d]/30 transition-all hover:bg-[#00795d]/50 hover:scale-105">
-              <span className="text-xl font-semibold">{contestants}</span>
-              <span className="text-white/70 ml-2 text-sm">Students</span>
+              <span className="text-xl font-semibold">{students}</span>
+              <span className="text-white/70 ml-2 text-sm">{students === 1 ? 'Student' : 'Students'}</span>
             </div>
             <div className="px-4 py-2 bg-purple-500/20 rounded-lg backdrop-blur-sm border border-purple-500/20 transition-all hover:bg-purple-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{observers}</span>
-              <span className="text-white/70 ml-2 text-sm">Observers</span>
+              <span className="text-white/70 ml-2 text-sm">{observers === 1 ? 'Observer' : 'Observers'}</span>
             </div>
             <div className="px-4 py-2 bg-orange-500/20 rounded-lg backdrop-blur-sm border border-orange-500/20 transition-all hover:bg-orange-500/40 hover:scale-105">
               <span className="text-xl font-semibold">{guests}</span>
-              <span className="text-white/70 ml-2 text-sm">Guests</span>
+              <span className="text-white/70 ml-2 text-sm">{guests === 1 ? 'Guest' : 'Guests'}</span>
+            </div>
+            <div className="px-4 py-2 bg-cyan-500/20 rounded-lg backdrop-blur-sm border border-cyan-500/20 transition-all hover:bg-cyan-500/40 hover:scale-105">
+              <span className="text-xl font-semibold">{remoteTranslators}</span>
+              <span className="text-white/70 ml-2 text-sm">{remoteTranslators === 1 ? 'Translator' : 'Translators'}</span>
             </div>
           </div>
         </div>
@@ -272,18 +300,74 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      {/* Quick Links */}
+      {/* Payment Status & Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <a href="/payment" className="group">
           <Card className="p-4 shadow-md border-0 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-lg text-white group-hover:scale-110 transition-transform">
-                <CreditCard className="w-5 h-5" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-[#2f3090] to-[#00795d] rounded-lg text-white group-hover:scale-110 transition-transform">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800">Payment</h3>
+                  <p className="text-sm text-gray-500">Invoice & payment proof</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Payment</h3>
-                <p className="text-sm text-gray-500">Invoice & payment proof</p>
+            </div>
+            {/* Payment Status Indicators */}
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+              {/* Participation Fee Status */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Participation Fee</span>
+                <div className="flex items-center gap-1.5">
+                  {participationFeeStatus === 'APPROVED' ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-green-600 font-medium">Paid</span>
+                    </>
+                  ) : participationFeeStatus === 'PENDING' ? (
+                    <>
+                      <Clock className="w-4 h-4 text-yellow-500" />
+                      <span className="text-yellow-600 font-medium">Pending</span>
+                    </>
+                  ) : participationFeeStatus === 'REJECTED' ? (
+                    <>
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                      <span className="text-red-600 font-medium">Rejected</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-500">Not submitted</span>
+                    </>
+                  )}
+                </div>
               </div>
+              {/* Single Room Fee Status - only show if there are requests */}
+              {hasSingleRoomRequests && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Single Room Fees ({participantsWithSingleRoom.length})</span>
+                  <div className="flex items-center gap-1.5">
+                    {allSingleRoomPaid ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-green-600 font-medium">Paid</span>
+                      </>
+                    ) : pendingSingleRoomInvoices.length > 0 ? (
+                      <>
+                        <Clock className="w-4 h-4 text-yellow-500" />
+                        <span className="text-yellow-600 font-medium">{pendingSingleRoomInvoices.length} pending</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-500">Awaiting invoices</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         </a>

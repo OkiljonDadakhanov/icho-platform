@@ -1,5 +1,7 @@
 "use client";
 
+import { getErrorMessage, hasStatus, hasMessage } from "@/lib/error-utils";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -14,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, AlertCircle, LogIn, Globe } from "lucide-react";
+import { Loader2, AlertCircle, LogIn, Globe, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { countriesService } from "@/lib/services/countries";
 import type { Country } from "@/lib/types";
@@ -23,6 +25,7 @@ export default function LoginPage() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
@@ -39,13 +42,13 @@ export default function LoginPage() {
       setError(null);
       const data = await countriesService.getCountries();
       setCountries(data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to load countries:", err);
-      const error = err as { message?: string; status?: number };
-      if (error.status === 0 || error.message?.includes('Failed to fetch') || error.message?.includes('CORS')) {
+      const errorMsg = getErrorMessage(err, "");
+      if ((hasStatus(err) && err.status === 0) || errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
         setError("Unable to connect to the server. Please ensure the API server is running and CORS is configured correctly.");
       } else {
-        setError(error.message || "Failed to load countries. Please refresh the page.");
+        setError(getErrorMessage(err, "Failed to load countries. Please refresh the page."));
       }
     } finally {
       setIsLoadingCountries(false);
@@ -66,9 +69,8 @@ export default function LoginPage() {
     try {
       await login({ country: selectedCountry, password });
       router.push("/dashboard");
-    } catch (err) {
-      const error = err as { message?: string };
-      setError(error.message || "Invalid credentials. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Invalid credentials. Please try again."));
     } finally {
       setIsLoading(false);
     }
@@ -133,15 +135,30 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your country password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading || isLoadingCountries}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your country password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading || isLoadingCountries}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <Button

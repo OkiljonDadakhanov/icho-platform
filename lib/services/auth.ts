@@ -17,10 +17,10 @@ export const authService = {
   },
 
   /**
-   * Logout - clear tokens
+   * Logout - blacklist refresh token on server and clear local tokens
    */
-  logout(): void {
-    api.clearTokens();
+  async logout(): Promise<void> {
+    await api.logout();
   },
 
   /**

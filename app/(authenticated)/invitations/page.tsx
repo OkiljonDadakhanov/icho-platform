@@ -1,11 +1,13 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/error-utils"
+
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, FileText, InfoIcon, Loader2, CheckCircle2, Mail, AlertCircle } from "lucide-react"
+import { Download, FileText, InfoIcon, Loader2, CheckCircle2, Mail, AlertCircle, RefreshCw } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { invitationsService } from "@/lib/services/invitations"
 import { participantsService } from "@/lib/services/participants"
@@ -34,7 +36,23 @@ export default function InvitationsPage() {
         participantsService.getAllParticipants(),
         invitationsService.getAllInvitations()
       ])
-      setParticipants(participantsData)
+      // Filter out remote translators - they don't need invitation letters
+      const filteredParticipants = participantsData.filter(p => p.role !== 'REMOTE_TRANSLATOR')
+
+      // Sort by role order: Head Mentor, Mentor, Students, Observers, Guests
+      const roleOrder: Record<string, number> = {
+        'HEAD_MENTOR': 1,
+        'MENTOR': 2,
+        'STUDENT': 3,
+        'OBSERVER': 4,
+        'GUEST': 5,
+      }
+      const sortedParticipants = filteredParticipants.sort((a, b) => {
+        const orderA = roleOrder[a.role] || 99
+        const orderB = roleOrder[b.role] || 99
+        return orderA - orderB
+      })
+      setParticipants(sortedParticipants)
 
       const invitationMap: Record<string, InvitationLetter> = {}
       invitationsData.forEach(inv => {
@@ -44,21 +62,44 @@ export default function InvitationsPage() {
       setError(null)
     } catch (err: unknown) {
       console.error("Failed to fetch data:", err)
-      const message = (err as { message?: string })?.message || "Failed to load data. Please try again.";
+      const message = getErrorMessage(err, "Failed to load data. Please try again.");
       setError(message)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleGenerateInvitation = async (participantId: string) => {
+  const handleGenerateInvitation = async (participantId: string, force: boolean = false) => {
     try {
       setGeneratingFor(participantId)
-      await invitationsService.requestInvitation(participantId)
+      await invitationsService.requestInvitation(participantId, force)
+
+      // Poll for status updates until generation completes
+      const maxAttempts = 30 // 30 seconds max
+      let attempts = 0
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+        const invitationsData = await invitationsService.getAllInvitations()
+        const invitation = invitationsData.find(inv => inv.participant === participantId)
+
+        if (invitation && (invitation.status === "GENERATED" || invitation.status === "FAILED")) {
+          // Update the invitations state
+          const invitationMap: Record<string, InvitationLetter> = {}
+          invitationsData.forEach(inv => {
+            invitationMap[inv.participant] = inv
+          })
+          setInvitations(invitationMap)
+          break
+        }
+        attempts++
+      }
+
+      // Final fetch to ensure UI is up to date
       await fetchData()
     } catch (err: unknown) {
       console.error("Failed to generate invitation:", err)
-      const message = (err as { message?: string })?.message || "Failed to generate invitation letter. Please try again.";
+      const message = getErrorMessage(err, "Failed to generate invitation letter. Please try again.");
       setError(message)
     } finally {
       setGeneratingFor(null)
@@ -78,7 +119,7 @@ export default function InvitationsPage() {
       document.body.removeChild(a)
     } catch (err: unknown) {
       console.error("Failed to download invitation:", err)
-      const message = (err as { message?: string })?.message || "Failed to download invitation letter. Please try again.";
+      const message = getErrorMessage(err, "Failed to download invitation letter. Please try again.");
       setError(message)
     }
   }
@@ -189,6 +230,11 @@ export default function InvitationsPage() {
                   const invitation = invitations[participant.id]
                   const isGenerating = generatingFor === participant.id
 
+                  // Check if participant was updated after invitation was generated
+                  const needsRegeneration = invitation?.status === "GENERATED" &&
+                    invitation.generated_at &&
+                    new Date(participant.updated_at) > new Date(invitation.generated_at)
+
                   return (
                     <tr
                       key={participant.id}
@@ -198,9 +244,9 @@ export default function InvitationsPage() {
                       <td className="py-4 px-4">
                         <Badge
                           className={`font-medium text-xs transition-all duration-200 group-hover:scale-105 ${
-                            role === "Team Leader"
+                            role === "Mentor"
                               ? "bg-[#2f3090] text-white"
-                              : role === "Contestant"
+                              : role === "Student"
                                 ? "bg-[#00795d] text-white"
                                 : role === "Observer"
                                   ? "bg-purple-600 text-white"
@@ -220,20 +266,27 @@ export default function InvitationsPage() {
                       <td className="py-4 px-4 text-gray-600">{new Date(participant.date_of_birth).toLocaleDateString()}</td>
                       <td className="py-4 px-4">
                         {invitation ? (
-                          <Badge
-                            className={`text-xs ${
-                              invitation.status === "GENERATED"
-                                ? "bg-[#00795d] text-white"
-                                : invitation.status === "GENERATING"
-                                  ? "bg-yellow-500 text-white"
-                                  : invitation.status === "FAILED"
-                                    ? "bg-red-500 text-white"
-                                    : "bg-gray-500 text-white"
-                            }`}
-                          >
-                            {invitation.status === "GENERATED" && <CheckCircle2 className="w-3 h-3 mr-1" />}
-                            {invitation.status}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge
+                              className={`text-xs w-fit ${
+                                needsRegeneration
+                                  ? "bg-amber-500 text-white"
+                                  : invitation.status === "GENERATED"
+                                    ? "bg-[#00795d] text-white"
+                                    : invitation.status === "GENERATING"
+                                      ? "bg-yellow-500 text-white"
+                                      : invitation.status === "FAILED"
+                                        ? "bg-red-500 text-white"
+                                        : "bg-gray-500 text-white"
+                              }`}
+                            >
+                              {invitation.status === "GENERATED" && !needsRegeneration && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                              {needsRegeneration ? "Needs Update" : invitation.status}
+                            </Badge>
+                            {needsRegeneration && (
+                              <span className="text-xs text-amber-600">Info changed</span>
+                            )}
+                          </div>
                         ) : (
                           <Badge className="bg-gray-200 text-gray-600 text-xs">
                             Not Generated
@@ -242,15 +295,37 @@ export default function InvitationsPage() {
                       </td>
                       <td className="py-4 px-4">
                         {invitation?.status === "GENERATED" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10 group-hover:scale-105 transition-all"
-                            onClick={() => handleDownloadInvitation(invitation.id)}
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Download PDF
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-[#2f3090] text-[#2f3090] hover:bg-[#2f3090]/10 group-hover:scale-105 transition-all"
+                              onClick={() => handleDownloadInvitation(invitation.id)}
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </Button>
+                            {needsRegeneration && (
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all"
+                                onClick={() => handleGenerateInvitation(participant.id, true)}
+                                disabled={isGenerating}
+                              >
+                                {isGenerating ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Regenerating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Regenerate
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         ) : (
                           <Button
                             size="sm"
