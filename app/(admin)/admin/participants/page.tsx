@@ -52,7 +52,7 @@ import {
 } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
-import { adminService, type AdminParticipant } from "@/lib/services/admin";
+import { adminService, type AdminParticipant, type AdminStats } from "@/lib/services/admin";
 import { apiDownloadAndOpen } from "@/lib/api";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -71,6 +71,7 @@ const roleColors: Record<string, string> = {
 export default function ParticipantsPage() {
   const [participants, setParticipants] = useState<AdminParticipant[]>([]);
   const [filteredParticipants, setFilteredParticipants] = useState<AdminParticipant[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,11 +87,15 @@ export default function ParticipantsPage() {
   );
 
   useEffect(() => {
-    const fetchParticipants = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const data = await adminService.getParticipants();
-        setParticipants(data);
+        const [participantsData, statsData] = await Promise.all([
+          adminService.getParticipants(),
+          adminService.getStats(),
+        ]);
+        setParticipants(participantsData);
+        setStats(statsData);
         setError(null);
       } catch (err: unknown) {
         console.error("Failed to fetch participants:", err);
@@ -100,7 +105,7 @@ export default function ParticipantsPage() {
       }
     };
 
-    fetchParticipants();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -155,12 +160,6 @@ export default function ParticipantsPage() {
     setShowDetailDialog(true);
   };
 
-  // Stats
-  const mentors = participants.filter((p) => p.role === "MENTOR").length;
-  const students = participants.filter((p) => p.role === "STUDENT").length;
-  const observers = participants.filter((p) => p.role === "OBSERVER").length;
-  const guests = participants.filter((p) => p.role === "GUEST").length;
-
   if (isLoading) {
     return <Loading message="Loading participants..." />;
   }
@@ -191,64 +190,52 @@ export default function ParticipantsPage() {
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <Users className="w-5 h-5 text-gray-600" />
+      {/* Pre-Registration vs Registered Overview */}
+      {stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200/50">
+            <h3 className="text-sm font-semibold text-blue-700 mb-3">Pre-Registration</h3>
+            <p className="text-3xl font-bold text-blue-900">{stats.total_participants}</p>
+            <p className="text-sm text-blue-600/80 mb-3">total from submitted pre-registrations</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Head Mentors", count: stats.pre_registration_by_role.head_mentors },
+                { label: "Mentors", count: stats.pre_registration_by_role.mentors },
+                { label: "Students", count: stats.pre_registration_by_role.students },
+                { label: "Observers", count: stats.pre_registration_by_role.observers },
+                { label: "Guests", count: stats.pre_registration_by_role.guests },
+                { label: "Remote Translators", count: stats.pre_registration_by_role.remote_translators },
+              ].map((item) => (
+                <div key={item.label} className="bg-white/60 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-blue-900">{item.count}</p>
+                  <p className="text-xs text-blue-600">{item.label}</p>
+                </div>
+              ))}
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{participants.length}</p>
-              <p className="text-sm text-gray-500">Total</p>
+          </Card>
+
+          <Card className="p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50">
+            <h3 className="text-sm font-semibold text-emerald-700 mb-3">Detailed Registration</h3>
+            <p className="text-3xl font-bold text-emerald-900">{stats.registered_participants}</p>
+            <p className="text-sm text-emerald-600/80 mb-3">completed detailed registration</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Head Mentors", count: stats.registered_by_role.head_mentors },
+                { label: "Mentors", count: stats.registered_by_role.mentors },
+                { label: "Students", count: stats.registered_by_role.students },
+                { label: "Observers", count: stats.registered_by_role.observers },
+                { label: "Guests", count: stats.registered_by_role.guests },
+                { label: "Remote Translators", count: stats.registered_by_role.remote_translators },
+              ].map((item) => (
+                <div key={item.label} className="bg-white/60 rounded-lg p-2 text-center">
+                  <p className="text-lg font-bold text-emerald-900">{item.count}</p>
+                  <p className="text-xs text-emerald-600">{item.label}</p>
+                </div>
+              ))}
             </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#2f3090]/10 rounded-lg">
-              <UserCircle className="w-5 h-5 text-[#2f3090]" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{mentors}</p>
-              <p className="text-sm text-gray-500">Mentors</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#00795d]/10 rounded-lg">
-              <GraduationCap className="w-5 h-5 text-[#00795d]" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{students}</p>
-              <p className="text-sm text-gray-500">Students</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <EyeIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{observers}</p>
-              <p className="text-sm text-gray-500">Observers</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <UserIcon className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{guests}</p>
-              <p className="text-sm text-gray-500">Guests</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
 
       {/* Filters & Table */}
       <Card className="p-6">

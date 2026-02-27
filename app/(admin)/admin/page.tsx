@@ -122,13 +122,16 @@ export default function AdminDashboardPage() {
               <p className="text-sm font-medium text-emerald-600">Total Participants</p>
               <p className="text-3xl font-bold text-emerald-900 mt-1">{stats.total_participants}</p>
               <p className="text-sm text-emerald-600/80 mt-1">
-                {stats.participants_by_role.students} students
+                pre-reg {stats.total_participants} | detailed {stats.registered_participants}
               </p>
             </div>
             <div className="p-3 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/30">
               <Users className="w-6 h-6 text-white" />
             </div>
           </div>
+          <Link href="/admin/participants" className="mt-3 inline-flex items-center text-sm font-medium text-emerald-700 hover:text-emerald-800">
+            Review now <ArrowRight className="w-4 h-4 ml-1" />
+          </Link>
         </Card>
 
         <Card className="p-5 bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200/50">
@@ -259,13 +262,15 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Participants by Role */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Participants by Role</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Registered Participants by Role</h2>
           <div className="grid grid-cols-2 gap-4">
             {[
-              { role: "Mentors", count: stats.participants_by_role.mentors, color: "bg-[#2f3090]", icon: "M" },
-              { role: "Students", count: stats.participants_by_role.students, color: "bg-[#00795d]", icon: "S" },
-              { role: "Observers", count: stats.participants_by_role.observers, color: "bg-purple-500", icon: "O" },
-              { role: "Guests", count: stats.participants_by_role.guests, color: "bg-orange-500", icon: "G" },
+              { role: "Head Mentors", count: stats.registered_by_role.head_mentors, color: "bg-[#1a1a5c]", icon: "HM" },
+              { role: "Mentors", count: stats.registered_by_role.mentors, color: "bg-[#2f3090]", icon: "M" },
+              { role: "Students", count: stats.registered_by_role.students, color: "bg-[#00795d]", icon: "S" },
+              { role: "Observers", count: stats.registered_by_role.observers, color: "bg-purple-500", icon: "O" },
+              { role: "Guests", count: stats.registered_by_role.guests, color: "bg-orange-500", icon: "G" },
+              { role: "Remote Translators", count: stats.registered_by_role.remote_translators, color: "bg-teal-500", icon: "RT" },
             ].map((item) => (
               <div
                 key={item.role}
