@@ -85,16 +85,22 @@ export interface AdminAccommodation {
   single_room_invoice_status?: string;
 }
 
+export interface RoleBreakdown {
+  head_mentors: number;
+  mentors: number;
+  students: number;
+  observers: number;
+  guests: number;
+  remote_translators: number;
+}
+
 export interface AdminStats {
   total_countries: number;
   active_countries: number;
   total_participants: number;
-  participants_by_role: {
-    mentors: number;
-    students: number;
-    observers: number;
-    guests: number;
-  };
+  pre_registration_by_role: RoleBreakdown;
+  registered_participants: number;
+  registered_by_role: RoleBreakdown;
   payments: {
     pending: number;
     approved: number;
